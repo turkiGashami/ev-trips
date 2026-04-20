@@ -1,0 +1,130 @@
+export enum UserRole {
+  GUEST = 'guest',
+  USER = 'user',
+  MODERATOR = 'moderator',
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin',
+}
+
+export enum UserStatus {
+  ACTIVE = 'active',
+  SUSPENDED = 'suspended',
+  BANNED = 'banned',
+  PENDING_VERIFICATION = 'pending_verification',
+  DELETED = 'deleted',
+}
+
+export enum TripStatus {
+  DRAFT = 'draft',
+  PENDING_REVIEW = 'pending_review',
+  PUBLISHED = 'published',
+  REJECTED = 'rejected',
+  HIDDEN = 'hidden',
+  ARCHIVED = 'archived',
+}
+
+export enum ReactionType {
+  HELPFUL = 'helpful',
+  NOT_HELPFUL = 'not_helpful',
+}
+
+export enum ReportStatus {
+  PENDING = 'pending',
+  REVIEWED = 'reviewed',
+  RESOLVED = 'resolved',
+  DISMISSED = 'dismissed',
+}
+
+export enum ReportType {
+  MISLEADING_DATA = 'misleading_data',
+  FALSE_BATTERY_INFO = 'false_battery_info',
+  INAPPROPRIATE_MEDIA = 'inappropriate_media',
+  SPAM = 'spam',
+  ABUSE = 'abuse',
+  DUPLICATE = 'duplicate',
+  OFF_TOPIC = 'off_topic',
+}
+
+export enum CommentStatus {
+  VISIBLE = 'visible',
+  HIDDEN = 'hidden',
+  DELETED = 'deleted',
+}
+
+export enum NotificationType {
+  TRIP_APPROVED = 'trip_approved',
+  TRIP_REJECTED = 'trip_rejected',
+  TRIP_HIDDEN = 'trip_hidden',
+  NEW_COMMENT = 'new_comment',
+  COMMENT_REPLY = 'comment_reply',
+  TRIP_FAVORITED = 'trip_favorited',
+  TRIP_HELPFUL = 'trip_helpful',
+  NEW_FOLLOWER = 'new_follower',
+  BADGE_AWARDED = 'badge_awarded',
+  SYSTEM_ANNOUNCEMENT = 'system_announcement',
+  ADMIN_MESSAGE = 'admin_message',
+  MODERATION_NOTICE = 'moderation_notice',
+}
+
+export enum ChargerType {
+  AC_LEVEL1 = 'ac_level1',
+  AC_LEVEL2 = 'ac_level2',
+  DC_FAST = 'dc_fast',
+  SUPERCHARGER = 'supercharger',
+  CCS = 'ccs',
+  CHADEMO = 'chademo',
+  TYPE2 = 'type2',
+}
+
+export enum WeatherCondition {
+  SUNNY = 'sunny',
+  CLOUDY = 'cloudy',
+  RAINY = 'rainy',
+  FOGGY = 'foggy',
+  WINDY = 'windy',
+  EXTREME_HEAT = 'extreme_heat',
+  COLD = 'cold',
+  SANDSTORM = 'sandstorm',
+}
+
+export enum DrivingStyle {
+  ECO = 'eco',
+  CALM = 'calm',
+  NORMAL = 'normal',
+  SPORTY = 'sporty',
+  AGGRESSIVE = 'aggressive',
+}
+
+export enum LuggageLevel {
+  NONE = 'none',
+  LIGHT = 'light',
+  MEDIUM = 'medium',
+  HEAVY = 'heavy',
+  FULL = 'full',
+}
+
+export enum AcUsage {
+  OFF = 'off',
+  PARTIAL = 'partial',
+  FULL = 'full',
+}
+
+export enum DrivetrainType {
+  RWD = 'rwd',
+  FWD = 'fwd',
+  AWD = 'awd',
+  SINGLE_MOTOR = 'single_motor',
+  DUAL_MOTOR = 'dual_motor',
+  TRI_MOTOR = 'tri_motor',
+}
+
+export enum BannerStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  SCHEDULED = 'scheduled',
+}
+
+export enum PageStatus {
+  PUBLISHED = 'published',
+  DRAFT = 'draft',
+}

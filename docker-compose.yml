@@ -1,0 +1,150 @@
+version: '3.9'
+
+name: ev-trips-community
+
+services:
+  # ─────────────────────────────────────────
+  # PostgreSQL 16 Database
+  # ─────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: ev_trips_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ev_trips_db}
+      POSTGRES_USER: ${POSTGRES_USER:-ev_trips_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ev_trips_password}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/db/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - ev_trips_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ev_trips_user} -d ${POSTGRES_DB:-ev_trips_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ─────────────────────────────────────────
+  # Redis 7 Cache & Session Store
+  # ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: ev_trips_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-ev_trips_redis_password}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --loglevel warning
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - ev_trips_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-ev_trips_redis_password}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ─────────────────────────────────────────
+  # Adminer - Database Management UI
+  # ─────────────────────────────────────────
+  adminer:
+    image: adminer:4.8.1
+    container_name: ev_trips_adminer
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: hydra
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    networks:
+      - ev_trips_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────
+  # NestJS API Server
+  # ─────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: production
+      args:
+        - NODE_VERSION=20
+    container_name: ev_trips_api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ev_trips_user}:${POSTGRES_PASSWORD:-ev_trips_password}@postgres:5432/${POSTGRES_DB:-ev_trips_db}?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD:-ev_trips_redis_password}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@evtrips.community}
+      FCM_SERVER_KEY: ${FCM_SERVER_KEY:-}
+      APNS_KEY_ID: ${APNS_KEY_ID:-}
+      APNS_TEAM_ID: ${APNS_TEAM_ID:-}
+    volumes:
+      - api_uploads:/app/uploads
+    ports:
+      - "${API_PORT:-3001}:3001"
+    networks:
+      - ev_trips_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+# ─────────────────────────────────────────
+# Named Volumes
+# ─────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+    name: ev_trips_postgres_data
+  redis_data:
+    driver: local
+    name: ev_trips_redis_data
+  api_uploads:
+    driver: local
+    name: ev_trips_api_uploads
+
+# ─────────────────────────────────────────
+# Networks
+# ─────────────────────────────────────────
+networks:
+  ev_trips_network:
+    driver: bridge
+    name: ev_trips_network

@@ -1,0 +1,203 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────
+   ADMIN — light warm palette, high-density, data-first
+   Shares visual identity with the public site (cream + ink),
+   but tuned for tables, forms, and dense panels.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --cream:      #faf8f5;
+  --sand:       #f2ece0;
+  --bone:       #e8e1d3;
+  --line:       #e3dcce;
+  --line-soft:  #efeade;
+
+  --ink:        #1a1a1a;
+  --ink-2:      #3a3a38;
+  --ink-3:      #6b6862;
+  --ink-4:      #9a968d;
+
+  --forest:     #2d4a3e;
+  --terra:      #b45e42;
+  --sky:        #6b8e9c;
+
+  --sidebar-width: 260px;
+  --topbar-height: 64px;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Noto Kufi Arabic', 'Tajawal', 'Cairo', system-ui, sans-serif;
+    letter-spacing: -0.005em;
+  }
+  ::selection { background: var(--ink); color: var(--cream); }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background-color: var(--line); border-radius: 2px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: var(--ink-4); }
+
+  /* Page layout */
+  .admin-main {
+    @apply flex-1 overflow-y-auto p-6 md:p-8 scrollbar-thin;
+  }
+  .page-header {
+    @apply mb-8 flex items-start justify-between gap-4 pb-5 border-b;
+    border-color: var(--line);
+  }
+  .page-title {
+    @apply text-[1.5rem] font-medium tracking-tight;
+    color: var(--ink);
+  }
+  .page-subtitle {
+    @apply text-sm mt-1.5;
+    color: var(--ink-3);
+  }
+
+  /* Card — flat, hairline */
+  .card {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+  .card-header {
+    @apply px-5 py-4 border-b;
+    border-color: var(--line);
+  }
+  .card-body { @apply p-5; }
+
+  /* Form helpers */
+  .form-label {
+    @apply block text-[11px] font-medium mb-2 uppercase tracking-[0.1em];
+    color: var(--ink-3);
+  }
+  .form-input,
+  .form-select,
+  .form-textarea {
+    @apply w-full px-3.5 py-2.5 text-sm outline-none transition-colors;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--ink);
+  }
+  .form-input::placeholder,
+  .form-textarea::placeholder { color: var(--ink-4); }
+  .form-input:hover,
+  .form-select:hover,
+  .form-textarea:hover { border-color: var(--ink-3); }
+  .form-input:focus,
+  .form-select:focus,
+  .form-textarea:focus { border-color: var(--ink); }
+  .form-textarea { resize: vertical; min-height: 96px; }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+    border-radius: 2px;
+    letter-spacing: 0.01em;
+  }
+  .btn-primary {
+    @apply btn;
+    background: var(--ink);
+    color: var(--cream);
+  }
+  .btn-primary:hover { background: var(--forest); }
+
+  .btn-secondary {
+    @apply btn;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+  }
+  .btn-secondary:hover { background: var(--ink); color: var(--cream); }
+
+  .btn-danger {
+    @apply btn;
+    background: transparent;
+    color: var(--terra);
+    border: 1px solid var(--terra);
+  }
+  .btn-danger:hover { background: var(--terra); color: var(--cream); }
+
+  .btn-sm { @apply px-3 py-1.5 text-xs; }
+
+  .btn-ghost {
+    @apply btn;
+    color: var(--ink-3);
+    background: transparent;
+  }
+  .btn-ghost:hover { color: var(--ink); background: var(--sand); }
+
+  /* Tables */
+  .admin-table {
+    @apply w-full text-sm;
+  }
+  .admin-table thead th {
+    @apply px-4 py-3 text-right text-[11px] font-medium uppercase tracking-[0.1em] border-b;
+    color: var(--ink-3);
+    border-color: var(--line);
+    background: var(--sand);
+  }
+  .admin-table tbody td {
+    @apply px-4 py-3 border-b;
+    color: var(--ink-2);
+    border-color: var(--line-soft);
+  }
+  .admin-table tbody tr:hover { background: var(--sand); }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em];
+    border-radius: 2px;
+  }
+  .badge-success { background: rgba(45,74,62,.1); color: var(--forest); }
+  .badge-warning { background: rgba(180,94,66,.1); color: var(--terra); }
+  .badge-neutral { background: var(--sand); color: var(--ink-2); }
+  .badge-info    { background: rgba(107,142,156,.12); color: var(--sky); }
+
+  /* Eyebrow */
+  .eyebrow {
+    @apply text-[11px] font-medium uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-3);
+  }
+}
+
+[dir="rtl"] .rtl\:flip { transform: scaleX(-1); }
+
+/* Rich text */
+.rich-content h1 { @apply text-xl font-medium mb-4; color: var(--ink); }
+.rich-content h2 { @apply text-lg font-medium mb-3; color: var(--ink); }
+.rich-content p  { @apply mb-3 leading-relaxed; color: var(--ink-2); }
+.rich-content ul { @apply list-disc list-inside mb-3 space-y-1; color: var(--ink-2); }
+.rich-content a  { color: var(--forest); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Skeleton */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--sand) 25%, var(--line-soft) 50%, var(--sand) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 3px;
+}
+
+/* Focus */
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }

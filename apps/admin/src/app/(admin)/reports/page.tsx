@@ -1,0 +1,134 @@
+"use client";
+
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { AdminTopbar } from "@/components/layout/AdminTopbar";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { DataTable, type Column } from "@/components/ui/DataTable";
+import { reportsApi } from "@/lib/api/admin.api";
+import type { Report, ReportStatus, ReportType, ReportReason } from "@/types/admin.types";
+import { formatDateTime, formatNumber, safeText } from "@/lib/format";
+
+const PAGE_LIMIT = 15;
+
+const STATUS_LABELS: Record<ReportStatus, string> = { open: "مفتوح", resolved: "تمت المراجعة", dismissed: "مرفوض" };
+const STATUS_STYLE: Record<ReportStatus, { bg: string; color: string }> = {
+  open:      { bg: 'rgba(217,119,6,.1)',  color: '#d97706' },
+  resolved:  { bg: 'rgba(45,74,62,.1)',   color: 'var(--forest)' },
+  dismissed: { bg: 'var(--sand)',          color: 'var(--ink-4)' },
+};
+
+const TYPE_LABELS: Record<ReportType, string> = { trip: "رحلة", comment: "تعليق", user: "مستخدم" };
+const TYPE_STYLE: Record<ReportType, { bg: string; color: string }> = {
+  trip:    { bg: 'rgba(107,142,156,.12)', color: 'var(--sky)' },
+  comment: { bg: 'rgba(139,92,246,.1)',   color: '#7c3aed' },
+  user:    { bg: 'rgba(180,94,66,.1)',    color: 'var(--terra)' },
+};
+
+const REASON_LABELS: Record<ReportReason, string> = {
+  spam: "بريد مزعج", inappropriate: "محتوى غير لائق", misleading: "معلومات مضللة", harassment: "مضايقة", other: "أخرى",
+};
+
+const STATUS_FILTER_TABS = [
+  { value: "", label: "الكل" }, { value: "open", label: "مفتوح" },
+  { value: "resolved", label: "تمت المراجعة" }, { value: "dismissed", label: "مرفوض" },
+];
+
+function StatusBadge({ status }: { status: ReportStatus }) {
+  const s = STATUS_STYLE[status];
+  return <span style={{ display: 'inline-flex', padding: '2px 8px', fontSize: 10, fontWeight: 500, background: s.bg, color: s.color, borderRadius: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{STATUS_LABELS[status]}</span>;
+}
+
+function TypeBadge({ type }: { type: ReportType }) {
+  const s = TYPE_STYLE[type];
+  return <span style={{ display: 'inline-flex', padding: '2px 8px', fontSize: 10, fontWeight: 500, background: s.bg, color: s.color, borderRadius: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{TYPE_LABELS[type]}</span>;
+}
+
+type ActionType = "resolve" | "dismiss" | null;
+interface ActionState { type: ActionType; report: Report | null; }
+
+export default function ReportsPage() {
+  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [action, setAction] = useState<ActionState>({ type: null, report: null });
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["admin", "reports", page, statusFilter],
+    queryFn: () => reportsApi.list({ page, limit: PAGE_LIMIT, status: statusFilter || undefined }),
+    placeholderData: (prev) => prev,
+  });
+
+  const reports = data?.data ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 1;
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin", "reports"] });
+
+  const resolveMutation = useMutation({ mutationFn: (id: string) => reportsApi.resolve(id), onSuccess: () => { setAction({ type: null, report: null }); invalidate(); } });
+  const dismissMutation = useMutation({ mutationFn: (id: string) => reportsApi.dismiss(id), onSuccess: () => { setAction({ type: null, report: null }); invalidate(); } });
+
+  const iconBtnStyle: React.CSSProperties = { padding: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-4)', borderRadius: 2, display: 'flex', alignItems: 'center' };
+
+  const columns: Column<Report>[] = [
+    { key: "reporter", header: "المُبلِّغ", render: (r) => <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink-2)' }}>{safeText(r.reporter?.name)}</span> },
+    { key: "type", header: "نوع البلاغ", render: (r) => <TypeBadge type={r.type} /> },
+    { key: "reason", header: "السبب", render: (r) => <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{REASON_LABELS[r.reason] ?? r.reason}</span> },
+    { key: "details", header: "التفاصيل", render: (r) => <span style={{ fontSize: 11, color: 'var(--ink-4)', maxWidth: 200, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={safeText(r.details, '')}>{safeText(r.details)}</span> },
+    { key: "status", header: "الحالة", render: (r) => <StatusBadge status={r.status} /> },
+    { key: "createdAt", header: "تاريخ البلاغ", sortable: true, render: (r) => <span style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{formatDateTime(r.createdAt)}</span> },
+    {
+      key: "actions", header: "", width: "100px",
+      render: (r) => {
+        if (r.status !== "open") return null;
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'flex-end' }}>
+            <button onClick={() => setAction({ type: "resolve", report: r })} style={{ ...iconBtnStyle, color: 'var(--forest)' }} title="تمت المراجعة"><CheckCircle style={{ width: 15, height: 15 }} /></button>
+            <button onClick={() => setAction({ type: "dismiss", report: r })} style={iconBtnStyle} title="رفض البلاغ"><XCircle style={{ width: 15, height: 15 }} /></button>
+          </div>
+        );
+      },
+    },
+  ];
+
+  const confirmConfig = (() => {
+    if (!action.type || !action.report) return null;
+    if (action.type === "resolve") return {
+      title: "تأكيد مراجعة البلاغ", message: "هل تريد تحديد هذا البلاغ كـ«تمت المراجعة»؟", confirmLabel: "تمت المراجعة", cancelLabel: "إلغاء", variant: "primary" as const, isLoading: resolveMutation.isPending, onConfirm: () => resolveMutation.mutate(action.report!.id),
+    };
+    return {
+      title: "رفض البلاغ", message: "هل تريد رفض هذا البلاغ واعتباره غير صالح؟", confirmLabel: "رفض البلاغ", cancelLabel: "إلغاء", variant: "warning" as const, isLoading: dismissMutation.isPending, onConfirm: () => dismissMutation.mutate(action.report!.id),
+    };
+  })();
+
+  return (
+    <>
+      <AdminTopbar title="إدارة البلاغات" subtitle={`${formatNumber(total)} بلاغ`} />
+      <main className="admin-main" dir="rtl">
+        {isError && (
+          <div style={{ background: 'rgba(180,94,66,0.08)', border: '1px solid rgba(180,94,66,0.3)', borderRadius: 3, padding: '10px 14px', fontSize: 13, color: 'var(--terra)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AlertTriangle style={{ width: 14, height: 14, flexShrink: 0 }} /> حدث خطأ أثناء تحميل البلاغات.
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 4, marginBottom: 16, overflowX: 'auto', paddingBottom: 4 }}>
+          {STATUS_FILTER_TABS.map((tab) => {
+            const active = statusFilter === tab.value;
+            return (
+              <button key={tab.value} onClick={() => { setStatusFilter(tab.value); setPage(1); }}
+                style={{ padding: '5px 14px', borderRadius: 2, fontSize: 12, fontWeight: active ? 500 : 400, whiteSpace: 'nowrap', background: active ? 'var(--ink)' : 'transparent', color: active ? 'var(--cream)' : 'var(--ink-3)', border: active ? '1px solid var(--ink)' : '1px solid var(--line)', cursor: 'pointer' }}>
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <DataTable columns={columns} data={reports} isLoading={isLoading} page={page} totalPages={totalPages} onPageChange={setPage} total={total} limit={PAGE_LIMIT} emptyMessage="لا توجد بلاغات بالمعايير المحددة" />
+      </main>
+
+      {confirmConfig && (
+        <ConfirmModal isOpen onClose={() => setAction({ type: null, report: null })} {...confirmConfig} />
+      )}
+    </>
+  );
+}

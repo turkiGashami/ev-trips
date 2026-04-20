@@ -1,0 +1,95 @@
+version: '3.9'
+
+# Development overrides — extend with:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# This file enables hot-reload, relaxed health checks, bind mounts, and
+# debug ports so you can iterate fast on the local machine.
+
+services:
+  postgres:
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: ev_trips_db_dev
+      POSTGRES_USER: ev_trips_dev
+      POSTGRES_PASSWORD: devpassword123
+
+  redis:
+    command: >
+      redis-server
+      --requirepass devredispass
+      --loglevel verbose
+    environment:
+      REDIS_PASSWORD: devredispass
+    ports:
+      - "6379:6379"
+
+  adminer:
+    ports:
+      - "8080:8080"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: development
+    container_name: ev_trips_api_dev
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: postgresql://ev_trips_dev:devpassword123@postgres:5432/ev_trips_db_dev?schema=public
+      REDIS_URL: redis://:devredispass@redis:6379
+      JWT_SECRET: dev-jwt-secret-not-for-production-use
+      JWT_REFRESH_SECRET: dev-refresh-secret-not-for-production-use
+      JWT_EXPIRES_IN: 1h
+      JWT_REFRESH_EXPIRES_IN: 30d
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3002
+      STORAGE_PROVIDER: local
+      LOG_LEVEL: debug
+    volumes:
+      - ./apps/api:/app/apps/api:delegated
+      - ./packages:/app/packages:delegated
+      - /app/node_modules
+      - /app/apps/api/node_modules
+      - api_dev_uploads:/app/uploads
+    ports:
+      - "3001:3001"
+      - "9229:9229"
+    command: ["pnpm", "--filter", "@ev-trips/api", "dev"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: ev_trips_mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - ev_trips_network
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: ev_trips_redis_commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: "local:redis:6379:0:devredispass"
+      HTTP_USER: admin
+      HTTP_PASSWORD: admin
+    ports:
+      - "8081:8081"
+    networks:
+      - ev_trips_network
+    depends_on:
+      - redis
+
+volumes:
+  api_dev_uploads:
+    driver: local
+    name: ev_trips_api_dev_uploads
