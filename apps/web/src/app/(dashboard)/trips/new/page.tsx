@@ -108,42 +108,61 @@ export default function NewTripPage() {
 
   const { fields, append, remove } = useFieldArray({ control, name: 'stops' });
 
+  const buildPayload = (data: FormData): any => ({
+    departure_city_id: data.departure_city_id,
+    destination_city_id: data.destination_city_id,
+    trip_date: data.trip_date,
+    departure_time: data.departure_time || undefined,
+    arrival_time: data.arrival_time || undefined,
+    distance_km: data.distance_km || undefined,
+    duration_minutes: data.duration_minutes || undefined,
+    vehicle_id: data.vehicle_id || undefined,
+    departure_battery_pct: data.departure_battery_pct,
+    arrival_battery_pct: data.arrival_battery_pct,
+    estimated_range_at_departure_km: data.estimated_range_at_departure_km || undefined,
+    remaining_range_at_arrival_km: data.remaining_range_at_arrival_km || undefined,
+    consumption_rate: data.consumption_rate || undefined,
+    weather_condition: data.weather_condition || undefined,
+    outside_temperature_c: data.outside_temperature_c !== undefined ? data.outside_temperature_c : undefined,
+    wind_speed_kmh: data.wind_speed_kmh || undefined,
+    ac_usage: data.ac_usage || undefined,
+    luggage_level: data.luggage_level || undefined,
+    passengers_count: data.passengers_count || undefined,
+    average_speed_kmh: data.average_speed_kmh || undefined,
+    driving_style: data.driving_style || undefined,
+    road_condition: data.road_condition || undefined,
+    trip_notes: data.trip_notes || undefined,
+    route_notes: data.route_notes || undefined,
+  });
+
   const createMutation = useMutation({
-    mutationFn: (data: FormData) => {
-      const payload: any = {
-        departure_city_id: data.departure_city_id,
-        destination_city_id: data.destination_city_id,
-        trip_date: data.trip_date,
-        departure_time: data.departure_time || undefined,
-        arrival_time: data.arrival_time || undefined,
-        distance_km: data.distance_km || undefined,
-        duration_minutes: data.duration_minutes || undefined,
-        vehicle_id: data.vehicle_id || undefined,
-        departure_battery_pct: data.departure_battery_pct,
-        arrival_battery_pct: data.arrival_battery_pct,
-        estimated_range_at_departure_km: data.estimated_range_at_departure_km || undefined,
-        remaining_range_at_arrival_km: data.remaining_range_at_arrival_km || undefined,
-        consumption_rate: data.consumption_rate || undefined,
-        weather_condition: data.weather_condition || undefined,
-        outside_temperature_c: data.outside_temperature_c !== undefined ? data.outside_temperature_c : undefined,
-        wind_speed_kmh: data.wind_speed_kmh || undefined,
-        ac_usage: data.ac_usage || undefined,
-        luggage_level: data.luggage_level || undefined,
-        passengers_count: data.passengers_count || undefined,
-        average_speed_kmh: data.average_speed_kmh || undefined,
-        driving_style: data.driving_style || undefined,
-        road_condition: data.road_condition || undefined,
-        trip_notes: data.trip_notes || undefined,
-        route_notes: data.route_notes || undefined,
-      };
-      return tripsApi.createTrip(payload);
-    },
+    mutationFn: (data: FormData) => tripsApi.createTrip(buildPayload(data)),
     onSuccess: () => {
       success('تم الحفظ', 'تم حفظ رحلتك كمسودة');
       router.push('/trips');
     },
     onError: (err: any) =>
       error('خطأ', err?.response?.data?.message || 'حدث خطأ أثناء الحفظ'),
+  });
+
+  // Submit-for-review: create the trip then transition it to pending_review.
+  const submitMutation = useMutation({
+    mutationFn: async (data: FormData) => {
+      if (!data.vehicle_id) {
+        throw new Error('اختر السيارة المستخدمة قبل الإرسال للمراجعة');
+      }
+      const created = await tripsApi.createTrip(buildPayload(data));
+      const tripId = created?.data?.data?.id ?? created?.data?.id;
+      if (!tripId) throw new Error('تعذّر إنشاء الرحلة');
+      await tripsApi.submitTrip(tripId);
+      return tripId;
+    },
+    onSuccess: () => {
+      success('تم الإرسال', 'تم إرسال رحلتك للمراجعة');
+      router.push('/trips');
+    },
+    onError: (err: any) =>
+      error('خطأ', err?.response?.data?.message || err?.message || 'تعذّر إرسال الرحلة للمراجعة'),
   });
 
   const onSubmit = (data: FormData) => createMutation.mutate(data);
@@ -461,13 +480,23 @@ export default function NewTripPage() {
               <ChevronLeft className="h-4 w-4" />
             </button>
           ) : (
-            <button
-              type="submit"
-              disabled={createMutation.isPending}
-              className="btn-primary px-6 disabled:opacity-50"
-            >
-              {createMutation.isPending ? 'جارٍ الحفظ...' : 'حفظ كمسودة'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={createMutation.isPending || submitMutation.isPending}
+                className="btn-secondary px-5 disabled:opacity-50"
+              >
+                {createMutation.isPending ? 'جارٍ الحفظ…' : 'حفظ كمسودة'}
+              </button>
+              <button
+                type="button"
+                disabled={createMutation.isPending || submitMutation.isPending}
+                onClick={handleSubmit((d) => submitMutation.mutate(d))}
+                className="btn-primary px-6 disabled:opacity-50"
+              >
+                {submitMutation.isPending ? 'جارٍ الإرسال…' : 'إرسال للمراجعة'}
+              </button>
+            </div>
           )}
         </div>
       </form>

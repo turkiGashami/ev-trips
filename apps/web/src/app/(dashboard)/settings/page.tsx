@@ -98,25 +98,50 @@ export default function SettingsPage() {
             { key: 'system_updates', label: 'التحديثات', desc: 'تحديثات وإعلانات النظام' },
             { key: 'email_notifications', label: 'إشعارات البريد الإلكتروني', desc: 'استلام الإشعارات على البريد' },
             { key: 'push_notifications', label: 'الإشعارات الفورية', desc: 'استلام الإشعارات الفورية' },
-          ].map((item) => (
-            <div key={item.key} className="flex items-center justify-between p-5">
-              <div>
-                <p className="font-medium text-gray-900">{item.label}</p>
-                <p className="text-sm text-gray-500">{item.desc}</p>
+          ].map((item) => {
+            // Only default to true when settings haven't loaded yet; otherwise
+            // use the actual stored boolean (including false).
+            const raw = (settings as Record<string, any>)[item.key];
+            const isOn: boolean = typeof raw === 'boolean' ? raw : true;
+            const pendingKey = (updateNotifMutation.variables as Record<string, any> | undefined) ?? {};
+            const saving = updateNotifMutation.isPending && item.key in pendingKey;
+
+            return (
+              <div key={item.key} className="flex items-center justify-between p-5">
+                <div>
+                  <p className="font-medium text-gray-900 flex items-center gap-2">
+                    {item.label}
+                    {saving && (
+                      <span className="text-[10px] text-gray-400 nums-latin">جارٍ الحفظ…</span>
+                    )}
+                  </p>
+                  <p className="text-sm text-gray-500">{item.desc}</p>
+                </div>
+
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isOn}
+                  aria-label={item.label}
+                  disabled={updateNotifMutation.isPending}
+                  onClick={() => updateNotifMutation.mutate({ [item.key]: !isOn })}
+                  className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-60 ${
+                    isOn
+                      ? 'bg-emerald-500 border-emerald-600 focus:ring-emerald-300'
+                      : 'bg-gray-200 border-gray-300 focus:ring-gray-300'
+                  }`}
+                >
+                  <span className="sr-only">{isOn ? 'مفعّل' : 'معطّل'}</span>
+                  <span
+                    aria-hidden
+                    className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-all duration-200 ${
+                      isOn ? 'end-[2px]' : 'start-[2px]'
+                    }`}
+                  />
+                </button>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={settings[item.key] ?? true}
-                  onChange={(e) =>
-                    updateNotifMutation.mutate({ [item.key]: e.target.checked })
-                  }
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600" />
-              </label>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

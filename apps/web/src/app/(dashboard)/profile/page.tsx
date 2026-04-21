@@ -4,151 +4,161 @@ import React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Edit2,
-  MapPin,
-  Calendar,
-  Route,
-  Users,
-  UserCheck,
-  BadgeCheck,
-  Star,
+  Edit2, MapPin, Calendar, Route, Users, UserCheck, BadgeCheck, Star, Car, ArrowLeft,
 } from 'lucide-react';
-import { useAuthStore } from '../../../store/auth.store';
-import { usersApi } from '../../../lib/api/users.api';
-import { Avatar } from '../../../components/ui/Avatar';
-import { Badge } from '../../../components/ui/Badge';
-import { Button } from '../../../components/ui/Button';
-import { PageSpinner } from '../../../components/ui/Spinner';
-import { ProtectedRoute } from '../../../components/auth/ProtectedRoute';
-import { formatDate, formatNumber } from '../../../lib/utils';
+import { useAuthStore } from '@/store/auth.store';
+import { usersApi } from '@/lib/api/users.api';
+import { tripsApi } from '@/lib/api/trips.api';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { cn } from '@/lib/utils';
 
-// ─── Stat card ───────────────────────────────────────────────────────────────
-
-function StatCard({
-  icon,
-  value,
-  label,
-  color,
+function Stat({
+  label, value, unit, icon: Icon,
 }: {
-  icon: React.ReactNode;
-  value: number | string;
   label: string;
-  color: string;
+  value: number | string;
+  unit?: string;
+  icon: any;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
-      <div
-        className={`w-11 h-11 rounded-xl flex items-center justify-center mx-auto mb-3 ${color}`}
-      >
-        {icon}
+    <div className="border border-[var(--line)] bg-[var(--cream)] p-5">
+      <div className="flex items-center gap-2 text-[var(--ink-3)] mb-4">
+        <Icon className="h-3.5 w-3.5" />
+        <span className="text-[11px] tracking-[0.1em] uppercase">{label}</span>
       </div>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-      <p className="text-sm text-gray-500 mt-0.5">{label}</p>
+      <div className="flex items-baseline gap-1.5 nums-latin">
+        <span className="text-[1.75rem] font-medium text-[var(--ink)] leading-none tracking-tight">
+          {value}
+        </span>
+        {unit && <span className="text-xs text-[var(--ink-3)]">{unit}</span>}
+      </div>
     </div>
   );
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+function QuickLink({
+  href, label, icon: Icon, trailing,
+}: {
+  href: string;
+  label: string;
+  icon: any;
+  trailing?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center justify-between gap-3 px-5 py-3.5 text-sm text-[var(--ink-2)] hover:bg-[var(--sand)]/60 hover:text-[var(--ink)] transition-colors border-t first:border-t-0 border-[var(--line-soft)]"
+    >
+      <span className="flex items-center gap-3">
+        <Icon className="h-4 w-4 text-[var(--ink-3)]" />
+        {label}
+      </span>
+      <span className="flex items-center gap-2">
+        {trailing && <span className="text-xs text-[var(--ink-3)] nums-latin">{trailing}</span>}
+        <ArrowLeft className="h-3.5 w-3.5 text-[var(--ink-4)] flip-rtl" />
+      </span>
+    </Link>
+  );
+}
 
 export default function ProfilePage() {
   const { user: authUser } = useAuthStore();
 
-  // Fetch full public profile with stats
-  const { data: profile, isLoading } = useQuery({
-    queryKey: ['profile', authUser?.username],
+  const profileQ = useQuery({
+    queryKey: ['me', 'profile', authUser?.username],
     queryFn: () =>
-      usersApi.getPublicProfile(authUser!.username).then((r) => r.data.data),
+      usersApi.getPublicProfile(authUser!.username).then((r) => r.data?.data),
     enabled: !!authUser?.username,
   });
 
-  // Merge auth store fields with fetched profile (profile takes precedence when available)
-  const user = profile ?? authUser;
+  const statsQ = useQuery({
+    queryKey: ['me', 'stats'],
+    queryFn: () => usersApi.getMyStats().then((r) => r.data?.data ?? {}),
+  });
 
-  const displayName = (user as any)?.fullName ?? (user as any)?.full_name ?? '';
+  const myTripsQ = useQuery({
+    queryKey: ['me', 'trips', 'recent'],
+    queryFn: () => tripsApi.getMyTrips({ page: 1, limit: 3 }).then((r) => r.data),
+  });
+
+  const savedQ = useQuery({
+    queryKey: ['me', 'saved-trips', 'count'],
+    queryFn: () => usersApi.getMySavedTrips({ page: 1, limit: 1 }).then((r) => r.data),
+  });
+
+  const user: any = profileQ.data ?? authUser ?? {};
+  const displayName = user?.full_name ?? user?.fullName ?? '';
   const username = user?.username ?? '';
-  const bio = (user as any)?.bio ?? '';
-  const joinedAt = (user as any)?.joinedAt ?? (user as any)?.joined_at ?? '';
-  const avatarUrl = (user as any)?.avatarUrl ?? (user as any)?.avatar_url ?? undefined;
-  const isVerified =
-    (user as any)?.isVerified ?? (user as any)?.is_contributor_verified ?? false;
+  const bio = user?.bio ?? '';
+  const joinedAt = user?.joined_at ?? user?.joinedAt ?? user?.created_at ?? '';
+  const city = user?.city?.name_ar ?? user?.city?.name ?? user?.city ?? '';
+  const isVerified = user?.is_contributor_verified ?? user?.isVerified ?? false;
 
-  const stats = (user as any)?.stats;
-  const tripsCount = stats?.tripsCount ?? 0;
-  const savedTripsCount = stats?.savedTripsCount ?? 0;
-  const reputation = stats?.reputation ?? 0;
+  const stats = statsQ.data ?? {};
+  const totalTrips = Number((stats as any).total_trips ?? 0);
+  const totalViews = Number((stats as any).total_views ?? 0);
+  const totalFavorites = Number((stats as any).total_favorites ?? 0);
+  const reputation = Number((stats as any).contributor_points ?? 0);
+  const savedCount = Number(savedQ.data?.meta?.total ?? 0);
+  const recentTrips: any[] = Array.isArray(myTripsQ.data?.data) ? myTripsQ.data!.data : [];
+
+  const joinedLabel = joinedAt
+    ? new Date(joinedAt).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })
+    : '';
+
+  const initials = (displayName || username || 'م')
+    .split(' ')
+    .map((p: string) => p[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
   return (
     <ProtectedRoute>
-      <div className="max-w-3xl mx-auto space-y-6">
-        {isLoading && !authUser ? (
-          <PageSpinner />
-        ) : (
-          <>
-            {/* Profile card */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              {/* Cover gradient */}
-              <div className="h-28 bg-gradient-to-l from-emerald-500 to-emerald-700" />
+      <div className="max-w-3xl mx-auto space-y-10">
 
-              <div className="px-6 pb-6">
-                {/* Avatar & edit button row */}
-                <div className="flex items-end justify-between -mt-10 mb-4">
-                  <div className="relative">
-                    <Avatar
-                      src={avatarUrl}
-                      name={displayName || username || 'م'}
-                      size="xl"
-                      verified={isVerified}
-                      className="ring-4 ring-white"
-                    />
-                    {isVerified && (
-                      <span className="absolute -bottom-1 -end-1 bg-emerald-500 rounded-full p-0.5">
-                        <BadgeCheck className="w-4 h-4 text-white" />
-                      </span>
-                    )}
-                  </div>
-                  <Link href="/profile/edit">
-                    <Button variant="outline" size="sm" leftIcon={<Edit2 className="w-4 h-4" />}>
-                      تعديل الملف الشخصي
-                    </Button>
-                  </Link>
-                </div>
-
-                {/* Name & username */}
-                <div className="mb-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-xl font-bold text-gray-900">{displayName}</h1>
-                    {isVerified && (
-                      <Badge variant="green" size="sm">
-                        <BadgeCheck className="w-3 h-3 me-1" />
-                        موثّق
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-gray-500 text-sm mt-0.5">@{username}</p>
-                </div>
-
-                {/* Bio */}
-                {bio && (
-                  <p className="text-gray-700 text-sm leading-relaxed mb-4 max-w-lg">{bio}</p>
-                )}
-
-                {/* Meta info */}
-                <div className="flex items-center gap-4 flex-wrap text-sm text-gray-500">
-                  {joinedAt && (
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      انضم {formatDate(joinedAt)}
+        {/* Header card */}
+        <section className="border border-[var(--line)] bg-[var(--cream)] p-6 md:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <div className="h-16 w-16 rounded-full border border-[var(--line)] bg-[var(--sand)] flex items-center justify-center text-lg font-medium text-[var(--ink)] shrink-0">
+                {initials}
+              </div>
+              <div className="min-w-0">
+                <span className="eyebrow">— ملفّي الشخصي</span>
+                <h1 className="heading-2 mt-2 flex items-center gap-2 flex-wrap">
+                  {displayName || username}
+                  {isVerified && (
+                    <span className="inline-flex items-center gap-1 text-xs text-[var(--forest)] border border-[var(--forest)]/30 bg-[var(--forest)]/5 px-2 py-0.5 rounded-[2px]">
+                      <BadgeCheck className="h-3 w-3" />
+                      موثّق
                     </span>
                   )}
-                  {(user as any)?.city && (
+                </h1>
+                <p className="text-sm text-[var(--ink-3)] nums-latin mt-1">@{username}</p>
+
+                {bio && (
+                  <p className="text-sm text-[var(--ink-2)] leading-relaxed mt-3 max-w-lg">
+                    {bio}
+                  </p>
+                )}
+
+                <div className="flex items-center gap-4 flex-wrap text-xs text-[var(--ink-3)] mt-4">
+                  {joinedLabel && (
                     <span className="flex items-center gap-1.5">
-                      <MapPin className="w-4 h-4 text-gray-400" />
-                      {(user as any).city}
+                      <Calendar className="h-3.5 w-3.5" />
+                      انضم {joinedLabel}
+                    </span>
+                  )}
+                  {city && (
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {city}
                     </span>
                   )}
                   {reputation > 0 && (
-                    <span className="flex items-center gap-1.5">
-                      <Star className="w-4 h-4 text-amber-400" />
+                    <span className="flex items-center gap-1.5 nums-latin">
+                      <Star className="h-3.5 w-3.5" />
                       {reputation} نقطة
                     </span>
                   )}
@@ -156,97 +166,93 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Stats grid */}
-            <div className="grid grid-cols-3 gap-4">
-              <StatCard
-                icon={<Route className="w-5 h-5 text-emerald-600" />}
-                value={tripsCount}
-                label="الرحلات"
-                color="bg-emerald-50"
-              />
-              <StatCard
-                icon={<Users className="w-5 h-5 text-blue-600" />}
-                value={stats?.followersCount ?? 0}
-                label="المتابعون"
-                color="bg-blue-50"
-              />
-              <StatCard
-                icon={<UserCheck className="w-5 h-5 text-purple-600" />}
-                value={stats?.followingCount ?? 0}
-                label="يتابع"
-                color="bg-purple-50"
-              />
-            </div>
+            <Link href="/profile/edit" className="btn-secondary self-start sm:self-auto text-sm">
+              <Edit2 className="h-4 w-4" />
+              تعديل الملف
+            </Link>
+          </div>
+        </section>
 
-            {/* Additional stats row */}
-            {(savedTripsCount > 0 || (stats?.totalDistance ?? 0) > 0) && (
-              <div className="grid grid-cols-2 gap-4">
-                {savedTripsCount > 0 && (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-                      <Star className="w-5 h-5 text-amber-500" />
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-gray-900">{savedTripsCount}</p>
-                      <p className="text-sm text-gray-500">رحلة محفوظة</p>
-                    </div>
-                  </div>
-                )}
-                {(stats?.totalDistance ?? 0) > 0 && (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-                      <Route className="w-5 h-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-gray-900">
-                        {formatNumber(stats?.totalDistance)}
+        {/* Stats grid */}
+        <section>
+          <div className="flex items-center justify-between pb-4 mb-5 border-b border-[var(--line)]">
+            <span className="eyebrow">— أرقامي</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <Stat label="رحلاتي"    value={totalTrips}     icon={Route} />
+            <Stat label="المشاهدات" value={totalViews}     icon={Users} />
+            <Stat label="المفضلات"  value={totalFavorites} icon={Star} />
+            <Stat label="النقاط"    value={reputation}     icon={BadgeCheck} />
+          </div>
+        </section>
+
+        {/* Recent trips */}
+        <section>
+          <div className="flex items-center justify-between pb-4 mb-5 border-b border-[var(--line)]">
+            <div>
+              <span className="eyebrow">— نشاطي</span>
+              <h2 className="mt-2 heading-3">آخر رحلاتي</h2>
+            </div>
+            <Link href="/trips" className="link-editorial text-xs">عرض الكل</Link>
+          </div>
+
+          {myTripsQ.isLoading ? (
+            <p className="text-sm text-[var(--ink-3)] py-4">جارٍ التحميل…</p>
+          ) : recentTrips.length === 0 ? (
+            <div className="text-center py-10 border border-dashed border-[var(--line)]">
+              <Route className="h-6 w-6 mx-auto text-[var(--ink-4)] mb-3" />
+              <p className="text-sm text-[var(--ink-2)] mb-1">لم توثّق أي رحلة بعد</p>
+              <p className="text-xs text-[var(--ink-3)] mb-4">ابدأ الآن وشارك تجربتك مع المجتمع</p>
+              <Link href="/trips/new" className="btn-primary text-sm">أضف رحلة جديدة</Link>
+            </div>
+          ) : (
+            <ul className="border border-[var(--line)] divide-y divide-[var(--line-soft)]">
+              {recentTrips.map((t: any) => (
+                <li key={t.id}>
+                  <Link
+                    href={`/trips/${t.slug}`}
+                    className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-[var(--sand)]/60 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-[var(--ink)] truncate">
+                        {(t.departure_city?.name_ar ?? t.departure_city?.name ?? '—')} ← {(t.destination_city?.name_ar ?? t.destination_city?.name ?? '—')}
                       </p>
-                      <p className="text-sm text-gray-500">كيلومتر موثّق</p>
+                      <p className="text-xs text-[var(--ink-3)] mt-0.5 nums-latin">
+                        {t.trip_date ? new Date(t.trip_date).toLocaleDateString('ar-SA') : ''}
+                      </p>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
+                    <span className={cn(
+                      'text-[10px] uppercase tracking-[0.1em] border px-2 py-0.5 rounded-[2px]',
+                      t.status === 'published'      && 'border-[var(--forest)]/30 text-[var(--forest)]',
+                      t.status === 'pending_review' && 'border-[var(--ink)]/30 text-[var(--ink-2)]',
+                      t.status === 'draft'          && 'border-[var(--line)] text-[var(--ink-3)]',
+                      t.status === 'rejected'       && 'border-[var(--terra)]/30 text-[var(--terra)]',
+                    )}>
+                      {t.status === 'published' ? 'منشورة'
+                        : t.status === 'pending_review' ? 'قيد المراجعة'
+                        : t.status === 'draft' ? 'مسودة'
+                        : t.status === 'rejected' ? 'مرفوضة'
+                        : t.status}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-            {/* Quick links */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
-              <Link
-                href="/trips"
-                className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors rounded-t-2xl group"
-              >
-                <div className="flex items-center gap-3">
-                  <Route className="w-5 h-5 text-emerald-500" />
-                  <span className="text-sm font-medium text-gray-700">رحلاتي</span>
-                </div>
-                <span className="text-gray-400 group-hover:text-gray-600 text-sm">
-                  {tripsCount} رحلة ←
-                </span>
-              </Link>
-              <Link
-                href="/saved-trips"
-                className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <Star className="w-5 h-5 text-amber-500" />
-                  <span className="text-sm font-medium text-gray-700">الرحلات المحفوظة</span>
-                </div>
-                <span className="text-gray-400 group-hover:text-gray-600 text-sm">
-                  {savedTripsCount} رحلة ←
-                </span>
-              </Link>
-              <Link
-                href="/vehicles"
-                className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors rounded-b-2xl group"
-              >
-                <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-blue-500" />
-                  <span className="text-sm font-medium text-gray-700">سياراتي</span>
-                </div>
-                <span className="text-gray-400 group-hover:text-gray-600 text-sm">إدارة ←</span>
-              </Link>
-            </div>
-          </>
-        )}
+        {/* Quick links */}
+        <section className="border border-[var(--line)]">
+          <div className="px-5 py-4 border-b border-[var(--line)]">
+            <span className="eyebrow">— اختصارات</span>
+          </div>
+          <nav>
+            <QuickLink href="/trips"        label="رحلاتي"            icon={Route} trailing={`${totalTrips}`} />
+            <QuickLink href="/saved-trips"  label="الرحلات المحفوظة"  icon={Star}  trailing={`${savedCount}`} />
+            <QuickLink href="/vehicles"     label="سياراتي"           icon={Car} />
+            <QuickLink href="/profile/edit" label="تعديل الملف"       icon={Edit2} />
+          </nav>
+        </section>
       </div>
     </ProtectedRoute>
   );
