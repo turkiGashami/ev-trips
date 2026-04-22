@@ -10,9 +10,10 @@ import {
   MaxLength,
   IsDateString,
   Matches,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   LuggageLevel,
   AcUsage,
@@ -26,15 +27,44 @@ export class CreateTripDto {
   @IsUUID()
   vehicle_id?: string;
 
-  @ApiPropertyOptional({ description: 'Departure city UUID' })
+  /**
+   * City handling:
+   * - If user selects a city from autocomplete, frontend sends *_city_id.
+   * - If user types a custom city, frontend sends *_city_name.
+   * - At least one value for departure and destination should be present.
+   */
+
+  @ApiPropertyOptional({ description: 'Departure city UUID from cities table' })
+  @ValidateIf((o) => !o.departure_city_name)
   @IsOptional()
   @IsUUID()
   departure_city_id?: string;
 
-  @ApiPropertyOptional({ description: 'Destination city UUID' })
+  @ApiPropertyOptional({
+    description: 'Departure city name typed manually by the user',
+    maxLength: 100,
+    example: 'الزلفي',
+  })
+  @ValidateIf((o) => !o.departure_city_id)
+  @IsString()
+  @MaxLength(100)
+  departure_city_name?: string;
+
+  @ApiPropertyOptional({ description: 'Destination city UUID from cities table' })
+  @ValidateIf((o) => !o.destination_city_name)
   @IsOptional()
   @IsUUID()
   destination_city_id?: string;
+
+  @ApiPropertyOptional({
+    description: 'Destination city name typed manually by the user',
+    maxLength: 100,
+    example: 'مكة المكرمة',
+  })
+  @ValidateIf((o) => !o.destination_city_id)
+  @IsString()
+  @MaxLength(100)
+  destination_city_name?: string;
 
   @ApiPropertyOptional({ description: 'Trip title', maxLength: 300 })
   @IsOptional()
@@ -50,13 +80,17 @@ export class CreateTripDto {
   @ApiPropertyOptional({ description: 'Departure time (HH:mm)', example: '08:00' })
   @IsOptional()
   @IsString()
-  @Matches(/^\d{2}:\d{2}$/, { message: 'departure_time must be in HH:mm format' })
+  @Matches(/^\d{2}:\d{2}$/, {
+    message: 'departure_time must be in HH:mm format',
+  })
   departure_time?: string;
 
   @ApiPropertyOptional({ description: 'Arrival time (HH:mm)', example: '12:30' })
   @IsOptional()
   @IsString()
-  @Matches(/^\d{2}:\d{2}$/, { message: 'arrival_time must be in HH:mm format' })
+  @Matches(/^\d{2}:\d{2}$/, {
+    message: 'arrival_time must be in HH:mm format',
+  })
   arrival_time?: string;
 
   @ApiPropertyOptional({ description: 'Trip duration in minutes' })
@@ -110,7 +144,11 @@ export class CreateTripDto {
   @Min(0)
   consumption_rate?: number;
 
-  @ApiPropertyOptional({ description: 'Number of passengers', minimum: 1, maximum: 9 })
+  @ApiPropertyOptional({
+    description: 'Number of passengers',
+    minimum: 1,
+    maximum: 9,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -162,19 +200,28 @@ export class CreateTripDto {
   @Max(300)
   wind_speed_kmh?: number;
 
-  @ApiPropertyOptional({ description: 'Road condition description', maxLength: 100 })
+  @ApiPropertyOptional({
+    description: 'Road condition description',
+    maxLength: 100,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   road_condition?: string;
 
-  @ApiPropertyOptional({ description: 'Notes about the route', maxLength: 5000 })
+  @ApiPropertyOptional({
+    description: 'Notes about the route',
+    maxLength: 5000,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(5000)
   route_notes?: string;
 
-  @ApiPropertyOptional({ description: 'General trip notes', maxLength: 5000 })
+  @ApiPropertyOptional({
+    description: 'General trip notes',
+    maxLength: 5000,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(5000)
