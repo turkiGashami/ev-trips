@@ -60,7 +60,6 @@ const optionalNumber = () =>
     z.number({ invalid_type_error: 'قيمة غير صحيحة' }).optional(),
   );
 
-/* ───────────────── Schema ────────────────── */
 const schema = z.object({
   departure_city_id: z.string().optional(),
   departure_city_name: z.string().min(1, 'مدينة الانطلاق مطلوبة'),
@@ -87,12 +86,18 @@ const schema = z.object({
     z.number().min(0, 'لا تقل عن 0').max(100, 'لا تزيد عن 100'),
   ),
 
-  estimated_range_at_departure_km: optionalNumber().pipe(z.number().min(0).optional()),
-  remaining_range_at_arrival_km: optionalNumber().pipe(z.number().min(0).optional()),
+  estimated_range_at_departure_km: optionalNumber().pipe(
+    z.number().min(0).optional(),
+  ),
+  remaining_range_at_arrival_km: optionalNumber().pipe(
+    z.number().min(0).optional(),
+  ),
   consumption_rate: optionalNumber().pipe(z.number().min(0).optional()),
 
   weather_condition: z.string().optional(),
-  outside_temperature_c: optionalNumber().pipe(z.number().min(-60).max(60).optional()),
+  outside_temperature_c: optionalNumber().pipe(
+    z.number().min(-60).max(60).optional(),
+  ),
   wind_speed_kmh: optionalNumber().pipe(z.number().min(0).max(300).optional()),
 
   ac_usage: z.string().optional(),
@@ -110,9 +115,15 @@ const schema = z.object({
       z.object({
         station_name: z.string().min(1, 'اسم المحطة مطلوب'),
         charger_type: z.string().optional(),
-        charging_duration_minutes: optionalNumber().pipe(z.number().min(0).optional()),
-        battery_before_pct: optionalNumber().pipe(z.number().min(0).max(100).optional()),
-        battery_after_pct: optionalNumber().pipe(z.number().min(0).max(100).optional()),
+        charging_duration_minutes: optionalNumber().pipe(
+          z.number().min(0).optional(),
+        ),
+        battery_before_pct: optionalNumber().pipe(
+          z.number().min(0).max(100).optional(),
+        ),
+        battery_after_pct: optionalNumber().pipe(
+          z.number().min(0).max(100).optional(),
+        ),
         charging_cost: optionalNumber().pipe(z.number().min(0).optional()),
         notes: z.string().optional(),
       }),
@@ -183,42 +194,43 @@ function FieldLabel({
   );
 }
 
-function FormInput({
-  error,
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { error?: string }) {
+const FormInput = React.forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement> & { error?: string }
+>(function FormInput({ error, className, ...props }, ref) {
   return (
     <div>
       <input
+        ref={ref}
         {...props}
         className={cn(
           'input-base h-11 text-sm',
           error && 'border-[var(--terra)]',
-          props.className,
+          className,
         )}
       />
       {error && <p className="text-xs text-[var(--terra)] mt-1">{error}</p>}
     </div>
   );
-}
+});
 
-function FormSelect({
-  error,
-  children,
-  ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement> & {
-  error?: string;
-  children: React.ReactNode;
-}) {
+const FormSelect = React.forwardRef<
+  HTMLSelectElement,
+  React.SelectHTMLAttributes<HTMLSelectElement> & {
+    error?: string;
+    children: React.ReactNode;
+  }
+>(function FormSelect({ error, children, className, ...props }, ref) {
   return (
     <div>
       <div className="relative">
         <select
+          ref={ref}
           {...props}
           className={cn(
             'input-base h-11 text-sm appearance-none pe-8',
             error && 'border-[var(--terra)]',
-            props.className,
+            className,
           )}
         >
           {children}
@@ -228,18 +240,16 @@ function FormSelect({
       {error && <p className="text-xs text-[var(--terra)] mt-1">{error}</p>}
     </div>
   );
-}
+});
 
-function DateTimeInput({
-  type,
-  icon: Icon,
-  error,
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & {
-  type: 'date' | 'time';
-  icon?: any;
-  error?: string;
-}) {
+const DateTimeInput = React.forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement> & {
+    type: 'date' | 'time';
+    icon?: any;
+    error?: string;
+  }
+>(function DateTimeInput({ type, icon: Icon, error, className, ...props }, ref) {
   return (
     <div>
       <div
@@ -251,15 +261,19 @@ function DateTimeInput({
       >
         {Icon && <Icon className="h-4 w-4 text-[var(--ink-3)] shrink-0" />}
         <input
+          ref={ref}
           type={type}
           {...props}
-          className="flex-1 bg-transparent outline-none text-sm text-[var(--ink)] nums-latin placeholder:text-[var(--ink-4)]"
+          className={cn(
+            'flex-1 bg-transparent outline-none text-sm text-[var(--ink)] nums-latin placeholder:text-[var(--ink-4)]',
+            className,
+          )}
         />
       </div>
       {error && <p className="text-xs text-[var(--terra)] mt-1">{error}</p>}
     </div>
   );
-}
+});
 
 export default function NewTripPage() {
   const router = useRouter();
