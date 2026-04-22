@@ -7,8 +7,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
-  ChevronRight, ChevronLeft, Plus, Trash2, MapPin, Battery, Car, FileText,
-  CloudSun, Calendar, Clock,
+  ChevronRight,
+  ChevronLeft,
+  Plus,
+  Trash2,
+  MapPin,
+  Battery,
+  Car,
+  FileText,
+  CloudSun,
+  Calendar,
+  Clock,
 } from 'lucide-react';
 import { tripsApi } from '@/lib/api/trips.api';
 import { vehiclesApi } from '@/lib/api/vehicles.api';
@@ -16,57 +25,99 @@ import { useToast } from '@/components/ui/Toast';
 import { CityAutocomplete } from '@/components/ui/CityAutocomplete';
 import { cn } from '@/lib/utils';
 
+const normalizeNumberInput = (value: unknown) => {
+  if (value === '' || value === null || value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value
+      .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+      .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+      .trim();
+
+    if (!normalized) return undefined;
+
+    const numberValue = Number(normalized);
+    return Number.isNaN(numberValue) ? value : numberValue;
+  }
+
+  return value;
+};
+
+const requiredNumber = (message: string) =>
+  z.preprocess(
+    normalizeNumberInput,
+    z.number({
+      required_error: message,
+      invalid_type_error: 'قيمة غير صحيحة',
+    }),
+  );
+
+const optionalNumber = () =>
+  z.preprocess(
+    normalizeNumberInput,
+    z.number({ invalid_type_error: 'قيمة غير صحيحة' }).optional(),
+  );
+
 /* ───────────────── Schema ────────────────── */
 const schema = z.object({
-  departure_city_id: z.string().min(1, 'مدينة الانطلاق مطلوبة'),
-  departure_city_name: z.string().optional(),
-  destination_city_id: z.string().min(1, 'مدينة الوصول مطلوبة'),
-  destination_city_name: z.string().optional(),
+  departure_city_id: z.string().optional(),
+  departure_city_name: z.string().min(1, 'مدينة الانطلاق مطلوبة'),
 
-  // تاريخ الرحلة اختياري في الواجهة
+  destination_city_id: z.string().optional(),
+  destination_city_name: z.string().min(1, 'مدينة الوصول مطلوبة'),
+
   trip_date: z.string().optional(),
 
   departure_time: z.string().optional(),
   arrival_time: z.string().optional(),
-  distance_km: z.coerce.number().min(0).optional(),
-  duration_hours: z.coerce.number().min(0).max(48).optional(),
-  duration_mins: z.coerce.number().min(0).max(59).optional(),
+
+  distance_km: optionalNumber().pipe(z.number().min(0).optional()),
+  duration_hours: optionalNumber().pipe(z.number().min(0).max(48).optional()),
+  duration_mins: optionalNumber().pipe(z.number().min(0).max(59).optional()),
+
   vehicle_id: z.string().optional(),
 
-  departure_battery_pct: z.coerce
-    .number({ invalid_type_error: 'قيمة غير صحيحة' })
-    .min(0, 'لا تقل عن 0')
-    .max(100, 'لا تزيد عن 100'),
+  departure_battery_pct: requiredNumber('نسبة البطارية عند الانطلاق مطلوبة').pipe(
+    z.number().min(0, 'لا تقل عن 0').max(100, 'لا تزيد عن 100'),
+  ),
 
-  arrival_battery_pct: z.coerce
-    .number({ invalid_type_error: 'قيمة غير صحيحة' })
-    .min(0, 'لا تقل عن 0')
-    .max(100, 'لا تزيد عن 100'),
+  arrival_battery_pct: requiredNumber('نسبة البطارية عند الوصول مطلوبة').pipe(
+    z.number().min(0, 'لا تقل عن 0').max(100, 'لا تزيد عن 100'),
+  ),
 
-  estimated_range_at_departure_km: z.coerce.number().min(0).optional(),
-  remaining_range_at_arrival_km: z.coerce.number().min(0).optional(),
-  consumption_rate: z.coerce.number().min(0).optional(),
+  estimated_range_at_departure_km: optionalNumber().pipe(z.number().min(0).optional()),
+  remaining_range_at_arrival_km: optionalNumber().pipe(z.number().min(0).optional()),
+  consumption_rate: optionalNumber().pipe(z.number().min(0).optional()),
+
   weather_condition: z.string().optional(),
-  outside_temperature_c: z.coerce.number().min(-60).max(60).optional(),
-  wind_speed_kmh: z.coerce.number().min(0).max(300).optional(),
+  outside_temperature_c: optionalNumber().pipe(z.number().min(-60).max(60).optional()),
+  wind_speed_kmh: optionalNumber().pipe(z.number().min(0).max(300).optional()),
+
   ac_usage: z.string().optional(),
   luggage_level: z.string().optional(),
-  passengers_count: z.coerce.number().min(1).max(9).optional(),
-  average_speed_kmh: z.coerce.number().min(0).max(300).optional(),
+  passengers_count: optionalNumber().pipe(z.number().min(1).max(9).optional()),
+  average_speed_kmh: optionalNumber().pipe(z.number().min(0).max(300).optional()),
+
   driving_style: z.string().optional(),
   road_condition: z.string().max(100).optional(),
   trip_notes: z.string().max(5000).optional(),
   route_notes: z.string().max(5000).optional(),
 
-  stops: z.array(z.object({
-    station_name: z.string().min(1, 'اسم المحطة مطلوب'),
-    charger_type: z.string().optional(),
-    charging_duration_minutes: z.coerce.number().min(0).optional(),
-    battery_before_pct: z.coerce.number().min(0).max(100).optional(),
-    battery_after_pct: z.coerce.number().min(0).max(100).optional(),
-    charging_cost: z.coerce.number().min(0).optional(),
-    notes: z.string().optional(),
-  })).optional(),
+  stops: z
+    .array(
+      z.object({
+        station_name: z.string().min(1, 'اسم المحطة مطلوب'),
+        charger_type: z.string().optional(),
+        charging_duration_minutes: optionalNumber().pipe(z.number().min(0).optional()),
+        battery_before_pct: optionalNumber().pipe(z.number().min(0).max(100).optional()),
+        battery_after_pct: optionalNumber().pipe(z.number().min(0).max(100).optional()),
+        charging_cost: optionalNumber().pipe(z.number().min(0).optional()),
+        notes: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -79,11 +130,10 @@ const STEPS = [
   { id: 'notes', label: 'الملاحظات', icon: FileText },
 ] as const;
 
-/* تاريخ الرحلة تم حذفه من التحقق الإجباري */
 const STEP_FIELDS: Record<number, (keyof FormData)[]> = {
   0: [
-    'departure_city_id',
-    'destination_city_id',
+    'departure_city_name',
+    'destination_city_name',
     'departure_time',
     'arrival_time',
     'distance_km',
@@ -259,29 +309,38 @@ export default function NewTripPage() {
       Number(data.duration_hours || 0) * 60 + Number(data.duration_mins || 0);
 
     return {
-      departure_city_id: data.departure_city_id,
-      destination_city_id: data.destination_city_id,
+      departure_city_id: data.departure_city_id || undefined,
+      destination_city_id: data.destination_city_id || undefined,
 
-      // إذا المستخدم ما اختار تاريخ، لا نرسله
+      departure_city_name: data.departure_city_name || undefined,
+      destination_city_name: data.destination_city_name || undefined,
+
       trip_date: data.trip_date || undefined,
 
       departure_time: data.departure_time || undefined,
       arrival_time: data.arrival_time || undefined,
       distance_km: data.distance_km || undefined,
       duration_minutes: totalMinutes > 0 ? totalMinutes : undefined,
+
       vehicle_id: data.vehicle_id || undefined,
+
       departure_battery_pct: data.departure_battery_pct,
       arrival_battery_pct: data.arrival_battery_pct,
+
       estimated_range_at_departure_km:
         data.estimated_range_at_departure_km || undefined,
+
       remaining_range_at_arrival_km:
         data.remaining_range_at_arrival_km || undefined,
+
       consumption_rate: data.consumption_rate || undefined,
       weather_condition: data.weather_condition || undefined,
+
       outside_temperature_c:
         data.outside_temperature_c !== undefined
           ? data.outside_temperature_c
           : undefined,
+
       wind_speed_kmh: data.wind_speed_kmh || undefined,
       ac_usage: data.ac_usage || undefined,
       luggage_level: data.luggage_level || undefined,
@@ -291,6 +350,7 @@ export default function NewTripPage() {
       road_condition: data.road_condition || undefined,
       trip_notes: data.trip_notes || undefined,
       route_notes: data.route_notes || undefined,
+
       stops:
         Array.isArray(data.stops) && data.stops.length > 0
           ? data.stops.map((s) => ({
@@ -404,7 +464,6 @@ export default function NewTripPage() {
         <p className="body-sm mt-1">سجّل تجربتك وساعد مجتمع EV</p>
       </div>
 
-      {/* Step indicator */}
       <div className="flex items-center mb-8 overflow-x-auto pb-1">
         {STEPS.map((s, i) => {
           const Icon = s.icon;
@@ -454,7 +513,6 @@ export default function NewTripPage() {
         <input type="hidden" {...register('departure_city_name')} />
         <input type="hidden" {...register('destination_city_name')} />
 
-        {/* ── Step 0: Route ── */}
         {step === 0 && (
           <div className="border border-[var(--line)] p-6 space-y-5">
             <h2 className="heading-3">المسار</h2>
@@ -467,12 +525,25 @@ export default function NewTripPage() {
 
                 <CityAutocomplete
                   selectedName={dep}
+                  onInputChange={(value) => {
+                    setValue('departure_city_name', value, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+
+                    setValue('departure_city_id', '', {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                  }}
                   onSelect={(id, nameAr) => {
                     setValue('departure_city_id', id, {
                       shouldValidate: true,
                       shouldDirty: true,
                     });
+
                     setValue('departure_city_name', nameAr, {
+                      shouldValidate: true,
                       shouldDirty: true,
                     });
                   }}
@@ -480,14 +551,17 @@ export default function NewTripPage() {
                     setValue('departure_city_id', '', {
                       shouldValidate: true,
                     });
-                    setValue('departure_city_name', '');
+
+                    setValue('departure_city_name', '', {
+                      shouldValidate: true,
+                    });
                   }}
                   placeholder="الرياض، جدة..."
                 />
 
-                {errors.departure_city_id && (
+                {errors.departure_city_name && (
                   <p className="text-xs text-[var(--terra)] mt-1">
-                    {errors.departure_city_id.message}
+                    {errors.departure_city_name.message}
                   </p>
                 )}
               </div>
@@ -499,12 +573,25 @@ export default function NewTripPage() {
 
                 <CityAutocomplete
                   selectedName={des}
+                  onInputChange={(value) => {
+                    setValue('destination_city_name', value, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+
+                    setValue('destination_city_id', '', {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                  }}
                   onSelect={(id, nameAr) => {
                     setValue('destination_city_id', id, {
                       shouldValidate: true,
                       shouldDirty: true,
                     });
+
                     setValue('destination_city_name', nameAr, {
+                      shouldValidate: true,
                       shouldDirty: true,
                     });
                   }}
@@ -512,14 +599,17 @@ export default function NewTripPage() {
                     setValue('destination_city_id', '', {
                       shouldValidate: true,
                     });
-                    setValue('destination_city_name', '');
+
+                    setValue('destination_city_name', '', {
+                      shouldValidate: true,
+                    });
                   }}
                   placeholder="الرياض، جدة..."
                 />
 
-                {errors.destination_city_id && (
+                {errors.destination_city_name && (
                   <p className="text-xs text-[var(--terra)] mt-1">
-                    {errors.destination_city_id.message}
+                    {errors.destination_city_name.message}
                   </p>
                 )}
               </div>
@@ -537,18 +627,12 @@ export default function NewTripPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <FieldLabel icon={Clock}>وقت الانطلاق</FieldLabel>
-                <DateTimeInput
-                  type="time"
-                  {...register('departure_time')}
-                />
+                <DateTimeInput type="time" {...register('departure_time')} />
               </div>
 
               <div>
                 <FieldLabel icon={Clock}>وقت الوصول</FieldLabel>
-                <DateTimeInput
-                  type="time"
-                  {...register('arrival_time')}
-                />
+                <DateTimeInput type="time" {...register('arrival_time')} />
               </div>
             </div>
 
@@ -609,7 +693,6 @@ export default function NewTripPage() {
           </div>
         )}
 
-        {/* ── Step 1: Battery & Stops ── */}
         {step === 1 && (
           <div className="space-y-4">
             <div className="border border-[var(--line)] p-6 space-y-5">
@@ -661,7 +744,7 @@ export default function NewTripPage() {
                 </div>
 
                 <div>
-                  <FieldLabel>الاستهلاك (kWh/100)</FieldLabel>
+                  <FieldLabel>الاستهلاك (KWH/100)</FieldLabel>
                   <FormInput
                     type="number"
                     step="0.1"
@@ -723,11 +806,13 @@ export default function NewTripPage() {
                       {...register(`stops.${idx}.battery_before_pct` as const)}
                       placeholder="بطارية قبل %"
                     />
+
                     <FormInput
                       type="number"
                       {...register(`stops.${idx}.battery_after_pct` as const)}
                       placeholder="بطارية بعد %"
                     />
+
                     <FormInput
                       type="number"
                       {...register(
@@ -735,6 +820,7 @@ export default function NewTripPage() {
                       )}
                       placeholder="مدة الشحن (د)"
                     />
+
                     <FormInput
                       type="number"
                       step="0.01"
@@ -753,10 +839,10 @@ export default function NewTripPage() {
           </div>
         )}
 
-        {/* ── Step 2: Vehicle ── */}
         {step === 2 && (
           <div className="border border-[var(--line)] p-6 space-y-4">
             <h2 className="heading-3">السيارة المستخدمة</h2>
+
             <p className="body-sm">
               اختر السيارة المستخدمة — مطلوبة لإرسال الرحلة للمراجعة، واختيارية
               للمسودة.
@@ -803,6 +889,7 @@ export default function NewTripPage() {
                             {v.model?.name_ar ?? v.model?.name ?? ''}{' '}
                             {v.trim?.name_ar ?? v.trim?.name ?? ''}
                           </p>
+
                           <p className="text-xs text-[var(--ink-3)] nums-latin">
                             موديل {v.year ?? '—'}
                           </p>
@@ -825,7 +912,6 @@ export default function NewTripPage() {
           </div>
         )}
 
-        {/* ── Step 3: Conditions ── */}
         {step === 3 && (
           <div className="border border-[var(--line)] p-6 space-y-5">
             <h2 className="heading-3">ظروف الرحلة</h2>
@@ -935,7 +1021,6 @@ export default function NewTripPage() {
           </div>
         )}
 
-        {/* ── Step 4: Notes ── */}
         {step === 4 && (
           <div className="border border-[var(--line)] p-6 space-y-5">
             <h2 className="heading-3">الملاحظات</h2>
@@ -962,11 +1047,12 @@ export default function NewTripPage() {
           </div>
         )}
 
-        {/* Navigation */}
         <div className="flex justify-between items-center mt-6 flex-wrap gap-3">
           <button
             type="button"
-            onClick={() => (step > 0 ? setStep(step - 1) : router.push('/trips'))}
+            onClick={() =>
+              step > 0 ? setStep(step - 1) : router.push('/trips')
+            }
             className="flex items-center gap-2 btn-secondary px-5"
             disabled={isBusy}
           >
@@ -991,7 +1077,9 @@ export default function NewTripPage() {
                 disabled={isBusy}
                 className="btn-secondary px-5 disabled:opacity-50"
               >
-                {createDraftMutation.isPending ? 'جارٍ الحفظ…' : 'حفظ كمسودة'}
+                {createDraftMutation.isPending
+                  ? 'جارٍ الحفظ…'
+                  : 'حفظ كمسودة'}
               </button>
 
               <button
