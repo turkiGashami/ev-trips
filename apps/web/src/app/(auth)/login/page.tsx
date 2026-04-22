@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import LoginForm from '@/components/auth/LoginForm';
 
 export const metadata = {
@@ -14,7 +15,9 @@ export default function LoginPage() {
         <p className="body-md mt-2">سجّل دخولك للمتابعة</p>
       </div>
 
-      <LoginForm />
+      <Suspense fallback={<div className="body-md">جاري التحميل...</div>}>
+        <LoginForm />
+      </Suspense>
 
       <div className="mt-5 text-center">
         <Link
