@@ -282,36 +282,6 @@ export default async function TripDetailPage({ params }: PageProps) {
               </section>
             )}
 
-            {/* MAP */}
-            <section>
-              <SectionHead eyebrow="— المسار" title="خريطة الرحلة" />
-              <div className="border border-[var(--line)] bg-[var(--sand)]/40 h-72 flex flex-col items-center justify-center gap-3">
-                <MapPin className="h-8 w-8 text-[var(--ink-3)]" />
-                <div className="text-center">
-                  <p className="text-sm font-medium text-[var(--ink-2)]">الخريطة التفاعلية</p>
-                  <p className="text-xs text-[var(--ink-3)] mt-1">يتطلب ضبط NEXT_PUBLIC_MAPBOX_TOKEN</p>
-                </div>
-              </div>
-              <div className="mt-5 flex flex-wrap items-center gap-5 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[var(--forest)]" />
-                  <span className="text-[var(--ink)]">{departureCity}</span>
-                </div>
-                {stops.map((stop: any, i: number) => (
-                  <div key={stop.id} className="flex items-center gap-2">
-                    <div className="nums-latin w-5 h-5 flex items-center justify-center border border-[var(--ink)] text-[var(--ink)] text-[10px] font-medium">
-                      {i + 1}
-                    </div>
-                    <span className="text-[var(--ink-2)]">{stop.station_name}</span>
-                  </div>
-                ))}
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[var(--terra)]" />
-                  <span className="text-[var(--ink)]">{destinationCity}</span>
-                </div>
-              </div>
-            </section>
-
             {/* TIMELINE */}
             <section>
               <SectionHead eyebrow="— التفاصيل" title="تسلسل الرحلة" />

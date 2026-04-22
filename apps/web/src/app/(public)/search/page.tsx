@@ -114,9 +114,12 @@ function SearchPage() {
     router.push(`/search?${params.toString()}`);
   };
 
-  const trips = (data as any)?.trips ?? (Array.isArray(data) ? data : []);
-  const total = (data as any)?.total ?? (data as any)?.meta?.total ?? 0;
-  const totalPages = (data as any)?.totalPages ?? (data as any)?.meta?.totalPages ?? 1;
+  // API response envelope: { success, data: Trip[], meta: { total, totalPages } }
+  const trips = Array.isArray((data as any)?.data)
+    ? (data as any).data
+    : (data as any)?.trips ?? (Array.isArray(data) ? data : []);
+  const total = (data as any)?.meta?.total ?? (data as any)?.total ?? 0;
+  const totalPages = (data as any)?.meta?.totalPages ?? (data as any)?.totalPages ?? 1;
 
   const activeChips: { key: string; label: string }[] = [];
   if (urlFilters.from_city_name) activeChips.push({ key: 'from_city_id', label: `من: ${urlFilters.from_city_name}` });

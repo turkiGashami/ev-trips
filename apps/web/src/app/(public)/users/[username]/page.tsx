@@ -1,64 +1,51 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import TripCard from '@/components/trips/TripCard';
 import Avatar from '@/components/ui/Avatar';
 import { formatNumber, formatDate } from '@/lib/utils';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 interface PageProps {
   params: { username: string };
 }
 
 async function getUserProfile(username: string): Promise<any | null> {
-  if (username === 'not-found') return null;
-  return {
-    id: 'u1',
-    username,
-    displayName: 'أحمد العتيبي',
-    avatar: null,
-    tripsCount: 47,
-    helpfulCount: 892,
-    bio: 'متحمس للسيارات الكهربائية منذ 2020. أوثق رحلاتي عبر المملكة لمساعدة مجتمع EV',
-    location: 'الرياض، المملكة العربية السعودية',
-    joinedAt: '2022-05-10',
-    followersCount: 312,
-    followingCount: 89,
-  };
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/users/${encodeURIComponent(username)}/profile`,
+      { next: { revalidate: 60 } },
+    );
+    if (res.status === 404 || res.status === 403) return null;
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data ?? json ?? null;
+  } catch {
+    return null;
+  }
 }
 
-async function getUserTrips(userId: string): Promise<any[]> {
-  return [
-    {
-      id: '1',
-      slug: 'riyadh-to-jeddah-tesla-model-3',
-      title: 'من الرياض إلى جدة بتسلا موديل 3',
-      titleEn: 'Riyadh to Jeddah with Tesla Model 3',
-      fromCity: 'الرياض',
-      toCity: 'جدة',
-      fromCityEn: 'Riyadh',
-      toCityEn: 'Jeddah',
-      distanceKm: 945,
-      durationMinutes: 540,
-      batteryDeparture: 95,
-      batteryArrival: 22,
-      stopsCount: 3,
-      status: 'published',
-      helpfulCount: 147,
-      viewCount: 1832,
-      vehicle: { brand: 'Tesla', model: 'Model 3', year: 2023, rangeKm: 576 },
-      author: { id: 'u1', username: userId, displayName: 'أحمد العتيبي', avatar: null },
-      tripDate: '2026-03-15',
-      weather: 'sunny',
-      createdAt: '2026-03-16T08:00:00Z',
-    },
-  ];
+async function getUserTrips(username: string): Promise<any[]> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/users/${encodeURIComponent(username)}/trips?limit=12`,
+      { next: { revalidate: 60 } },
+    );
+    if (!res.ok) return [];
+    const json = await res.json();
+    const list = json?.data ?? json ?? [];
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: PageProps) {
   const user = await getUserProfile(params.username);
   if (!user) return { title: 'مستخدم غير موجود' };
+  const name = user.full_name ?? user.fullName ?? user.displayName ?? user.username;
   return {
-    title: `${user.displayName} | رحلات EV`,
-    description: user.bio,
+    title: `${name} | رحلات EV`,
+    description: user.bio ?? undefined,
   };
 }
 
@@ -70,76 +57,84 @@ export default async function UserProfilePage({ params }: PageProps) {
 
   if (!user) notFound();
 
+  const displayName: string =
+    user.full_name ?? user.fullName ?? user.displayName ?? user.username ?? 'مستخدم';
+  const username: string = user.username ?? params.username;
+  const avatar: string | null = user.avatar_url ?? user.avatarUrl ?? null;
+  const bio: string = user.bio ?? '';
+  const city: string =
+    user.city?.name_ar ?? user.city?.name ?? (typeof user.city === 'string' ? user.city : '');
+  const joinedAt: string =
+    user.joined_at ?? user.joinedAt ?? user.created_at ?? '';
+
+  const stats = user.stats ?? {};
+  const tripsCount = Number(
+    stats.tripsCount ?? stats.total_trips ?? user.total_trips ?? trips.length ?? 0,
+  );
+  const helpfulCount = Number(stats.helpfulCount ?? user.total_helpful ?? 0);
+  const followersCount = Number(stats.followersCount ?? user.followers_count ?? 0);
+  const followingCount = Number(stats.followingCount ?? user.following_count ?? 0);
+
   return (
     <div className="min-h-screen">
-      {/* Cover / Profile header */}
       <div className="h-40 gradient-hero" />
 
       <div className="page-container">
         <div className="-mt-16 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-            <div className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg overflow-hidden flex-shrink-0">
-              <Avatar src={user.avatar} name={user.displayName} size="xl" className="w-full h-full rounded-none" />
+            <div className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg overflow-hidden flex-shrink-0 bg-white">
+              <Avatar
+                src={avatar ?? undefined}
+                name={displayName}
+                size="xl"
+                className="w-full h-full rounded-none"
+              />
             </div>
 
-            <div className="flex-1 pb-1">
-              <h1 className="text-2xl font-bold text-gray-900">{user.displayName}</h1>
-              <p className="text-gray-500">@{user.username}</p>
-              {user.location && (
+            <div className="flex-1 pb-1 min-w-0">
+              <h1 className="text-2xl font-bold text-gray-900 truncate">{displayName}</h1>
+              <p className="text-gray-500 nums-latin">@{username}</p>
+              {city && (
                 <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  {user.location}
+                  {city}
                 </p>
               )}
             </div>
-
-            <div className="flex gap-3">
-              <button className="btn-base bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 focus:ring-emerald-500">
-                متابعة
-              </button>
-              <button className="btn-base border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 px-4 py-2.5 focus:ring-gray-300">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </button>
-            </div>
           </div>
 
-          {/* Bio */}
-          {user.bio && (
-            <p className="mt-4 text-gray-700 max-w-xl">{user.bio}</p>
-          )}
+          {bio && <p className="mt-4 text-gray-700 max-w-xl">{bio}</p>}
 
-          {/* Stats */}
           <div className="flex flex-wrap gap-6 mt-5">
             {[
-              { label: 'رحلة', value: user.tripsCount },
-              { label: 'مفيد', value: user.helpfulCount },
-              { label: 'متابع', value: user.followersCount },
-              { label: 'متابَع', value: user.followingCount },
+              { label: 'رحلة', value: tripsCount },
+              { label: 'مفيد', value: helpfulCount },
+              { label: 'متابع', value: followersCount },
+              { label: 'متابَع', value: followingCount },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
-                <div className="text-xl font-bold text-gray-900">{formatNumber(stat.value)}</div>
+                <div className="text-xl font-bold text-gray-900 nums-latin">
+                  {formatNumber(stat.value)}
+                </div>
                 <div className="text-sm text-gray-500">{stat.label}</div>
               </div>
             ))}
-            <div className="text-center">
-              <div className="text-xl font-bold text-gray-900">
-                {formatDate(user.joinedAt)}
+            {joinedAt && (
+              <div className="text-center">
+                <div className="text-xl font-bold text-gray-900">{formatDate(joinedAt)}</div>
+                <div className="text-sm text-gray-500">تاريخ الانضمام</div>
               </div>
-              <div className="text-sm text-gray-500">تاريخ الانضمام</div>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Trips section */}
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">رحلات {user.displayName}</h2>
-            <span className="text-sm text-gray-500">{trips.length} رحلة</span>
+            <h2 className="text-xl font-bold text-gray-900">رحلات {displayName}</h2>
+            <span className="text-sm text-gray-500 nums-latin">{trips.length} رحلة</span>
           </div>
 
           {trips.length === 0 ? (
@@ -148,7 +143,7 @@ export default async function UserProfilePage({ params }: PageProps) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-10">
-              {trips.map((trip) => (
+              {trips.map((trip: any) => (
                 <TripCard key={trip.id} trip={trip} />
               ))}
             </div>

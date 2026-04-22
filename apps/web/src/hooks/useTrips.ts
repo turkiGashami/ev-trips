@@ -14,7 +14,9 @@ export const tripKeys = {
 export function useTrips(params: SearchTripsParams) {
   return useQuery({
     queryKey: tripKeys.list(params),
-    queryFn: () => tripsApi.search(params).then((r) => r.data.data),
+    // Return the full response body so callers can read `.data` (items) and
+    // `.meta` (pagination) without an extra hop.
+    queryFn: () => tripsApi.search(params).then((r) => r.data),
   });
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,6 +20,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState('');
@@ -38,10 +39,15 @@ export default function LoginForm() {
       setAuth(user, tokens.accessToken, tokens.refreshToken);
 
       const role = user.role;
+      // Only allow same-origin relative paths in ?redirect= to avoid open-redirect.
+      const rawRedirect = searchParams?.get('redirect') ?? '';
+      const safeRedirect =
+        rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '';
+
       if (role === 'admin' || role === 'super_admin') {
-        router.push('/admin/dashboard');
+        router.push(safeRedirect || '/admin/dashboard');
       } else {
-        router.push('/dashboard');
+        router.push(safeRedirect || '/dashboard');
       }
     } catch (err: any) {
       if (!err?.response) {

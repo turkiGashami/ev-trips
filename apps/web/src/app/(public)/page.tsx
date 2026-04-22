@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import ShareTripCTA from '@/components/cta/ShareTripCTA';
 
 export const revalidate = 60;
 
@@ -109,10 +110,7 @@ export default async function HomePage() {
                 تصفّح الرحلات
                 <ArrowLeft className="h-4 w-4 flip-rtl" />
               </Link>
-              <Link href="/register"
-                    className="text-[var(--cream)] text-sm md:text-[0.95rem] font-medium border-b border-[var(--cream)]/50 pb-1 hover:border-[var(--cream)] transition-colors">
-                شارك رحلتك
-              </Link>
+              <ShareTripCTA variant="link" label="شارك رحلتك" />
             </div>
           </div>
 
