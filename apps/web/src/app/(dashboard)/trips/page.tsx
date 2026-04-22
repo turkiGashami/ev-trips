@@ -1,125 +1,117 @@
-/** @type {import("eslint").Linter.Config} */
-module.exports = {
-  root: true,
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaVersion: 2022,
-    sourceType: 'module',
-    project: ['./tsconfig.base.json', './apps/*/tsconfig.json', './packages/*/tsconfig.json'],
-  },
-  plugins: ['@typescript-eslint', 'import', 'prettier'],
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking',
-    'plugin:import/recommended',
-    'plugin:import/typescript',
-    'prettier',
-    'plugin:prettier/recommended',
-  ],
-  rules: {
-    // TypeScript
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-    '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/explicit-function-return-type': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-non-null-assertion': 'warn',
-    '@typescript-eslint/no-floating-promises': 'error',
-    '@typescript-eslint/await-thenable': 'error',
-    '@typescript-eslint/no-misused-promises': 'error',
-    '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
-    '@typescript-eslint/no-import-type-side-effects': 'error',
+'use client';
 
-    // Import ordering
-    'import/order': [
-      'error',
-      {
-        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'type'],
-        'newlines-between': 'always',
-        alphabetize: { order: 'asc', caseInsensitive: true },
-      },
-    ],
-    'import/no-duplicates': 'error',
-    'import/no-cycle': 'warn',
-    'import/no-unresolved': 'off', // Handled by TypeScript
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { Plus, FileText, Clock, CheckCircle, XCircle, Archive, Eye, Pencil } from 'lucide-react';
+import { useMyTrips } from '../../../hooks/useTrips';
+import { useSubmitTrip, useDeleteTrip } from '../../../hooks/useTrips';
+import { TripCard } from '../../../components/trips/TripCard';
+import { Button } from '../../../components/ui/Button';
+import { TripStatusBadge } from '../../../components/ui/Badge';
+import { PageSpinner } from '../../../components/ui/Spinner';
+import { EmptyState } from '../../../components/ui/EmptyState';
+import { ProtectedRoute } from '../../../components/auth/ProtectedRoute';
+import { formatDate } from '../../../lib/utils';
 
-    // General
-    'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
-    'no-debugger': 'error',
-    'prettier/prettier': 'error',
-    'eqeqeq': ['error', 'always'],
-    'curly': ['error', 'all'],
-    'prefer-const': 'error',
-    'no-var': 'error',
-  },
-  settings: {
-    'import/parsers': {
-      '@typescript-eslint/parser': ['.ts', '.tsx'],
-    },
-    'import/resolver': {
-      typescript: {
-        alwaysTryTypes: true,
-        project: ['./tsconfig.base.json', './apps/*/tsconfig.json', './packages/*/tsconfig.json'],
-      },
-      node: true,
-    },
-  },
-  overrides: [
-    // NestJS API specific rules
-    {
-      files: ['apps/api/**/*.ts'],
-      rules: {
-        '@typescript-eslint/no-explicit-any': 'off',
-      },
-    },
-    // Next.js web app
-    {
-      files: ['apps/web/**/*.{ts,tsx}'],
-      extends: ['next/core-web-vitals'],
-      rules: {
-        'react/react-in-jsx-scope': 'off',
-      },
-    },
-    // React Native mobile
-    {
-      files: ['apps/mobile/**/*.{ts,tsx}'],
-      rules: {
-        'react/react-in-jsx-scope': 'off',
-        '@typescript-eslint/no-require-imports': 'off',
-      },
-    },
-    // Test files
-    {
-      files: ['**/*.spec.ts', '**/*.test.ts', '**/*.e2e-spec.ts'],
-      env: {
-        jest: true,
-      },
-      rules: {
-        '@typescript-eslint/no-explicit-any': 'off',
-        '@typescript-eslint/no-non-null-assertion': 'off',
-        '@typescript-eslint/unbound-method': 'off',
-      },
-    },
-    // Config files
-    {
-      files: ['*.js', '*.cjs', '*.mjs'],
-      env: {
-        node: true,
-      },
-      rules: {
-        '@typescript-eslint/no-var-requires': 'off',
-        '@typescript-eslint/no-require-imports': 'off',
-      },
-    },
-  ],
-  ignorePatterns: [
-    'node_modules',
-    'dist',
-    'build',
-    '.next',
-    '.turbo',
-    'coverage',
-    '*.d.ts',
-    'pnpm-lock.yaml',
-  ],
-};
+const tabs = [
+  { key: 'all', label: 'الكل', icon: FileText },
+  { key: 'draft', label: 'مسودات', icon: Clock },
+  { key: 'pending_review', label: 'قيد المراجعة', icon: Eye },
+  { key: 'published', label: 'منشورة', icon: CheckCircle },
+  { key: 'rejected', label: 'مرفوضة', icon: XCircle },
+  { key: 'archived', label: 'مؤرشفة', icon: Archive },
+];
+
+export default function MyTripsPage() {
+  const [activeTab, setActiveTab] = useState('all');
+  const { data, isLoading } = useMyTrips(activeTab !== 'all' ? { status: activeTab } : undefined);
+  const submitTrip = useSubmitTrip();
+  const deleteTrip = useDeleteTrip();
+
+  const trips = data?.data || [];
+
+  return (
+    <ProtectedRoute>
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">رحلاتي</h1>
+            <p className="text-gray-500 text-sm mt-1">{data?.meta?.total || 0} رحلة</p>
+          </div>
+          <Link href="/trips/new">
+            <Button leftIcon={<Plus className="w-4 h-4" />}>إضافة رحلة</Button>
+          </Link>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6 overflow-x-auto">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                  activeTab === tab.key
+                    ? 'bg-white text-emerald-700 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Content */}
+        {isLoading ? (
+          <PageSpinner />
+        ) : trips.length === 0 ? (
+          <EmptyState
+            icon={<FileText className="w-8 h-8" />}
+            title="لا توجد رحلات"
+            description="ابدأ بتوثيق رحلتك الأولى ومشاركتها مع المجتمع"
+            action={{ label: 'إضافة رحلة', onClick: () => window.location.href = '/trips/new' }}
+          />
+        ) : (
+          <div className="space-y-4">
+            {trips.map((trip: any) => (
+              <div key={trip.id} className="relative">
+                <TripCard trip={trip} />
+
+                {/* Quick actions overlay */}
+                <div className="absolute top-3 end-3 flex gap-2">
+                  <TripStatusBadge status={trip.status} />
+                  {(trip.status === 'draft' || trip.status === 'rejected') && trip.slug && (
+                    <Link href={`/trips/${trip.slug}/edit`}>
+                      <Button size="xs" variant="outline" leftIcon={<Pencil className="w-3 h-3" />}>
+                        تعديل
+                      </Button>
+                    </Link>
+                  )}
+                  {trip.status === 'draft' && (
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      onClick={() => submitTrip.mutate(trip.id)}
+                      loading={submitTrip.isPending}
+                    >
+                      إرسال للمراجعة
+                    </Button>
+                  )}
+                  {trip.status === 'rejected' && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-1 text-xs text-red-700">
+                      {trip.rejection_reason}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </ProtectedRoute>
+  );
+}
