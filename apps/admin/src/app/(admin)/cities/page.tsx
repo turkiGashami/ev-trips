@@ -2,10 +2,35 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { adminApi } from '@/lib/api/admin.api';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { safeText } from '@/lib/format';
+
+const primaryBtnStyle: React.CSSProperties = {
+  background: 'var(--forest)',
+  color: 'var(--cream)',
+  border: '1px solid var(--forest)',
+  borderRadius: 2,
+  padding: '6px 16px',
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+};
+
+const ghostBtnStyle: React.CSSProperties = {
+  border: '1px solid var(--line)',
+  color: 'var(--ink-2)',
+  background: 'transparent',
+  borderRadius: 2,
+  padding: '6px 16px',
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: 'pointer',
+};
 
 export default function AdminCitiesPage() {
   const [showForm, setShowForm] = useState(false);
@@ -38,53 +63,47 @@ export default function AdminCitiesPage() {
   });
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">إدارة المدن</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 bg-primary-600 text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-primary-700"
-        >
-          <Plus className="w-4 h-4" />
+    <div style={{ padding: 24, maxWidth: 960, marginInline: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <h1 className="heading-2" style={{ color: 'var(--ink)' }}>إدارة المدن</h1>
+        <button onClick={() => setShowForm(!showForm)} style={primaryBtnStyle}>
+          <Plus style={{ width: 14, height: 14 }} />
           إضافة مدينة
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-6">
-          <h2 className="font-bold text-gray-900 mb-4">مدينة جديدة</h2>
-          <div className="grid grid-cols-3 gap-4">
+        <div className="card" style={{ padding: 20, marginBottom: 24 }}>
+          <h2 className="heading-3" style={{ marginBottom: 16 }}>مدينة جديدة</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 16 }}>
             <input
               placeholder="الاسم بالعربية"
               value={newCity.name_ar}
               onChange={(e) => setNewCity({ ...newCity, name_ar: e.target.value })}
-              className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+              className="form-input"
             />
             <input
               placeholder="الاسم بالإنجليزية"
               value={newCity.name_en}
               onChange={(e) => setNewCity({ ...newCity, name_en: e.target.value })}
-              className="border border-gray-200 rounded-xl px-3 py-2 text-sm"
+              className="form-input"
             />
             <input
               placeholder="المعرف (slug)"
               value={newCity.slug}
               onChange={(e) => setNewCity({ ...newCity, slug: e.target.value })}
-              className="border border-gray-200 rounded-xl px-3 py-2 text-sm"
+              className="form-input"
             />
           </div>
-          <div className="flex gap-3 mt-4">
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
             <button
               onClick={() => createMutation.mutate(newCity)}
               disabled={!newCity.name_ar || createMutation.isPending}
-              className="bg-primary-600 text-white rounded-xl px-5 py-2 text-sm font-semibold hover:bg-primary-700 disabled:opacity-50"
+              style={{ ...primaryBtnStyle, opacity: (!newCity.name_ar || createMutation.isPending) ? 0.5 : 1 }}
             >
               حفظ
             </button>
-            <button
-              onClick={() => setShowForm(false)}
-              className="border border-gray-200 rounded-xl px-5 py-2 text-sm text-gray-600 hover:bg-gray-50"
-            >
+            <button onClick={() => setShowForm(false)} style={ghostBtnStyle}>
               إلغاء
             </button>
           </div>
@@ -92,23 +111,29 @@ export default function AdminCitiesPage() {
       )}
 
       {isLoading ? (
-        <div className="text-center py-12 text-gray-400">جارٍ التحميل...</div>
+        <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-4)' }}>جارٍ التحميل...</div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
+        <div className="card" style={{ overflow: 'hidden' }}>
           {cities.length === 0 && (
-            <div className="py-12 text-center text-gray-400">لا توجد مدن</div>
+            <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--ink-4)' }}>لا توجد مدن</div>
           )}
           {cities.map((city: any) => (
-            <div key={city.id} className="flex items-center gap-4 p-4">
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900">{safeText(city.name_ar)}</p>
-                <p className="text-sm text-gray-400">{safeText(city.name_en)} · {safeText(city.slug)}</p>
+            <div
+              key={city.id}
+              style={{ display: 'flex', alignItems: 'center', gap: 16, padding: 16, borderBottom: '1px solid var(--line)' }}
+            >
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)' }}>{safeText(city.name_ar)}</p>
+                <p className="body-sm" style={{ color: 'var(--ink-4)' }}>
+                  {safeText(city.name_en)} · {safeText(city.slug)}
+                </p>
               </div>
               <button
                 onClick={() => setConfirmId(city.id)}
-                className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600"
+                style={{ padding: 8, borderRadius: 2, background: 'transparent', border: 'none', color: 'var(--ink-4)', cursor: 'pointer' }}
+                aria-label="حذف"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 style={{ width: 16, height: 16 }} />
               </button>
             </div>
           ))}

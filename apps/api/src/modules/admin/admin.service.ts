@@ -389,6 +389,39 @@ export class AdminService {
     return comment;
   }
 
+  async restoreComment(actorId: string, commentId: string) {
+    const comment = await this.commentRepo.findOne({ where: { id: commentId } });
+    if (!comment) throw new NotFoundException('Comment not found');
+
+    comment.status = 'visible' as any;
+    await this.commentRepo.save(comment);
+
+    await logAdminAction(this.dataSource, {
+      actorId,
+      action: 'comment.restored',
+      targetType: 'comment',
+      targetId: commentId,
+    });
+
+    return comment;
+  }
+
+  async deleteComment(actorId: string, commentId: string) {
+    const comment = await this.commentRepo.findOne({ where: { id: commentId } });
+    if (!comment) throw new NotFoundException('Comment not found');
+
+    await this.commentRepo.remove(comment);
+
+    await logAdminAction(this.dataSource, {
+      actorId,
+      action: 'comment.deleted',
+      targetType: 'comment',
+      targetId: commentId,
+    });
+
+    return { id: commentId, deleted: true };
+  }
+
   // ── REPORTS ───────────────────────────────────────────────────────────────
 
   async getReports(query: { status?: string; page?: number; limit?: number }) {

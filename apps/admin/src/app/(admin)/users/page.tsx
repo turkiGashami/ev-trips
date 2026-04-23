@@ -20,6 +20,9 @@ const STATUS_OPTIONS = [
 
 const ROLE_OPTIONS = [
   { value: "", label: "جميع الأدوار" },
+  { value: "super_admin", label: "مدير عام" },
+  { value: "admin", label: "مدير" },
+  { value: "moderator", label: "مشرف" },
   { value: "user", label: "مستخدم" },
   { value: "verified", label: "موثق" },
   { value: "premium", label: "مميز" },
@@ -55,10 +58,14 @@ export default function UsersPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await usersApi.list({ page, limit: 15, search: debouncedSearch || undefined, status: statusFilter || undefined, role: roleFilter || undefined, sortBy: sortKey, sortDir });
-      setUsers(res.data);
-      setTotal(res.total);
-      setTotalPages(res.totalPages);
+      const res: any = await usersApi.list({ page, limit: 15, search: debouncedSearch || undefined, status: statusFilter || undefined, role: roleFilter || undefined, sortBy: sortKey, sortDir });
+      const items = Array.isArray(res?.data) ? res.data : Array.isArray(res?.data?.data) ? res.data.data : [];
+      const meta = res?.meta ?? res?.data?.meta ?? {};
+      const totalVal = meta.total ?? res?.total ?? items.length;
+      const totalPagesVal = meta.totalPages ?? res?.totalPages ?? 1;
+      setUsers(items);
+      setTotal(totalVal);
+      setTotalPages(totalPagesVal);
     } catch (err: any) {
       setUsers([]);
       setTotal(0);
@@ -191,7 +198,7 @@ export default function UsersPage() {
               <h3 style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>
                 {modal.type === "badge" ? "منح شارة" : modal.type === "suspend" ? "إيقاف مستخدم" : modal.type === "ban" ? "حظر مستخدم" : modal.type === "verify" ? "توثيق مستخدم" : "تفعيل مستخدم"}
               </h3>
-              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>{modal.user.name}</p>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>{(modal.user as any).name ?? (modal.user as any).full_name ?? (modal.user as any).username ?? (modal.user as any).email ?? '—'}</p>
             </div>
             <div style={{ padding: '16px 20px' }}>
               {(modal.type === "suspend" || modal.type === "ban") && (
