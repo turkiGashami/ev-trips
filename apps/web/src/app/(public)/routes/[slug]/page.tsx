@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft, Route as RouteIcon } from 'lucide-react';
+import { getApiBaseUrl } from '@/lib/utils';
 
 export const revalidate = 60;
 
@@ -53,7 +54,7 @@ async function safeFetch<T>(url: string): Promise<T | null> {
 async function getRoute(slug: string) {
   const parsed = parseSlug(slug);
   if (!parsed) return null;
-  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  const base = getApiBaseUrl();
 
   const cities = await safeFetch<City[]>(`${base}/api/v1/lookup/cities`);
   if (!cities || !Array.isArray(cities)) return null;

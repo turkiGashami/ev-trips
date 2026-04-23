@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, Lock, Globe, User } from 'lucide-react';
+import { Bell, Lock, Globe, User, Check } from 'lucide-react';
 import { notificationsApi } from '@/lib/api/notifications.api';
 import { authApi } from '@/lib/api/auth.api';
 import { useToast } from '@/components/ui/Toast';
@@ -28,6 +28,7 @@ const TABS = [
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('notifications');
+  const [savedKey, setSavedKey] = useState<string | null>(null);
   const { success, error } = useToast();
   const queryClient = useQueryClient();
 
@@ -38,12 +39,20 @@ export default function SettingsPage() {
 
   const updateNotifMutation = useMutation({
     mutationFn: notificationsApi.updateSettings,
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       success('تم الحفظ', 'تم تحديث إعدادات الإشعارات');
       queryClient.invalidateQueries({ queryKey: ['notification-settings'] });
+      const key = Object.keys(variables ?? {})[0] ?? null;
+      if (key) setSavedKey(key);
     },
     onError: () => error('خطأ', 'تعذر حفظ الإعدادات'),
   });
+
+  useEffect(() => {
+    if (!savedKey) return;
+    const t = setTimeout(() => setSavedKey(null), 2000);
+    return () => clearTimeout(t);
+  }, [savedKey]);
 
   const settings = notifSettings?.data?.data ?? {};
 
@@ -105,14 +114,26 @@ export default function SettingsPage() {
             const isOn: boolean = typeof raw === 'boolean' ? raw : true;
             const pendingKey = (updateNotifMutation.variables as Record<string, any> | undefined) ?? {};
             const saving = updateNotifMutation.isPending && item.key in pendingKey;
+            const justSaved = savedKey === item.key;
 
             return (
-              <div key={item.key} className="flex items-center justify-between p-5">
+              <div
+                key={item.key}
+                className={`flex items-center justify-between p-5 transition-colors duration-300 ${
+                  justSaved ? 'bg-[var(--forest)]/5' : ''
+                }`}
+              >
                 <div>
                   <p className="font-medium text-gray-900 flex items-center gap-2">
                     {item.label}
                     {saving && (
                       <span className="text-[10px] text-gray-400 nums-latin">جارٍ الحفظ…</span>
+                    )}
+                    {justSaved && !saving && (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-[var(--forest)] nums-latin">
+                        <Check className="h-3 w-3" />
+                        تم الحفظ
+                      </span>
                     )}
                   </p>
                   <p className="text-sm text-gray-500">{item.desc}</p>
@@ -125,16 +146,16 @@ export default function SettingsPage() {
                   aria-label={item.label}
                   disabled={updateNotifMutation.isPending}
                   onClick={() => updateNotifMutation.mutate({ [item.key]: !isOn })}
-                  className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-60 ${
+                  className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-60 ${
                     isOn
-                      ? 'bg-emerald-500 border-emerald-600 focus:ring-emerald-300'
-                      : 'bg-gray-200 border-gray-300 focus:ring-gray-300'
+                      ? 'bg-[var(--forest)] border-[var(--forest)] focus:ring-[var(--forest)]/40'
+                      : 'bg-gray-300 border-gray-400 focus:ring-gray-300'
                   }`}
                 >
                   <span className="sr-only">{isOn ? 'مفعّل' : 'معطّل'}</span>
                   <span
                     aria-hidden
-                    className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-all duration-200 ${
+                    className={`absolute top-[2px] h-5 w-5 rounded-full bg-white shadow transition-all duration-200 ${
                       isOn ? 'end-[2px]' : 'start-[2px]'
                     }`}
                   />

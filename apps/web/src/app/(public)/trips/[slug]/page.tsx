@@ -4,9 +4,9 @@ import { MapPin, ThumbsUp, Eye, Bookmark, Share2, ChevronLeft, Wind, Thermometer
 import TripTimeline from '@/components/trips/TripTimeline';
 import CommentSection from '@/components/comments/CommentSection';
 import TripCard from '@/components/trips/TripCard';
-import { formatDate, formatNumber } from '@/lib/utils';
+import { formatDate, formatNumber, getApiBaseUrl } from '@/lib/utils';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_BASE = getApiBaseUrl();
 
 interface PageProps {
   params: { slug: string };

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import ShareTripCTA from '@/components/cta/ShareTripCTA';
+import { getApiBaseUrl } from '@/lib/utils';
 
 export const revalidate = 60;
 
@@ -28,7 +29,7 @@ type ApiTrip = {
 };
 
 async function getFeaturedTrips(): Promise<ApiTrip[]> {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  const base = getApiBaseUrl();
   try {
     const res = await fetch(
       `${base}/api/v1/trips?limit=3&sort_by=helpful_count&sort_order=DESC`,

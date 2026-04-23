@@ -23,6 +23,8 @@ const schema = z.object({
   arrival_time: z.string().optional(),
   distance_km: z.coerce.number().min(0).optional().or(z.literal('')),
   duration_minutes: z.coerce.number().min(1).optional().or(z.literal('')),
+  duration_hours_input: z.coerce.number().min(0).max(48).optional().or(z.literal('')),
+  duration_mins_input: z.coerce.number().min(0).max(59).optional().or(z.literal('')),
   vehicle_id: z.string().optional(),
   departure_battery_pct: z.coerce.number().min(0).max(100).optional().or(z.literal('')),
   arrival_battery_pct: z.coerce.number().min(0).max(100).optional().or(z.literal('')),
@@ -103,6 +105,14 @@ export default function EditTripPage() {
       arrival_time: trip.arrival_time ?? '',
       distance_km: trip.distance_km ?? '',
       duration_minutes: trip.duration_minutes ?? '',
+      duration_hours_input:
+        trip.duration_minutes != null
+          ? Math.floor(Number(trip.duration_minutes) / 60)
+          : '',
+      duration_mins_input:
+        trip.duration_minutes != null
+          ? Number(trip.duration_minutes) % 60
+          : '',
       vehicle_id: trip.vehicle_id ?? '',
       departure_battery_pct: trip.departure_battery_pct ?? '',
       arrival_battery_pct: trip.arrival_battery_pct ?? '',
@@ -129,11 +139,27 @@ export default function EditTripPage() {
     mutationFn: (data: FormData) => {
       const payload: any = {};
       const emptyToUndefined = (v: any) => (v === '' || v === undefined) ? undefined : v;
+      const excluded = [
+        'departure_city_name',
+        'destination_city_name',
+        'duration_hours_input',
+        'duration_mins_input',
+      ];
       Object.entries(data).forEach(([k, v]) => {
-        if (!['departure_city_name', 'destination_city_name'].includes(k)) {
+        if (!excluded.includes(k)) {
           payload[k] = emptyToUndefined(v);
         }
       });
+
+      const h = data.duration_hours_input;
+      const m = data.duration_mins_input;
+      const hasHours = h !== '' && h !== undefined;
+      const hasMins = m !== '' && m !== undefined;
+      if (hasHours || hasMins) {
+        const total = Number(hasHours ? h : 0) * 60 + Number(hasMins ? m : 0);
+        payload.duration_minutes = total > 0 ? total : undefined;
+      }
+
       return tripsApi.updateTrip(trip!.id, payload);
     },
     onSuccess: () => {
@@ -222,8 +248,37 @@ export default function EditTripPage() {
               <FormInput type="number" {...register('distance_km')} placeholder="950" />
             </div>
             <div>
-              <FieldLabel>المدة (دقائق)</FieldLabel>
-              <FormInput type="number" {...register('duration_minutes')} placeholder="540" />
+              <FieldLabel>مدة الرحلة</FieldLabel>
+              <div className="grid grid-cols-2 gap-2" dir="rtl">
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={0}
+                    max={48}
+                    inputMode="numeric"
+                    {...register('duration_hours_input')}
+                    placeholder="0"
+                    className="input-base h-10 text-sm nums-latin pe-12 text-center bg-[var(--cream)] border-[var(--line)] text-[var(--ink)]"
+                  />
+                  <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-[var(--ink-3)] pointer-events-none">
+                    ساعة
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    inputMode="numeric"
+                    {...register('duration_mins_input')}
+                    placeholder="0"
+                    className="input-base h-10 text-sm nums-latin pe-14 text-center bg-[var(--cream)] border-[var(--line)] text-[var(--ink)]"
+                  />
+                  <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-[var(--ink-3)] pointer-events-none">
+                    دقيقة
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </Section>
