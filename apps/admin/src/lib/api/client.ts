@@ -94,12 +94,27 @@ function getOrStartRefresh(): Promise<string | null> {
   return refreshPromise;
 }
 
+let redirectInFlight = false;
+
 function redirectToLogin() {
   if (typeof window === "undefined") return;
+  if (redirectInFlight) return;
+  redirectInFlight = true;
+
   clearAdminTokens();
-  const path = window.location.pathname + window.location.search;
+
+  // Clear persisted Zustand store so useAdminAuthStore doesn't think we're
+  // still authenticated on the next page load — that causes a login ⇄ dashboard
+  // loop when cookies are gone but localStorage still has the user.
+  try {
+    window.localStorage.removeItem("admin-auth");
+  } catch {
+    /* ignore */
+  }
+
   // Avoid redirect loop when we're already on /login.
   if (!window.location.pathname.startsWith("/login")) {
+    const path = window.location.pathname + window.location.search;
     window.location.href = `/login?redirect=${encodeURIComponent(path)}`;
   }
 }
