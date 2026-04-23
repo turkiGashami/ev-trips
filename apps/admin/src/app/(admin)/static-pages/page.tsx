@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { FileText, Pencil } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Pencil, Info } from 'lucide-react';
+import { AdminTopbar } from '@/components/layout/AdminTopbar';
 import { adminApi } from '@/lib/api/admin.api';
 import { formatDate, safeText } from '@/lib/format';
 
@@ -13,45 +14,119 @@ export default function AdminStaticPagesPage() {
     queryFn: adminApi.getStaticPages,
   });
 
-  const pages = data?.data?.data ?? [];
+  const pages: any[] = data?.data?.data ?? data?.data ?? [];
+  const count = pages.length;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">الصفحات الثابتة</h1>
-        <p className="text-gray-500 text-sm mt-1">إدارة صفحات مثل سياسة الخصوصية والشروط والأحكام</p>
-      </div>
+    <div dir="rtl">
+      <AdminTopbar title="الصفحات الثابتة" subtitle={`${count} صفحة`} />
 
-      {isLoading ? (
-        <div className="text-center py-12 text-gray-400">جارٍ التحميل...</div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
-          {pages.length === 0 && (
-            <div className="py-12 text-center text-gray-400">لا توجد صفحات</div>
-          )}
-          {pages.map((page: any) => (
-            <div key={page.key} className="flex items-center gap-4 p-4">
-              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-gray-400" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900">{safeText(page.title)}</p>
-                <p className="text-xs text-gray-400 font-mono">{safeText(page.key)}</p>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <span>آخر تعديل: {formatDate(page.updated_at)}</span>
-              </div>
-              <Link
-                href={`/static-pages/${page.key}/edit`}
-                className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium border border-primary-200 rounded-lg px-3 py-1.5"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                تعديل
-              </Link>
-            </div>
-          ))}
+      <div style={{ padding: 24, maxWidth: 1120, marginInline: 'auto' }}>
+        {/* Info callout */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            padding: 14,
+            marginBottom: 20,
+            background: 'rgba(107,142,156,.08)',
+            border: '1px solid var(--line)',
+            borderRadius: 2,
+          }}
+        >
+          <Info style={{ width: 16, height: 16, color: 'var(--sky)', flexShrink: 0, marginTop: 2 }} />
+          <p className="body-sm" style={{ color: 'var(--ink-2)', lineHeight: 1.6 }}>
+            هذه الصفحات تظهر في الموقع العام على <span className="nums-latin" dir="ltr" style={{ fontFamily: 'monospace' }}>/pages/:key</span> — التعديلات تنعكس خلال دقائق بفضل ISR
+          </p>
         </div>
-      )}
+
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-4)' }}>جارٍ التحميل...</div>
+        ) : (
+          <div className="card" style={{ overflow: 'hidden' }}>
+            {pages.length === 0 ? (
+              <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--ink-4)' }}>لا توجد صفحات</div>
+            ) : (
+              <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>المفتاح</th>
+                    <th style={thStyle}>العنوان (عربي)</th>
+                    <th style={thStyle}>العنوان (إنجليزي)</th>
+                    <th style={thStyle}>آخر تعديل</th>
+                    <th style={{ ...thStyle, width: 100, textAlign: 'end' }}>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pages.map((page: any) => (
+                    <tr key={page.key} style={{ borderTop: '1px solid var(--line)' }}>
+                      <td style={tdStyle}>
+                        <span
+                          dir="ltr"
+                          style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--ink-2)' }}
+                        >
+                          {safeText(page.key)}
+                        </span>
+                      </td>
+                      <td style={{ ...tdStyle, fontWeight: 500, color: 'var(--ink)' }}>
+                        {safeText(page.title_ar ?? page.titleAr ?? page.title)}
+                      </td>
+                      <td style={{ ...tdStyle, color: 'var(--ink-3)' }} dir="ltr">
+                        {safeText(page.title_en ?? page.titleEn ?? page.title)}
+                      </td>
+                      <td style={tdStyle}>
+                        <span className="nums-latin" style={{ color: 'var(--ink-3)', fontSize: 12 }}>
+                          {formatDate(page.updated_at ?? page.updatedAt)}
+                        </span>
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: 'end' }}>
+                        <Link
+                          href={`/static-pages/${page.key}/edit`}
+                          style={iconBtnStyle}
+                          title="تعديل"
+                          aria-label="تعديل"
+                        >
+                          <Pencil style={{ width: 14, height: 14 }} />
+                          <span style={{ fontSize: 12 }}>تعديل</span>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+const thStyle: React.CSSProperties = {
+  textAlign: 'start',
+  padding: '12px 16px',
+  fontSize: 11,
+  fontWeight: 500,
+  color: 'var(--ink-3)',
+  background: 'var(--sand)',
+  letterSpacing: '0.02em',
+};
+
+const tdStyle: React.CSSProperties = {
+  padding: '14px 16px',
+  fontSize: 13,
+  color: 'var(--ink-2)',
+  verticalAlign: 'middle',
+};
+
+const iconBtnStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  padding: '6px 12px',
+  border: '1px solid var(--line)',
+  borderRadius: 2,
+  color: 'var(--ink-2)',
+  textDecoration: 'none',
+  background: 'transparent',
+};
