@@ -62,6 +62,22 @@ export class AdminController {
     return this.adminService.awardBadge(actor.id, userId, body.badgeId);
   }
 
+  @Delete('users/:id/badges/:badgeKey')
+  @HttpCode(HttpStatus.OK)
+  removeBadge(
+    @CurrentUser() actor: any,
+    @Param('id') userId: string,
+    @Param('badgeKey') badgeKey: string,
+  ) {
+    return this.adminService.removeBadge(actor.id, userId, badgeKey);
+  }
+
+  @Patch('users/:id/verify')
+  @HttpCode(HttpStatus.OK)
+  verifyUser(@CurrentUser() actor: any, @Param('id') id: string) {
+    return this.adminService.verifyUser(actor.id, id);
+  }
+
   // ── TRIPS ──────────────────────────────────────────────────────────────
   @Get('trips')
   getTrips(@Query() query: any) {
@@ -103,6 +119,12 @@ export class AdminController {
     @Body() body: { featured: boolean },
   ) {
     return this.adminService.featureTrip(actor.id, id, body.featured);
+  }
+
+  @Delete('trips/:id')
+  @HttpCode(HttpStatus.OK)
+  deleteTrip(@CurrentUser() actor: any, @Param('id') id: string) {
+    return this.adminService.deleteTrip(actor.id, id);
   }
 
   // ── COMMENTS ───────────────────────────────────────────────────────────

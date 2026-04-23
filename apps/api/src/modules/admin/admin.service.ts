@@ -191,6 +191,41 @@ export class AdminService {
     return userBadge;
   }
 
+  async removeBadge(actorId: string, userId: string, badgeKey: string) {
+    const badge = await this.badgeRepo.findOne({ where: { key: badgeKey } });
+    if (!badge) throw new NotFoundException('Badge not found');
+
+    const userBadge = await this.userBadgeRepo.findOne({
+      where: { user_id: userId, badge_id: badge.id },
+    });
+    if (!userBadge) throw new NotFoundException('User does not have this badge');
+
+    await this.userBadgeRepo.remove(userBadge);
+
+    await logAdminAction(this.dataSource, {
+      actorId,
+      action: 'user.badge_removed',
+      targetType: 'user',
+      targetId: userId,
+      payload: { badgeKey, badgeId: badge.id },
+    });
+
+    return { userId, badgeKey, removed: true };
+  }
+
+  async verifyUser(actorId: string, userId: string) {
+    const user = await this.getUserById(userId);
+    user.email_verified_at = new Date();
+    await this.userRepo.save(user);
+    await logAdminAction(this.dataSource, {
+      actorId,
+      action: 'user.email_verified',
+      targetType: 'user',
+      targetId: userId,
+    });
+    return user;
+  }
+
   // ── TRIPS ─────────────────────────────────────────────────────────────────
 
   async getTrips(query: {
@@ -355,6 +390,28 @@ export class AdminService {
     });
 
     return trip;
+  }
+
+  async deleteTrip(actorId: string, tripId: string) {
+    const trip = await this.tripRepo.findOne({ where: { id: tripId } });
+    if (!trip) throw new NotFoundException('Trip not found');
+
+    await this.dataSource.transaction(async (manager) => {
+      // Manual soft-delete: trip entity has a plain `deleted_at` column (not
+      // @DeleteDateColumn), so we set it explicitly and also mark archived.
+      await manager
+        .getRepository(Trip)
+        .update(tripId, { deleted_at: new Date(), status: 'archived' as any });
+    });
+
+    await logAdminAction(this.dataSource, {
+      actorId,
+      action: 'trip.deleted',
+      targetType: 'trip',
+      targetId: tripId,
+    });
+
+    return { id: tripId, deleted: true };
   }
 
   // ── COMMENTS ──────────────────────────────────────────────────────────────

@@ -506,12 +506,19 @@ async function seedUsers(
   const repo = ds.getRepository(User);
   const map  = new Map<string, User>();
 
+  // Seed passwords are configurable via env so checked-in defaults are only
+  // usable for local development. See apps/api/.env.example for the full list.
+  const SUPERADMIN_PWD = process.env.SEED_SUPERADMIN_PWD ?? 'DevSuperAdmin@2026!';
+  const ADMIN_PWD      = process.env.SEED_ADMIN_PWD      ?? 'DevAdmin@2026!';
+  const MODERATOR_PWD  = process.env.SEED_MODERATOR_PWD  ?? 'DevModerator@2026!';
+  const USER_PWD       = process.env.SEED_USER_PWD       ?? 'DevUser@2026!';
+
   const usersData = [
     {
       key:       'superadmin',
       email:     'superadmin@evtrips.sa',
       username:  'superadmin',
-      password:  'SuperAdmin@2026!',
+      password:  SUPERADMIN_PWD,
       full_name: 'Super Administrator',
       role:      UserRole.SUPER_ADMIN,
       status:    UserStatus.ACTIVE,
@@ -521,7 +528,7 @@ async function seedUsers(
       key:       'admin',
       email:     'admin@evtrips.sa',
       username:  'admin_ev',
-      password:  'Admin@2026!',
+      password:  ADMIN_PWD,
       full_name: 'Platform Administrator',
       role:      UserRole.ADMIN,
       status:    UserStatus.ACTIVE,
@@ -531,7 +538,7 @@ async function seedUsers(
       key:       'moderator',
       email:     'moderator@evtrips.sa',
       username:  'mod_hamad',
-      password:  'Moderator@2026!',
+      password:  MODERATOR_PWD,
       full_name: 'Hamad Al-Moderator',
       role:      UserRole.MODERATOR,
       status:    UserStatus.ACTIVE,
@@ -541,7 +548,7 @@ async function seedUsers(
       key:       'user1',
       email:     'turki@evtrips.sa',
       username:  'turki_ev',
-      password:  'User@2026!',
+      password:  USER_PWD,
       full_name: 'Turki Al-Gashami',
       role:      UserRole.USER,
       status:    UserStatus.ACTIVE,
@@ -554,7 +561,7 @@ async function seedUsers(
       key:       'user2',
       email:     'fahad@evtrips.sa',
       username:  'fahad_ev',
-      password:  'User@2026!',
+      password:  USER_PWD,
       full_name: 'Fahad Al-Otaibi',
       role:      UserRole.USER,
       status:    UserStatus.ACTIVE,
@@ -567,7 +574,7 @@ async function seedUsers(
       key:       'user3',
       email:     'nora@evtrips.sa',
       username:  'nora_drives',
-      password:  'User@2026!',
+      password:  USER_PWD,
       full_name: 'Nora Al-Zahrani',
       role:      UserRole.USER,
       status:    UserStatus.ACTIVE,
@@ -580,7 +587,7 @@ async function seedUsers(
       key:       'user4',
       email:     'khaled@evtrips.sa',
       username:  'khaled_ksa_ev',
-      password:  'User@2026!',
+      password:  USER_PWD,
       full_name: 'Khaled Al-Harbi',
       role:      UserRole.USER,
       status:    UserStatus.ACTIVE,
@@ -592,7 +599,7 @@ async function seedUsers(
       key:       'user5',
       email:     'sara@evtrips.sa',
       username:  'sara_ioniq',
-      password:  'User@2026!',
+      password:  USER_PWD,
       full_name: 'Sara Al-Dosari',
       role:      UserRole.USER,
       status:    UserStatus.ACTIVE,
@@ -832,6 +839,19 @@ async function seedSystemSettings(ds: DataSource): Promise<void> {
 // Main Runner
 // ---------------------------------------------------------------------------
 async function main(): Promise<void> {
+  // Safety guard: refuse to seed against a production database by accident.
+  // To intentionally seed production, set ALLOW_PROD_SEED=yes-i-mean-it.
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.ALLOW_PROD_SEED !== 'yes-i-mean-it'
+  ) {
+    console.error(
+      '[seed] Refusing to run: NODE_ENV=production and ALLOW_PROD_SEED is ' +
+        'not set to "yes-i-mean-it". Aborting.',
+    );
+    process.exit(1);
+  }
+
   console.log('Connecting to database...');
   await AppDataSource.initialize();
   console.log('Connected. Running seeds...\n');

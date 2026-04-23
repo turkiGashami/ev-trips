@@ -6,9 +6,9 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig = {
   reactStrictMode: false,
   output: "standalone",
-  // Pre-existing type/lint issues in admin app — unblock deploy; fix in follow-up.
+  // ESLint parser project path issues when Next runs lint from apps/admin
+  // (pre-existing — unrelated to type safety). TS errors are still enforced.
   eslint: { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors: true },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**.supabase.co" },

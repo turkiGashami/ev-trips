@@ -146,18 +146,33 @@ export const usersApi = {
       .then((r) => r.data),
   get: (id: string) =>
     apiClient.get<PlatformUser>(`/admin/users/${id}`).then((r) => r.data),
+  // API exposes only PATCH /admin/users/:id/status with { status, reason? }.
+  // Adapt high-level actions to that single endpoint.
   suspend: (id: string, reason: string) =>
-    apiClient.post(`/admin/users/${id}/suspend`, { reason }).then((r) => r.data),
+    apiClient
+      .patch(`/admin/users/${id}/status`, { status: "suspended", reason })
+      .then((r) => r.data),
   ban: (id: string, reason: string) =>
-    apiClient.post(`/admin/users/${id}/ban`, { reason }).then((r) => r.data),
+    apiClient
+      .patch(`/admin/users/${id}/status`, { status: "banned", reason })
+      .then((r) => r.data),
   activate: (id: string) =>
-    apiClient.post(`/admin/users/${id}/activate`).then((r) => r.data),
+    apiClient
+      .patch(`/admin/users/${id}/status`, { status: "active" })
+      .then((r) => r.data),
+  // Dedicated verify endpoint on the API sets email_verified_at = NOW().
   verify: (id: string) =>
-    apiClient.post(`/admin/users/${id}/verify`).then((r) => r.data),
+    apiClient.patch(`/admin/users/${id}/verify`).then((r) => r.data),
+  // Admin controller expects `{ badgeId }`. Keep the param name on the client
+  // for call-site simplicity but forward as badgeId.
   assignBadge: (id: string, badge: string) =>
-    apiClient.post(`/admin/users/${id}/badges`, { badge }).then((r) => r.data),
-  removeBadge: (id: string, badge: string) =>
-    apiClient.delete(`/admin/users/${id}/badges/${badge}`).then((r) => r.data),
+    apiClient
+      .post(`/admin/users/${id}/badges`, { badgeId: badge })
+      .then((r) => r.data),
+  removeBadge: (id: string, badgeKey: string) =>
+    apiClient
+      .delete(`/admin/users/${id}/badges/${badgeKey}`)
+      .then((r) => r.data),
 };
 
 // ─── Trips ────────────────────────────────────────────────────────────────────
@@ -219,10 +234,15 @@ export const reportsApi = {
     apiClient
       .get<PaginatedResponse<Report>>("/admin/reports", { params })
       .then((r) => r.data),
+  // API exposes PATCH /admin/reports/:id with { status, adminNotes? }.
   resolve: (id: string, notes?: string) =>
-    apiClient.post(`/admin/reports/${id}/resolve`, { notes }).then((r) => r.data),
-  dismiss: (id: string) =>
-    apiClient.post(`/admin/reports/${id}/dismiss`).then((r) => r.data),
+    apiClient
+      .patch(`/admin/reports/${id}`, { status: "resolved", adminNotes: notes })
+      .then((r) => r.data),
+  dismiss: (id: string, notes?: string) =>
+    apiClient
+      .patch(`/admin/reports/${id}`, { status: "dismissed", adminNotes: notes })
+      .then((r) => r.data),
 };
 
 // ─── Charging Stations ────────────────────────────────────────────────────────
@@ -300,8 +320,14 @@ export const bannersApi = {
       .then((r) => r.data),
   update: (id: string, data: Partial<Banner>) =>
     apiClient.patch<Banner>(`/admin/banners/${id}`, data).then((r) => r.data),
-  toggleActive: (id: string) =>
-    apiClient.post(`/admin/banners/${id}/toggle-active`).then((r) => r.data),
+  // API has no toggle-active endpoint for banners — flip the `status` field on
+  // the existing PATCH instead. Caller supplies the current state.
+  toggleActive: (id: string, currentlyActive: boolean) =>
+    apiClient
+      .patch(`/admin/banners/${id}`, {
+        status: currentlyActive ? "inactive" : "active",
+      })
+      .then((r) => r.data),
   delete: (id: string) =>
     apiClient.delete(`/admin/banners/${id}`).then((r) => r.data),
 };
@@ -309,10 +335,27 @@ export const bannersApi = {
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
 export const settingsApi = {
-  get: () =>
-    apiClient.get<Record<string, unknown>>("/admin/settings").then((r) => r.data),
-  update: (data: Record<string, unknown>) =>
-    apiClient.patch<Record<string, unknown>>("/admin/settings", data).then((r) => r.data),
+  get: async (): Promise<Record<string, unknown>> => {
+    const { data } = await apiClient.get<any>("/admin/settings");
+    const payload = data?.data ?? data;
+    // API returns an array of { key, value, ... } rows. Flatten to a map so
+    // the admin UI (keyed by setting key) stays unchanged.
+    if (Array.isArray(payload)) {
+      return payload.reduce<Record<string, unknown>>((acc, row) => {
+        if (row?.key !== undefined) acc[row.key] = row.value;
+        return acc;
+      }, {});
+    }
+    return (payload ?? {}) as Record<string, unknown>;
+  },
+  // API exposes PATCH /admin/settings with body `{ key, value }`. The admin UI
+  // passes a `{ key: value }` object; we translate to one PATCH per entry.
+  update: async (data: Record<string, unknown>): Promise<void> => {
+    const entries = Object.entries(data);
+    for (const [key, value] of entries) {
+      await apiClient.patch("/admin/settings", { key, value: String(value) });
+    }
+  },
 };
 
 // ─── Logs ─────────────────────────────────────────────────────────────────────
@@ -324,28 +367,18 @@ export const logsApi = {
       .then((r) => r.data),
 };
 
-// ─── Combined default export ──────────────────────────────────────────────────
-
+// ─── Legacy raw-axios adapter ────────────────────────────────────────────────
+//
+// Older pages consume `response.data.data` directly off axios responses, so
+// this map returns the raw axios response (unlike the typed `*Api` objects
+// above which return `response.data`). All paths here are verified against
+// `apps/api/src/modules/admin/admin.controller.ts` — broken legacy routes
+// (e.g. `/admin/dashboard/stats`, `/admin/charging-stations`, `/admin/settings/:key`)
+// have been removed. Prefer the typed `*Api` objects in new code.
 export const adminApi = {
-  // Dashboard
-  getDashboardStats: () => apiClient.get('/admin/dashboard/stats'),
-  // Users
-  getUsers: (p?: any) => apiClient.get('/admin/users', { params: p }),
-  getUser: (id: string) => apiClient.get(`/admin/users/${id}`),
-  suspendUser: (id: string, reason: string) => apiClient.post(`/admin/users/${id}/suspend`, { reason }),
-  activateUser: (id: string) => apiClient.post(`/admin/users/${id}/activate`),
-  // Trips
-  getTrips: (p?: any) => apiClient.get('/admin/trips', { params: p }),
-  approveTrip: (id: string) => apiClient.patch(`/admin/trips/${id}/approve`),
-  rejectTrip: (id: string, reason: string) => apiClient.patch(`/admin/trips/${id}/reject`, { reason }),
-  featureTrip: (id: string, featured: boolean) => apiClient.patch(`/admin/trips/${id}/feature`, { featured }),
-  // Comments
+  // Comments (list + delete used by comments page)
   getComments: (p?: any) => apiClient.get('/admin/comments', { params: p }),
-  hideComment: (id: string) => apiClient.patch(`/admin/comments/${id}/hide`),
   deleteComment: (id: string) => apiClient.delete(`/admin/comments/${id}`),
-  // Reports
-  getReports: (p?: any) => apiClient.get('/admin/reports', { params: p }),
-  updateReport: (id: string, status: string) => apiClient.patch(`/admin/reports/${id}`, { status }),
   // Brands
   getBrands: () => apiClient.get('/admin/brands'),
   createBrand: (data: any) => apiClient.post('/admin/brands', data),
@@ -363,13 +396,4 @@ export const adminApi = {
   createBanner: (data: any) => apiClient.post('/admin/banners', data),
   updateBanner: (id: string, data: any) => apiClient.patch(`/admin/banners/${id}`, data),
   deleteBanner: (id: string) => apiClient.delete(`/admin/banners/${id}`),
-  // Settings
-  getSettings: () => apiClient.get('/admin/settings'),
-  updateSetting: (key: string, value: string) => apiClient.patch(`/admin/settings/${key}`, { value }),
-  // Logs
-  getLogs: (p?: any) => apiClient.get('/admin/logs', { params: p }),
-  // Charging stations
-  getChargingStations: (p?: any) => apiClient.get('/admin/charging-stations', { params: p }),
-  createChargingStation: (data: any) => apiClient.post('/admin/charging-stations', data),
-  deleteChargingStation: (id: string) => apiClient.delete(`/admin/charging-stations/${id}`),
 };

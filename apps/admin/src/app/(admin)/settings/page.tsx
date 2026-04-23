@@ -61,7 +61,11 @@ function SettingRow({ entry, onChange, onSave, onReset }: { entry: SettingEntry;
           <input type="text" value={entry.value} onChange={(e) => onChange(entry.key, e.target.value)} dir="ltr" className="form-input" style={{ width: 220, fontFamily: 'monospace', fontSize: 12 }} />
         )}
         {entry.savedAt && !entry.isDirty && <CheckCircle style={{ width: 14, height: 14, color: 'var(--forest)', flexShrink: 0 }} />}
-        {entry.error && <AlertTriangle style={{ width: 14, height: 14, color: 'var(--terra)', flexShrink: 0 }} title={entry.error} />}
+        {entry.error && (
+          <span title={entry.error} style={{ display: 'inline-flex' }}>
+            <AlertTriangle style={{ width: 14, height: 14, color: 'var(--terra)', flexShrink: 0 }} aria-label={entry.error} />
+          </span>
+        )}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, opacity: entry.isDirty ? 1 : 0 }}>
         {entry.isDirty && (
