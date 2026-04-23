@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 
 /**
@@ -19,6 +19,25 @@ function resolveBaseUrl(): string {
 
 const BASE_URL = resolveBaseUrl();
 
+// ─── Cookie helpers ──────────────────────────────────────────────────────────
+const ACCESS_COOKIE = "admin_token";
+const REFRESH_COOKIE = "admin_refresh_token";
+const COOKIE_OPTS = {
+  expires: 7,
+  secure: typeof window !== "undefined" && window.location.protocol === "https:",
+  sameSite: "strict" as const,
+};
+
+export function setAdminTokens(accessToken: string, refreshToken?: string) {
+  Cookies.set(ACCESS_COOKIE, accessToken, COOKIE_OPTS);
+  if (refreshToken) Cookies.set(REFRESH_COOKIE, refreshToken, COOKIE_OPTS);
+}
+
+export function clearAdminTokens() {
+  Cookies.remove(ACCESS_COOKIE);
+  Cookies.remove(REFRESH_COOKIE);
+}
+
 export const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
@@ -30,7 +49,7 @@ export const apiClient: AxiosInstance = axios.create({
 // ─── Request interceptor — attach admin JWT ───────────────────────────────────
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = Cookies.get("admin_token");
+    const token = Cookies.get(ACCESS_COOKIE);
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -39,16 +58,81 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ─── Response interceptor — handle 401 / errors ───────────────────────────────
+// ─── Silent refresh of access token ──────────────────────────────────────────
+// A single in-flight refresh promise is shared across concurrent 401s so we
+// only hit /auth/refresh once, then replay every queued request.
+let refreshPromise: Promise<string | null> | null = null;
+
+async function performRefresh(): Promise<string | null> {
+  const refreshToken = Cookies.get(REFRESH_COOKIE);
+  if (!refreshToken) return null;
+
+  try {
+    // Raw axios call (not apiClient) so we don't loop through our own interceptors.
+    const { data } = await axios.post(
+      `${BASE_URL}/auth/refresh`,
+      { refreshToken },
+      { timeout: 15000, headers: { "Content-Type": "application/json" } }
+    );
+    const body = data?.data ?? data;
+    const nextAccess = body?.accessToken ?? body?.tokens?.accessToken;
+    const nextRefresh = body?.refreshToken ?? body?.tokens?.refreshToken;
+    if (!nextAccess) return null;
+    setAdminTokens(nextAccess, nextRefresh ?? refreshToken);
+    return nextAccess;
+  } catch {
+    return null;
+  }
+}
+
+function getOrStartRefresh(): Promise<string | null> {
+  if (!refreshPromise) {
+    refreshPromise = performRefresh().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+function redirectToLogin() {
+  if (typeof window === "undefined") return;
+  clearAdminTokens();
+  const path = window.location.pathname + window.location.search;
+  // Avoid redirect loop when we're already on /login.
+  if (!window.location.pathname.startsWith("/login")) {
+    window.location.href = `/login?redirect=${encodeURIComponent(path)}`;
+  }
+}
+
+// ─── Response interceptor — 401 → refresh → retry ─────────────────────────────
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      Cookies.remove("admin_token");
-      // Let React Query / page components handle 401 via isError state.
-      // A hard window.location redirect breaks client-side routing.
+  async (error: AxiosError) => {
+    const original = error.config as (AxiosRequestConfig & { _retry?: boolean }) | undefined;
+
+    const is401 = error.response?.status === 401;
+    const isRefreshCall = typeof original?.url === "string" && original.url.includes("/auth/refresh");
+    const isLoginCall = typeof original?.url === "string" && original.url.includes("/auth/login");
+
+    if (!is401 || !original || original._retry || isRefreshCall || isLoginCall) {
+      if (is401 && (isRefreshCall || !Cookies.get(REFRESH_COOKIE))) {
+        redirectToLogin();
+      }
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    original._retry = true;
+    const newAccess = await getOrStartRefresh();
+    if (!newAccess) {
+      redirectToLogin();
+      return Promise.reject(error);
+    }
+
+    original.headers = {
+      ...(original.headers ?? {}),
+      Authorization: `Bearer ${newAccess}`,
+    };
+    return apiClient.request(original);
   }
 );
 

@@ -30,11 +30,8 @@ export const useAdminAuthStore = create<AdminAuthState>()(
         set({ isLoading: true, error: null });
         try {
           const data = await authApi.login({ email, password });
-          Cookies.set("admin_token", data.token, {
-            expires: 7,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-          });
+          // authApi.login already persists both access + refresh tokens
+          // via setAdminTokens. Only keep access token in store for UI.
           set({ admin: data.admin, token: data.token, isLoading: false });
         } catch (err: unknown) {
           const message =
@@ -49,9 +46,10 @@ export const useAdminAuthStore = create<AdminAuthState>()(
         try {
           await authApi.logout();
         } catch {
-          // swallow — still clear local state
+          // authApi.logout already clears tokens in its finally block
         } finally {
           Cookies.remove("admin_token");
+          Cookies.remove("admin_refresh_token");
           set({ admin: null, token: null });
         }
       },
