@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Trash2, Reply, Flag } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Avatar } from '../ui/Avatar';
 import { CommentForm } from './CommentForm';
 import { formatDate } from '../../lib/utils';
@@ -24,6 +25,7 @@ interface CommentCardProps {
 }
 
 export function CommentCard({ comment, replies = [], tripId, onDelete }: CommentCardProps) {
+  const t = useTranslations('comments');
   const { user } = useAuthStore();
   const [showReplyForm, setShowReplyForm] = useState(false);
   const qc = useQueryClient();
@@ -71,7 +73,7 @@ export function CommentCard({ comment, replies = [], tripId, onDelete }: Comment
               className="flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600 transition-colors"
             >
               <Reply className="w-3.5 h-3.5" />
-              رد
+              {t('replyShort')}
             </button>
             {isOwner && (
               <button
@@ -79,7 +81,7 @@ export function CommentCard({ comment, replies = [], tripId, onDelete }: Comment
                 className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                حذف
+                {t('delete')}
               </button>
             )}
           </div>
@@ -91,7 +93,7 @@ export function CommentCard({ comment, replies = [], tripId, onDelete }: Comment
                 onSubmit={(c) => addReply.mutateAsync(c)}
                 loading={addReply.isPending}
                 onCancel={() => setShowReplyForm(false)}
-                placeholder="اكتب ردك..."
+                placeholder={t('replyPlaceholder')}
                 compact
               />
             </div>

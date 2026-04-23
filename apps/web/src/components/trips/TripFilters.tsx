@@ -3,34 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '../../lib/utils';
 import { CityAutocomplete } from '../ui/CityAutocomplete';
 import { useBrands, useModels, useTrims } from '../../hooks/useLookup';
-
-const WEATHER_OPTIONS = [
-  { value: 'sunny',        label: 'مشمس' },
-  { value: 'cloudy',       label: 'غائم' },
-  { value: 'rainy',        label: 'ممطر' },
-  { value: 'windy',        label: 'رياح' },
-  { value: 'foggy',        label: 'ضبابي' },
-  { value: 'extreme_heat', label: 'حر شديد' },
-  { value: 'cold',         label: 'بارد' },
-  { value: 'sandstorm',    label: 'غبار' },
-];
-
-const AC_OPTIONS = [
-  { value: 'off',     label: 'مطفأ' },
-  { value: 'partial', label: 'جزئي' },
-  { value: 'full',    label: 'كامل' },
-];
-
-const LUGGAGE_OPTIONS = [
-  { value: 'none',   label: 'لا أمتعة' },
-  { value: 'light',  label: 'خفيفة' },
-  { value: 'medium', label: 'متوسطة' },
-  { value: 'heavy',  label: 'ثقيلة' },
-  { value: 'full',   label: 'كامل' },
-];
 
 export interface FilterValues {
   q?: string;
@@ -143,6 +119,9 @@ function RangeSlider({ label, name, register, watch, min, max, step, unit }: {
 }
 
 export function TripFilters({ defaultValues, onFilter }: TripFiltersProps) {
+  const t = useTranslations('tripFilters');
+  const tTrips = useTranslations('trips');
+  const tSearch = useTranslations('search');
   const { register, handleSubmit, reset, watch, setValue } = useForm<FilterValues>({ defaultValues });
 
   const selectedBrandId = watch('brand_id') ?? '';
@@ -157,132 +136,157 @@ export function TripFilters({ defaultValues, onFilter }: TripFiltersProps) {
 
   const handleReset = () => { reset({}); onFilter({}); };
 
+  const WEATHER_OPTIONS = [
+    { value: 'sunny', label: tTrips('weatherLabels.sunny') },
+    { value: 'cloudy', label: tTrips('weatherLabels.cloudy') },
+    { value: 'rainy', label: tTrips('weatherLabels.rainy') },
+    { value: 'windy', label: tTrips('weatherLabels.windy') },
+    { value: 'foggy', label: tTrips('weatherLabels.foggy') },
+    { value: 'extreme_heat', label: tTrips('weatherLabels.extreme_heat') },
+    { value: 'cold', label: tTrips('weatherLabels.cold') },
+    { value: 'sandstorm', label: tTrips('weatherLabels.dust') },
+  ];
+
+  const AC_OPTIONS = [
+    { value: 'off', label: tTrips('acUsageLabels.off') },
+    { value: 'partial', label: tTrips('acUsageLabels.partial') },
+    { value: 'full', label: tTrips('acUsageLabels.full') },
+  ];
+
+  const LUGGAGE_OPTIONS = [
+    { value: 'none', label: tTrips('luggageLabels.none') },
+    { value: 'light', label: tTrips('luggageLabels.light') },
+    { value: 'medium', label: tTrips('luggageLabels.medium') },
+    { value: 'heavy', label: tTrips('luggageLabels.heavy') },
+    { value: 'full', label: tTrips('luggageLabels.full') },
+  ];
+
   return (
     <form onSubmit={handleSubmit(onFilter)}>
       <div className="flex items-center justify-between pb-5 border-b border-[var(--line)]">
-        <span className="text-sm font-medium text-[var(--ink)] tracking-tight">تصفية النتائج</span>
+        <span className="text-sm font-medium text-[var(--ink)] tracking-tight">{t('title')}</span>
         <button
           type="button" onClick={handleReset}
           className="flex items-center gap-1.5 text-xs text-[var(--ink-3)] hover:text-[var(--ink)] transition-colors"
         >
           <RotateCcw className="h-3 w-3" />
-          مسح الكل
+          {t('clearAll')}
         </button>
       </div>
 
       <div className="py-5 space-y-6">
 
-        <Section title="بحث">
+        <Section title={t('sectionSearch')}>
           <input
             {...register('q')}
-            placeholder="مسار، مدينة، سيارة..."
+            placeholder={t('searchPlaceholder')}
             className="input-base h-11 text-sm"
           />
         </Section>
 
-        <Section title="المسار">
+        <Section title={t('sectionRoute')}>
           <div className="space-y-2">
             <CityAutocomplete
               selectedName={watch('from_city_name') ?? ''}
               onSelect={(id, nameAr) => { setValue('from_city_id', id); setValue('from_city_name', nameAr); }}
               onClear={() => { setValue('from_city_id', ''); setValue('from_city_name', ''); }}
-              placeholder="مدينة الانطلاق"
+              placeholder={t('fromCityPlaceholder')}
             />
             <CityAutocomplete
               selectedName={watch('to_city_name') ?? ''}
               onSelect={(id, nameAr) => { setValue('to_city_id', id); setValue('to_city_name', nameAr); }}
               onClear={() => { setValue('to_city_id', ''); setValue('to_city_name', ''); }}
-              placeholder="مدينة الوصول"
+              placeholder={t('toCityPlaceholder')}
             />
           </div>
         </Section>
 
-        <Section title="السيارة" collapsible defaultOpen>
+        <Section title={t('sectionVehicle')} collapsible defaultOpen>
           <div className="space-y-2">
             <NativeSelect name="brand_id" register={register}>
-              <option value="">جميع الماركات</option>
+              <option value="">{t('allBrands')}</option>
               {brands?.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </NativeSelect>
             {selectedBrandId && models && models.length > 0 && (
               <NativeSelect name="model_id" register={register}>
-                <option value="">جميع الموديلات</option>
+                <option value="">{t('allModels')}</option>
                 {models.map((m: any) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </NativeSelect>
             )}
             {selectedModelId && trims && trims.length > 0 && (
               <NativeSelect name="trim_id" register={register}>
-                <option value="">جميع الفئات</option>
-                {trims.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                <option value="">{t('allTrims')}</option>
+                {trims.map((tr: any) => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
               </NativeSelect>
             )}
             <input
               {...register('year', { valueAsNumber: true })}
-              type="number" placeholder="سنة الصنع" min={2010} max={2030}
+              type="number" placeholder={t('yearPlaceholder')} min={2010} max={2030}
               className="input-base h-10 text-sm"
             />
           </div>
         </Section>
 
-        <Section title="البطارية" collapsible defaultOpen>
+        <Section title={t('sectionBattery')} collapsible defaultOpen>
           <div className="space-y-4">
-            <RangeSlider label="أدنى شحن عند الانطلاق" name="min_departure_battery" register={register} watch={watch} min={0} max={100} step={5} unit="%" />
-            <RangeSlider label="أدنى شحن عند الوصول"   name="min_arrival_battery"   register={register} watch={watch} min={0} max={80}  step={5} unit="%" />
+            <RangeSlider label={t('minDeparture')} name="min_departure_battery" register={register} watch={watch} min={0} max={100} step={5} unit="%" />
+            <RangeSlider label={t('minArrival')} name="min_arrival_battery"   register={register} watch={watch} min={0} max={80}  step={5} unit="%" />
           </div>
         </Section>
 
-        <Section title="ظروف الرحلة" collapsible defaultOpen={false}>
+        <Section title={t('sectionConditions')} collapsible defaultOpen={false}>
           <div className="space-y-4">
             <div>
-              <p className="text-[11px] text-[var(--ink-3)] mb-2">الطقس</p>
+              <p className="text-[11px] text-[var(--ink-3)] mb-2">{t('weather')}</p>
               <RadioChips
                 name="weather_condition"
-                options={[{ value: '', label: 'الكل' }, ...WEATHER_OPTIONS]}
+                options={[{ value: '', label: t('all') }, ...WEATHER_OPTIONS]}
                 register={register}
                 watch={watch}
               />
             </div>
             <div>
-              <p className="text-[11px] text-[var(--ink-3)] mb-2">التكييف</p>
+              <p className="text-[11px] text-[var(--ink-3)] mb-2">{t('ac')}</p>
               <RadioChips
                 name="ac_usage"
-                options={[{ value: '', label: 'الكل' }, ...AC_OPTIONS]}
+                options={[{ value: '', label: t('all') }, ...AC_OPTIONS]}
                 register={register}
                 watch={watch}
               />
             </div>
             <div>
-              <p className="text-[11px] text-[var(--ink-3)] mb-2">الأمتعة</p>
+              <p className="text-[11px] text-[var(--ink-3)] mb-2">{t('luggage')}</p>
               <NativeSelect name="luggage_level" register={register}>
-                <option value="">الكل</option>
+                <option value="">{t('all')}</option>
                 {LUGGAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </NativeSelect>
             </div>
             <div>
-              <p className="text-[10px] text-[var(--ink-3)] mb-1.5">عدد الركاب</p>
+              <p className="text-[10px] text-[var(--ink-3)] mb-1.5">{t('passengers')}</p>
               <NativeSelect name="passengers_count" register={register}>
-                <option value="">الكل</option>
+                <option value="">{t('all')}</option>
                 {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                  <option key={n} value={n}>{n} {n === 1 ? 'راكب' : 'ركاب'}</option>
+                  <option key={n} value={n}>{n} {n === 1 ? t('passengerOne') : t('passengerMany')}</option>
                 ))}
               </NativeSelect>
             </div>
           </div>
         </Section>
 
-        <Section title="الترتيب">
+        <Section title={t('sectionSort')}>
           <NativeSelect name="sortBy" register={register}>
-            <option value="newest">الأحدث أولاً</option>
-            <option value="helpful">الأكثر إفادة</option>
-            <option value="views">الأكثر مشاهدة</option>
-            <option value="favorites">الأكثر حفظاً</option>
-            <option value="date_asc">تاريخ الرحلة: الأقدم</option>
-            <option value="date_desc">تاريخ الرحلة: الأحدث</option>
+            <option value="newest">{tSearch('sort.newest')}</option>
+            <option value="helpful">{tSearch('sort.helpful')}</option>
+            <option value="views">{tSearch('sort.views')}</option>
+            <option value="favorites">{tSearch('sort.favorites')}</option>
+            <option value="date_asc">{tSearch('sort.dateAsc')}</option>
+            <option value="date_desc">{tSearch('sort.dateDesc')}</option>
           </NativeSelect>
         </Section>
       </div>
 
       <button type="submit" className="btn-primary w-full">
-        تطبيق التصفية
+        {t('apply')}
       </button>
     </form>
   );

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import {
   Route, Eye, ThumbsUp, Users, Plus, Bell, CheckCircle2, MessageSquare,
   Car, ArrowUpRight, ArrowLeft, Star, UserPlus, Inbox,
@@ -41,13 +42,13 @@ function KPI({
   );
 }
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  published:      { label: 'منشورة',  color: 'bg-[var(--forest)]' },
-  pending_review: { label: 'قيد المراجعة', color: 'bg-[var(--ink)]/60' },
-  draft:          { label: 'مسودة',   color: 'bg-[var(--ink-3)]' },
-  rejected:       { label: 'مرفوضة', color: 'bg-[var(--terra)]' },
-  hidden:         { label: 'مخفية',   color: 'bg-[var(--ink-4)]' },
-  archived:       { label: 'مؤرشفة', color: 'bg-[var(--ink-4)]' },
+const STATUS_COLORS: Record<string, string> = {
+  published:      'bg-[var(--forest)]',
+  pending_review: 'bg-[var(--ink)]/60',
+  draft:          'bg-[var(--ink-3)]',
+  rejected:       'bg-[var(--terra)]',
+  hidden:         'bg-[var(--ink-4)]',
+  archived:       'bg-[var(--ink-4)]',
 };
 
 const NOTIF_ICON: Record<string, React.ReactNode> = {
@@ -61,24 +62,37 @@ const NOTIF_ICON: Record<string, React.ReactNode> = {
   system:           <Bell className="h-3.5 w-3.5" />,
 };
 
-function formatShort(n: number | undefined | null): { value: string; unit?: string } {
-  const v = Number(n ?? 0);
-  if (v >= 1000) return { value: (v / 1000).toFixed(1), unit: 'ألف' };
-  return { value: String(v) };
-}
-
-function relativeTime(iso?: string): string {
-  if (!iso) return '';
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return 'الآن';
-  if (diff < 3600) return `منذ ${Math.floor(diff / 60)} د`;
-  if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} س`;
-  if (diff < 86400 * 7) return `منذ ${Math.floor(diff / 86400)} يوم`;
-  return new Date(iso).toLocaleDateString('ar-SA');
-}
-
 export default function DashboardPage() {
+  const t = useTranslations('dashboard');
+  const tStatus = useTranslations('trips.status');
+  const tCommon = useTranslations('common');
+  const tNotif = useTranslations('notifications');
   const { user } = useAuthStore();
+
+  function formatShort(n: number | undefined | null): { value: string; unit?: string } {
+    const v = Number(n ?? 0);
+    if (v >= 1000) return { value: (v / 1000).toFixed(1), unit: t('kpi.thousandUnit') };
+    return { value: String(v) };
+  }
+
+  function relativeTime(iso?: string): string {
+    if (!iso) return '';
+    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60) return t('relativeTime.now');
+    if (diff < 3600) return t('relativeTime.minutesAgo', { n: Math.floor(diff / 60) });
+    if (diff < 86400) return t('relativeTime.hoursAgo', { n: Math.floor(diff / 3600) });
+    if (diff < 86400 * 7) return t('relativeTime.daysAgo', { n: Math.floor(diff / 86400) });
+    return new Date(iso).toLocaleDateString('ar-SA');
+  }
+
+  const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+    published:      { label: tStatus('publishedFem'),     color: STATUS_COLORS.published },
+    pending_review: { label: tStatus('pending_review'),   color: STATUS_COLORS.pending_review },
+    draft:          { label: tStatus('draft'),            color: STATUS_COLORS.draft },
+    rejected:       { label: tStatus('rejected'),         color: STATUS_COLORS.rejected },
+    hidden:         { label: tStatus('hidden'),           color: STATUS_COLORS.hidden },
+    archived:       { label: tStatus('archivedFem'),      color: STATUS_COLORS.archived },
+  };
 
   // Real user stats
   const statsQ = useQuery({
@@ -127,7 +141,7 @@ export default function DashboardPage() {
   const views = formatShort(totalViews);
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'صباح الخير' : hour < 18 ? 'مساء الخير' : 'مساء النور';
+  const greeting = hour < 12 ? t('greetingMorning') : hour < 18 ? t('greetingAfternoon') : t('greetingEvening');
   const today = new Date().toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
@@ -138,21 +152,21 @@ export default function DashboardPage() {
         <div>
           <span className="eyebrow">— {today}</span>
           <h1 className="mt-3 heading-1">
-            {greeting}، <span className="italic font-light text-[var(--ink-2)]">{user?.full_name?.split(' ')[0] ?? 'مستخدم'}</span>
+            {greeting}، <span className="italic font-light text-[var(--ink-2)]">{user?.full_name?.split(' ')[0] ?? t('defaultUser')}</span>
           </h1>
         </div>
         <Link href="/trips/new" className="btn-primary self-start sm:self-auto">
           <Plus className="h-4 w-4" />
-          أضف رحلة جديدة
+          {t('addTripCta')}
         </Link>
       </div>
 
       {/* KPI grid — real user data only */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <KPI label="رحلاتي" value={totalTrips} icon={Route} loading={statsQ.isLoading} />
-        <KPI label="المشاهدات" value={views.value} unit={views.unit} icon={Eye} loading={statsQ.isLoading} />
-        <KPI label="المفضلات" value={totalFavorites} icon={ThumbsUp} loading={statsQ.isLoading} />
-        <KPI label="نقاط المساهمة" value={reputation} icon={Users} loading={statsQ.isLoading} />
+        <KPI label={t('kpi.myTrips')} value={totalTrips} icon={Route} loading={statsQ.isLoading} />
+        <KPI label={t('kpi.views')} value={views.value} unit={views.unit} icon={Eye} loading={statsQ.isLoading} />
+        <KPI label={t('kpi.favorites')} value={totalFavorites} icon={ThumbsUp} loading={statsQ.isLoading} />
+        <KPI label={t('kpi.reputation')} value={reputation} icon={Users} loading={statsQ.isLoading} />
       </div>
 
       {/* Two-column content */}
@@ -165,22 +179,22 @@ export default function DashboardPage() {
           <section>
             <div className="flex items-center justify-between pb-4 mb-5 border-b border-[var(--line)]">
               <div>
-                <span className="eyebrow">— نشاطي</span>
-                <h2 className="mt-2 heading-2">آخر رحلاتي</h2>
+                <span className="eyebrow">{t('eyebrowActivity')}</span>
+                <h2 className="mt-2 heading-2">{t('recentTripsTitle')}</h2>
               </div>
-              <Link href="/trips" className="link-editorial text-xs">عرض الكل</Link>
+              <Link href="/trips" className="link-editorial text-xs">{tCommon('viewAll')}</Link>
             </div>
 
             {recentTripsQ.isLoading ? (
-              <p className="text-sm text-[var(--ink-3)] py-6">جارٍ التحميل…</p>
+              <p className="text-sm text-[var(--ink-3)] py-6">{tCommon('loadingShort')}</p>
             ) : recentTrips.length === 0 ? (
               <div className="text-center py-12 border border-dashed border-[var(--line)]">
                 <Route className="h-6 w-6 mx-auto text-[var(--ink-4)] mb-3" />
-                <p className="text-sm text-[var(--ink-2)] mb-1">لم توثّق أي رحلة بعد</p>
-                <p className="text-xs text-[var(--ink-3)] mb-4">ابدأ بتسجيل أول رحلة وساعد مجتمع EV</p>
+                <p className="text-sm text-[var(--ink-2)] mb-1">{t('noTripsTitle')}</p>
+                <p className="text-xs text-[var(--ink-3)] mb-4">{t('noTripsDesc')}</p>
                 <Link href="/trips/new" className="btn-primary text-sm">
                   <Plus className="h-3.5 w-3.5" />
-                  أضف رحلة جديدة
+                  {t('addTripCta')}
                 </Link>
               </div>
             ) : (
@@ -195,11 +209,11 @@ export default function DashboardPage() {
             <section>
               <div className="flex items-center justify-between pb-4 mb-5 border-b border-[var(--line)]">
                 <div>
-                  <span className="eyebrow">— ملخص</span>
-                  <h2 className="mt-2 heading-2">حالة رحلاتي</h2>
+                  <span className="eyebrow">{t('eyebrowSummary')}</span>
+                  <h2 className="mt-2 heading-2">{t('statusTitle')}</h2>
                 </div>
                 <span className="text-xs text-[var(--ink-3)] nums-latin">
-                  إجمالي {totalBuckets}
+                  {t('totalLabel', { count: totalBuckets })}
                 </span>
               </div>
 
@@ -230,15 +244,15 @@ export default function DashboardPage() {
           {/* Notifications */}
           <section>
             <div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--line)]">
-              <h3 className="heading-3">الإشعارات</h3>
-              <Link href="/notifications" className="text-xs text-[var(--ink-3)] hover:text-[var(--ink)]">عرض الكل</Link>
+              <h3 className="heading-3">{t('notificationsTitle')}</h3>
+              <Link href="/notifications" className="text-xs text-[var(--ink-3)] hover:text-[var(--ink)]">{tCommon('viewAll')}</Link>
             </div>
             {notificationsQ.isLoading ? (
               <p className="text-sm text-[var(--ink-3)] py-4">…</p>
             ) : notifications.length === 0 ? (
               <div className="py-8 text-center border border-dashed border-[var(--line)]">
                 <Inbox className="h-5 w-5 mx-auto text-[var(--ink-4)] mb-2" />
-                <p className="text-sm text-[var(--ink-3)]">لا توجد إشعارات بعد</p>
+                <p className="text-sm text-[var(--ink-3)]">{t('noNotifications')}</p>
               </div>
             ) : (
               <ul className="divide-y divide-[var(--line-soft)]">
@@ -249,7 +263,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-[var(--ink-2)] leading-relaxed">
-                        {n.message ?? n.title ?? 'إشعار'}
+                        {n.message ?? n.title ?? tNotif('genericFallback')}
                       </p>
                       <p className="text-xs text-[var(--ink-4)] mt-1 nums-latin">
                         {relativeTime(n.created_at ?? n.createdAt)}
@@ -264,13 +278,13 @@ export default function DashboardPage() {
           {/* Quick actions */}
           <section className="border border-[var(--line)]">
             <div className="px-5 py-4 border-b border-[var(--line)]">
-              <span className="eyebrow">— روابط سريعة</span>
+              <span className="eyebrow">{t('eyebrowQuick')}</span>
             </div>
             <nav>
               {[
-                { href: '/trips/new',     label: 'أضف رحلة جديدة',  icon: Plus },
-                { href: '/vehicles',      label: 'إدارة سياراتي',    icon: Car },
-                { href: '/notifications', label: 'كل الإشعارات',     icon: Bell },
+                { href: '/trips/new',     label: t('quickAddTrip'),       icon: Plus },
+                { href: '/vehicles',      label: t('quickVehicles'),      icon: Car },
+                { href: '/notifications', label: t('quickNotifications'), icon: Bell },
               ].map(({ href, label, icon: Icon }) => (
                 <Link
                   key={href}

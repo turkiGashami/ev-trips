@@ -4,21 +4,13 @@ export const dynamic = 'force-dynamic';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useCallback, Suspense } from 'react';
 import { SlidersHorizontal, X, Search as SearchIcon, ChevronDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import TripCard from '@/components/trips/TripCard';
 import TripFilters, { FilterValues } from '@/components/trips/TripFilters';
 import Pagination from '@/components/ui/Pagination';
 import { useTrips } from '@/hooks/useTrips';
 import type { SearchTripsParams } from '@/lib/api/trips.api';
 import { formatNumber } from '@/lib/utils';
-
-const SORT_OPTIONS = [
-  { value: 'newest',    label: 'الأحدث أولاً' },
-  { value: 'helpful',   label: 'الأكثر إفادة' },
-  { value: 'views',     label: 'الأكثر مشاهدة' },
-  { value: 'favorites', label: 'الأكثر حفظاً' },
-  { value: 'date_asc',  label: 'تاريخ الرحلة: الأقدم' },
-  { value: 'date_desc', label: 'تاريخ الرحلة: الأحدث' },
-];
 
 const SORT_MAP: Record<string, { sort_by: string; sort_order: 'ASC' | 'DESC' }> = {
   newest:    { sort_by: 'published_at',   sort_order: 'DESC' },
@@ -30,9 +22,20 @@ const SORT_MAP: Record<string, { sort_by: string; sort_order: 'ASC' | 'DESC' }> 
 };
 
 function SearchPage() {
+  const t = useTranslations('search');
+  const tCommon = useTranslations('common');
   const searchParams = useSearchParams();
   const router = useRouter();
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const SORT_OPTIONS = [
+    { value: 'newest',    label: t('sort.newest') },
+    { value: 'helpful',   label: t('sort.helpful') },
+    { value: 'views',     label: t('sort.views') },
+    { value: 'favorites', label: t('sort.favorites') },
+    { value: 'date_asc',  label: t('sort.dateAsc') },
+    { value: 'date_desc', label: t('sort.dateDesc') },
+  ];
 
   const currentPage = Number(searchParams.get('page') ?? '1');
   const q = searchParams.get('q') ?? '';
@@ -57,7 +60,6 @@ function SearchPage() {
     sortBy,
   };
 
-  // Build API params — strip display-only name fields, map sort
   const apiParams: SearchTripsParams = {
     q: urlFilters.q,
     from_city_id: urlFilters.from_city_id,
@@ -77,7 +79,6 @@ function SearchPage() {
     limit: 12,
   };
 
-  // Remove undefined, empty, null, and NaN params
   const cleanParams = Object.fromEntries(
     Object.entries(apiParams).filter(([, v]) =>
       v !== undefined && v !== null && v !== '' && !(typeof v === 'number' && !Number.isFinite(v))
@@ -114,7 +115,6 @@ function SearchPage() {
     router.push(`/search?${params.toString()}`);
   };
 
-  // API response envelope: { success, data: Trip[], meta: { total, totalPages } }
   const trips = Array.isArray((data as any)?.data)
     ? (data as any).data
     : (data as any)?.trips ?? (Array.isArray(data) ? data : []);
@@ -122,16 +122,15 @@ function SearchPage() {
   const totalPages = (data as any)?.meta?.totalPages ?? (data as any)?.totalPages ?? 1;
 
   const activeChips: { key: string; label: string }[] = [];
-  if (urlFilters.from_city_name) activeChips.push({ key: 'from_city_id', label: `من: ${urlFilters.from_city_name}` });
-  if (urlFilters.to_city_name)   activeChips.push({ key: 'to_city_id',   label: `إلى: ${urlFilters.to_city_name}` });
-  if (urlFilters.weather_condition) activeChips.push({ key: 'weather_condition', label: `طقس: ${urlFilters.weather_condition}` });
-  if (urlFilters.ac_usage)       activeChips.push({ key: 'ac_usage',       label: `تكييف: ${urlFilters.ac_usage}` });
-  if (urlFilters.passengers_count) activeChips.push({ key: 'passengers_count', label: `ركاب: ${urlFilters.passengers_count}` });
-  if (urlFilters.min_arrival_battery) activeChips.push({ key: 'min_arrival_battery', label: `وصول ≥ ${urlFilters.min_arrival_battery}%` });
+  if (urlFilters.from_city_name) activeChips.push({ key: 'from_city_id', label: t('fromChip', { name: urlFilters.from_city_name }) });
+  if (urlFilters.to_city_name)   activeChips.push({ key: 'to_city_id',   label: t('toChip', { name: urlFilters.to_city_name }) });
+  if (urlFilters.weather_condition) activeChips.push({ key: 'weather_condition', label: t('weatherChip', { value: urlFilters.weather_condition }) });
+  if (urlFilters.ac_usage)       activeChips.push({ key: 'ac_usage',       label: t('acChip', { value: urlFilters.ac_usage }) });
+  if (urlFilters.passengers_count) activeChips.push({ key: 'passengers_count', label: t('passengersChip', { count: urlFilters.passengers_count }) });
+  if (urlFilters.min_arrival_battery) activeChips.push({ key: 'min_arrival_battery', label: t('minArrivalChip', { value: urlFilters.min_arrival_battery }) });
 
   const removeChip = (key: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    // When removing a city, also remove the display name
     if (key === 'from_city_id') { params.delete('from_city_id'); params.delete('from_city_name'); }
     else if (key === 'to_city_id') { params.delete('to_city_id'); params.delete('to_city_name'); }
     else params.delete(key);
@@ -158,16 +157,16 @@ function SearchPage() {
 
       <div className="border-b border-[var(--line)] bg-[var(--cream)]">
         <div className="container-app pt-10 md:pt-14 pb-6 md:pb-8">
-          <span className="eyebrow">— استكشف</span>
+          <span className="eyebrow">{t('eyebrow')}</span>
           <div className="mt-3 flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <h1 className="heading-1">
-                {q ? <>نتائج البحث عن <span className="italic font-light text-[var(--ink-2)]">"{q}"</span></> : 'جميع الرحلات'}
+                {q ? <>{t('resultsFor')} <span className="italic font-light text-[var(--ink-2)]">&quot;{q}&quot;</span></> : t('allTrips')}
               </h1>
               <p className="body-md mt-2">
                 {isLoading
                   ? <span className="skeleton inline-block h-4 w-24" />
-                  : <><span className="nums-latin font-medium text-[var(--ink)]">{formatNumber(total)}</span> رحلة موثّقة من سائقي EV</>
+                  : t('totalTripsSummary', { count: formatNumber(total) })
                 }
               </p>
             </div>
@@ -188,14 +187,14 @@ function SearchPage() {
                 className="h-11 px-4 text-sm font-medium border border-[var(--ink)] text-[var(--ink)] rounded-[2px] lg:hidden flex items-center gap-2"
               >
                 <SlidersHorizontal className="h-4 w-4" />
-                فلترة
+                {t('filterButton')}
               </button>
             </div>
           </div>
 
           {activeChips.length > 0 && (
             <div className="mt-5 flex items-center flex-wrap gap-2">
-              <span className="label-sm text-[11px]">تطبق:</span>
+              <span className="label-sm text-[11px]">{t('applied')}</span>
               {activeChips.map((c) => (
                 <button
                   key={c.key}
@@ -210,7 +209,7 @@ function SearchPage() {
                 onClick={() => router.push('/search')}
                 className="text-xs text-[var(--ink-3)] hover:text-[var(--ink)] underline underline-offset-4"
               >
-                مسح الكل
+                {t('clearAll')}
               </button>
             </div>
           )}
@@ -231,7 +230,7 @@ function SearchPage() {
               <div className="absolute inset-0 bg-[var(--ink)]/60" onClick={() => setFiltersOpen(false)} />
               <div className="absolute end-0 top-0 h-full w-[88vw] max-w-sm bg-[var(--cream)] overflow-y-auto">
                 <div className="flex items-center justify-between p-5 border-b border-[var(--line)]">
-                  <h3 className="heading-3">تصفية النتائج</h3>
+                  <h3 className="heading-3">{t('filterTitle')}</h3>
                   <button onClick={() => setFiltersOpen(false)} className="btn-icon-sm">
                     <X className="h-4 w-4" />
                   </button>
@@ -250,15 +249,15 @@ function SearchPage() {
               </div>
             ) : isError ? (
               <EmptyBlock
-                title="تعذّر تحميل الرحلات"
-                body="يرجى التحقق من الاتصال والمحاولة مجدداً."
-                action={<button onClick={() => router.refresh()} className="btn-primary">إعادة المحاولة</button>}
+                title={t('loadError')}
+                body={t('loadErrorDesc')}
+                action={<button onClick={() => router.refresh()} className="btn-primary">{tCommon('retry')}</button>}
               />
             ) : trips.length === 0 ? (
               <EmptyBlock
-                title="لا توجد نتائج"
-                body="لم نعثر على رحلات تطابق بحثك. جرّب تعديل الفلاتر أو مسح الكل."
-                action={<button onClick={() => router.push('/search')} className="btn-secondary">مسح جميع الفلاتر</button>}
+                title={t('noResultsTitle')}
+                body={t('noResultsDesc')}
+                action={<button onClick={() => router.push('/search')} className="btn-secondary">{t('clearAllFilters')}</button>}
               />
             ) : (
               <>

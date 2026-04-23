@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Plus, Car, Star, Trash2, CheckCircle, Pencil } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useMyVehicles, useDeleteVehicle, useSetDefaultVehicle } from '@/hooks/useVehicles';
 import { Button } from '@/components/ui/Button';
 import { PageSpinner } from '@/components/ui/Spinner';
@@ -16,10 +17,12 @@ function pickName(obj: any): string {
 }
 
 function VehicleCard({ vehicle }: { vehicle: any }) {
+  const t = useTranslations('vehicles');
+  const tCommon = useTranslations('common');
   const deleteVehicle = useDeleteVehicle();
   const setDefault = useSetDefaultVehicle();
 
-  const brandName = pickName(vehicle?.brand) || 'سيارة';
+  const brandName = pickName(vehicle?.brand) || t('defaultCar');
   const modelName = pickName(vehicle?.model);
   const trimName = pickName(vehicle?.trim);
   const year = vehicle?.year ?? null;
@@ -61,7 +64,7 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
         {isDefault && (
           <div className="flex items-center gap-1 text-xs text-[var(--forest)] border border-[var(--forest)] rounded-full px-2 py-0.5 shrink-0">
             <CheckCircle className="w-3 h-3" />
-            <span>الافتراضية</span>
+            <span>{t('defaultBadge')}</span>
           </div>
         )}
       </div>
@@ -69,13 +72,13 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-[var(--line)]">
         <div>
-          <div className="eyebrow mb-1">السنة</div>
+          <div className="eyebrow mb-1">{t('yearShort')}</div>
           <div className="text-base font-medium text-[var(--ink)] nums-latin">
             {year ?? <span className="text-[var(--ink-4)]">—</span>}
           </div>
         </div>
         <div>
-          <div className="eyebrow mb-1">البطارية</div>
+          <div className="eyebrow mb-1">{t('batteryShort')}</div>
           <div className="text-base font-medium text-[var(--ink)] nums-latin">
             {batteryKwh != null ? (
               <>
@@ -91,7 +94,7 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
 
       {tripsCount > 0 && (
         <div className="mt-4 text-xs text-[var(--ink-3)] nums-latin">
-          {tripsCount} رحلة
+          {tripsCount} {t('tripsCountOne')}
         </div>
       )}
 
@@ -100,7 +103,7 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
         <Link href={`/vehicles/${vehicle.id}/edit`} className="flex-1">
           <button className="btn-secondary w-full justify-center gap-1.5 text-sm py-2">
             <Pencil className="w-3.5 h-3.5" />
-            تعديل
+            {tCommon('edit')}
           </button>
         </Link>
 
@@ -108,7 +111,7 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
           <button
             onClick={() => setDefault.mutate(vehicle.id)}
             disabled={setDefault.isPending}
-            title="تعيين كافتراضية"
+            title={t('setDefaultTitle')}
             className="p-2 rounded-lg text-[var(--ink-3)] hover:text-[var(--forest)] hover:bg-[var(--sand)] transition-colors disabled:opacity-50"
           >
             <Star className="w-4 h-4" />
@@ -117,12 +120,12 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
 
         <button
           onClick={() => {
-            if (confirm('هل أنت متأكد من حذف هذه السيارة؟')) {
+            if (confirm(t('deleteConfirm'))) {
               deleteVehicle.mutate(vehicle.id);
             }
           }}
           disabled={deleteVehicle.isPending}
-          title="حذف السيارة"
+          title={t('deleteVehicleTitle')}
           className="p-2 rounded-lg text-[var(--ink-3)] hover:text-[var(--terra)] hover:bg-[var(--terra)]/10 transition-colors disabled:opacity-50"
         >
           <Trash2 className="w-4 h-4" />
@@ -133,6 +136,7 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
 }
 
 export default function VehiclesPage() {
+  const t = useTranslations('vehicles');
   const { data, isLoading, isError } = useMyVehicles();
 
   const vehicles: any[] = Array.isArray(data) ? data : [];
@@ -142,15 +146,15 @@ export default function VehiclesPage() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">سياراتي</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t('myVehicles')}</h1>
             {vehicles.length > 0 && (
               <p className="text-gray-500 text-sm mt-1 nums-latin">
-                {vehicles.length} {vehicles.length === 1 ? 'سيارة' : 'سيارات'}
+                {vehicles.length} {vehicles.length === 1 ? t('countOne') : t('countMany')}
               </p>
             )}
           </div>
           <Link href="/vehicles/new">
-            <Button leftIcon={<Plus className="w-4 h-4" />}>إضافة سيارة</Button>
+            <Button leftIcon={<Plus className="w-4 h-4" />}>{t('addVehicleShort')}</Button>
           </Link>
         </div>
 
@@ -158,15 +162,15 @@ export default function VehiclesPage() {
           <PageSpinner />
         ) : isError ? (
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-            <p className="text-red-700 text-sm">حدث خطأ أثناء تحميل السيارات. يرجى المحاولة مجدداً.</p>
+            <p className="text-red-700 text-sm">{t('errorLoading')}</p>
           </div>
         ) : vehicles.length === 0 ? (
           <EmptyState
             icon={<Car className="w-8 h-8" />}
-            title="لا توجد سيارات مضافة"
-            description="أضف سيارتك الكهربائية لتتمكن من توثيق رحلاتك ومشاركتها مع المجتمع"
+            title={t('noVehiclesTitle')}
+            description={t('noVehiclesDescLong')}
             action={{
-              label: 'إضافة سيارة',
+              label: t('addVehicleShort'),
               onClick: () => (window.location.href = '/vehicles/new'),
             }}
           />

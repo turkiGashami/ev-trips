@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ThumbsUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn, formatNumber, formatDuration } from '../../lib/utils';
 
 export interface TripCardData {
@@ -50,12 +51,15 @@ function arrivalTone(pct: number) {
 
 /* ── component ───────────────────────────────────────── */
 export function TripCard({ trip, className, compact = false }: TripCardProps) {
+  const t = useTranslations('tripCard');
+  const tCommon = useTranslations('common');
   const departure = trip.departure_battery_pct ?? 0;
   const arrival = trip.arrival_battery_pct ?? 0;
   const used = departure - arrival;
   const tone = arrivalTone(arrival);
   const vehicleLabel = [trip.snap_brand_name, trip.snap_model_name].filter(Boolean).join(' ');
   const initial = trip.user?.full_name?.[0] ?? trip.user?.username?.[0] ?? 'U';
+  const dash = tCommon('dash');
 
   return (
     <Link href={`/trips/${trip.slug}`} className={cn('block group', className)}>
@@ -65,14 +69,14 @@ export function TripCard({ trip, className, compact = false }: TripCardProps) {
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="label-sm truncate">
-              {vehicleLabel || 'سيارة كهربائية'}
+              {vehicleLabel || t('defaultVehicle')}
               {trip.snap_year ? ` · ${trip.snap_year}` : ''}
             </div>
             {/* Route */}
             <h3 className="mt-2 flex items-center gap-2 flex-wrap text-[1.125rem] md:text-[1.25rem] tracking-tight text-[var(--ink)] font-medium">
-              <span className="truncate">{trip.departure_city?.name_ar ?? trip.departure_city?.name ?? '—'}</span>
+              <span className="truncate">{trip.departure_city?.name_ar ?? trip.departure_city?.name ?? dash}</span>
               <ArrowLeft className="h-4 w-4 text-[var(--ink-4)] shrink-0 flip-rtl" />
-              <span className="truncate">{trip.destination_city?.name_ar ?? trip.destination_city?.name ?? '—'}</span>
+              <span className="truncate">{trip.destination_city?.name_ar ?? trip.destination_city?.name ?? dash}</span>
             </h3>
           </div>
 
@@ -80,7 +84,7 @@ export function TripCard({ trip, className, compact = false }: TripCardProps) {
             <div className={cn('nums-latin text-2xl md:text-[1.75rem] font-medium leading-none tracking-tight', tone.text)}>
               {arrival}%
             </div>
-            <div className="mt-1 text-[10px] text-[var(--ink-3)] tracking-[0.1em] uppercase">وصول</div>
+            <div className="mt-1 text-[10px] text-[var(--ink-3)] tracking-[0.1em] uppercase">{t('arrive')}</div>
           </div>
         </div>
 
@@ -94,9 +98,9 @@ export function TripCard({ trip, className, compact = false }: TripCardProps) {
               <div className={cn('absolute inset-y-0 start-0', tone.bar)} style={{ width: `${arrival}%` }} />
             </div>
             <div className="flex items-center justify-between mt-2 text-[11px] text-[var(--ink-3)] nums-latin tracking-wide">
-              <span>انطلاق {departure}%</span>
-              <span>استهلاك {used}%</span>
-              <span className={cn(tone.text, 'font-medium')}>وصول {arrival}%</span>
+              <span>{t('depart', { pct: departure })}</span>
+              <span>{t('used', { pct: used })}</span>
+              <span className={cn(tone.text, 'font-medium')}>{t('arriveWithPct', { pct: arrival })}</span>
             </div>
           </div>
         )}
@@ -104,18 +108,18 @@ export function TripCard({ trip, className, compact = false }: TripCardProps) {
         {/* Data strip — always visible, high-contrast */}
         <div className="grid grid-cols-3 gap-4 py-4 border-y border-[var(--line-soft)]">
           <DataCell
-            label="المسافة"
-            value={trip.distance_km ? `${trip.distance_km}` : '—'}
-            unit={trip.distance_km ? 'كم' : undefined}
+            label={t('distance')}
+            value={trip.distance_km ? `${trip.distance_km}` : dash}
+            unit={trip.distance_km ? tCommon('kmUnit') : undefined}
           />
           <DataCell
-            label="المدة"
+            label={t('duration')}
             value={formatDuration(trip.duration_minutes)}
           />
           <DataCell
-            label="التوقفات"
-            value={!trip.stop_count ? '—' : String(trip.stop_count)}
-            unit={(trip.stop_count ?? 0) > 0 ? 'محطة' : 'بلا'}
+            label={t('stops')}
+            value={!trip.stop_count ? dash : String(trip.stop_count)}
+            unit={(trip.stop_count ?? 0) > 0 ? t('stopSingular') : t('stopsNone')}
           />
         </div>
 
@@ -126,7 +130,7 @@ export function TripCard({ trip, className, compact = false }: TripCardProps) {
               {initial}
             </div>
             <span className="text-xs text-[var(--ink-2)] truncate tracking-tight">
-              {trip.user?.full_name || (trip.user?.username ? `@${trip.user.username}` : '—')}
+              {trip.user?.full_name || (trip.user?.username ? `@${trip.user.username}` : dash)}
             </span>
           </div>
           <div className="flex items-center gap-3 shrink-0 text-[var(--ink-3)]">

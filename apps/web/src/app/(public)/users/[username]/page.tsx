@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import TripCard from '@/components/trips/TripCard';
 import Avatar from '@/components/ui/Avatar';
 import { formatNumber, formatDate, getApiBaseUrl } from '@/lib/utils';
@@ -40,16 +41,18 @@ async function getUserTrips(username: string): Promise<any[]> {
 }
 
 export async function generateMetadata({ params }: PageProps) {
+  const t = await getTranslations('userProfile');
   const user = await getUserProfile(params.username);
-  if (!user) return { title: 'مستخدم غير موجود' };
+  if (!user) return { title: t('notFoundTitle') };
   const name = user.full_name ?? user.fullName ?? user.displayName ?? user.username;
   return {
-    title: `${name} | رحلات EV`,
+    title: t('metaTitle', { name }),
     description: user.bio ?? undefined,
   };
 }
 
 export default async function UserProfilePage({ params }: PageProps) {
+  const t = await getTranslations('userProfile');
   const [user, trips] = await Promise.all([
     getUserProfile(params.username),
     getUserTrips(params.username),
@@ -58,7 +61,7 @@ export default async function UserProfilePage({ params }: PageProps) {
   if (!user) notFound();
 
   const displayName: string =
-    user.full_name ?? user.fullName ?? user.displayName ?? user.username ?? 'مستخدم';
+    user.full_name ?? user.fullName ?? user.displayName ?? user.username ?? t('defaultUser');
   const username: string = user.username ?? params.username;
   const avatar: string | null = user.avatar_url ?? user.avatarUrl ?? null;
   const bio: string = user.bio ?? '';
@@ -110,10 +113,10 @@ export default async function UserProfilePage({ params }: PageProps) {
 
           <div className="flex flex-wrap gap-6 mt-5">
             {[
-              { label: 'رحلة', value: tripsCount },
-              { label: 'مفيد', value: helpfulCount },
-              { label: 'متابع', value: followersCount },
-              { label: 'متابَع', value: followingCount },
+              { label: t('stat.trips'), value: tripsCount },
+              { label: t('stat.helpful'), value: helpfulCount },
+              { label: t('stat.followers'), value: followersCount },
+              { label: t('stat.following'), value: followingCount },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-xl font-bold text-gray-900 nums-latin">
@@ -125,7 +128,7 @@ export default async function UserProfilePage({ params }: PageProps) {
             {joinedAt && (
               <div className="text-center">
                 <div className="text-xl font-bold text-gray-900">{formatDate(joinedAt)}</div>
-                <div className="text-sm text-gray-500">تاريخ الانضمام</div>
+                <div className="text-sm text-gray-500">{t('joinedLabel')}</div>
               </div>
             )}
           </div>
@@ -133,13 +136,13 @@ export default async function UserProfilePage({ params }: PageProps) {
 
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">رحلات {displayName}</h2>
-            <span className="text-sm text-gray-500 nums-latin">{trips.length} رحلة</span>
+            <h2 className="text-xl font-bold text-gray-900">{t('userTrips', { name: displayName })}</h2>
+            <span className="text-sm text-gray-500 nums-latin">{t('tripsCount', { count: trips.length })}</span>
           </div>
 
           {trips.length === 0 ? (
             <div className="text-center py-20 text-gray-400">
-              <p className="text-lg">لا توجد رحلات بعد</p>
+              <p className="text-lg">{t('noTrips')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-10">

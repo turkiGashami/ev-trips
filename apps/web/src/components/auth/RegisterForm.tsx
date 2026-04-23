@@ -1,81 +1,98 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Eye, EyeOff, Mail, Lock, User, AtSign, Globe } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useAuthStore } from '../../store/auth.store';
 import { authApi } from '../../lib/api/auth.api';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { useRouter } from 'next/navigation';
 
-const schema = z
-  .object({
-    full_name: z
-      .string()
-      .min(2, 'الاسم الكامل مطلوب (حرفان على الأقل)')
-      .max(100, 'الاسم طويل جدًا'),
-    username: z
-      .string()
-      .min(3, 'اسم المستخدم 3 أحرف على الأقل')
-      .max(30, 'اسم المستخدم 30 حرفًا كحد أقصى')
-      .regex(/^[a-z0-9_]+$/, 'أحرف إنجليزية صغيرة وأرقام وشرطة سفلية فقط'),
-    email: z.string().email('صيغة البريد الإلكتروني غير صحيحة'),
-    password: z
-      .string()
-      .min(8, 'كلمة المرور 8 أحرف على الأقل')
-      .regex(/[A-Z]/, 'يجب أن تحتوي على حرف كبير')
-      .regex(/[0-9]/, 'يجب أن تحتوي على رقم')
-      .regex(/[@$!%*?&\-_#]/, 'يجب أن تحتوي على رمز خاص (@$!%*?&-_#)'),
-    confirm_password: z.string().min(1, 'تأكيد كلمة المرور مطلوب'),
-    country: z.string().optional(),
-    terms: z.boolean().refine((v) => v === true, 'يجب قبول الشروط والأحكام'),
-  })
-  .refine((d) => d.password === d.confirm_password, {
-    message: 'كلمتا المرور غير متطابقتين',
-    path: ['confirm_password'],
-  });
+type FormData = {
+  full_name: string;
+  username: string;
+  email: string;
+  password: string;
+  confirm_password: string;
+  country?: string;
+  terms: boolean;
+};
 
-type FormData = z.infer<typeof schema>;
-
-// Map backend error codes/messages to Arabic
-function parseServerError(err: any): string {
-  if (!err?.response) return 'تعذر الاتصال بالخادم، تحقق من اتصالك بالإنترنت';
+// Map backend error codes/messages to i18n keys
+function parseServerError(err: any, tSrv: (k: string) => string): string {
+  if (!err?.response) return tSrv('networkFail');
 
   const { status, data } = err.response;
   const msg: string = Array.isArray(data?.message) ? data.message[0] : (data?.message ?? '');
 
   if (status === 409) {
-    if (msg === 'email_taken' || msg.toLowerCase().includes('email')) return 'البريد الإلكتروني مستخدم مسبقًا';
-    if (msg === 'username_taken' || msg.toLowerCase().includes('username')) return 'اسم المستخدم مستخدم مسبقًا';
-    return 'هذا الحساب موجود مسبقًا';
+    if (msg === 'email_taken' || msg.toLowerCase().includes('email')) return tSrv('emailTaken');
+    if (msg === 'username_taken' || msg.toLowerCase().includes('username')) return tSrv('usernameTaken');
+    return tSrv('accountExists');
   }
 
   if (status === 400) {
     const m = msg.toLowerCase();
-    if (m.includes('password') && (m.includes('8') || m.includes('short') || m.includes('least'))) return 'كلمة المرور قصيرة جدًا (8 أحرف على الأقل)';
-    if (m.includes('password')) return 'كلمة المرور يجب أن تحتوي على حرف كبير ورقم ورمز خاص';
-    if (m.includes('email')) return 'صيغة البريد الإلكتروني غير صحيحة';
-    if (m.includes('username')) return 'اسم المستخدم غير صالح (أحرف إنجليزية صغيرة وأرقام وشرطة سفلية فقط)';
-    if (m.includes('full_name') || m.includes('name')) return 'الاسم الكامل غير صالح';
-    if (m.includes('required') || m.includes('empty')) return 'الرجاء تعبئة جميع الحقول المطلوبة';
-    return 'يرجى التحقق من البيانات المدخلة';
+    if (m.includes('password') && (m.includes('8') || m.includes('short') || m.includes('least'))) return tSrv('passwordShort');
+    if (m.includes('password')) return tSrv('passwordRules');
+    if (m.includes('email')) return tSrv('emailInvalid');
+    if (m.includes('username')) return tSrv('usernameInvalid');
+    if (m.includes('full_name') || m.includes('name')) return tSrv('nameInvalid');
+    if (m.includes('required') || m.includes('empty')) return tSrv('fillAllFields');
+    return tSrv('checkInputs');
   }
 
-  if (status === 429) return 'محاولات كثيرة، يرجى الانتظار قليلًا ثم المحاولة مجددًا';
-  if (status >= 500) return 'حدث خطأ في الخادم، يرجى المحاولة لاحقًا';
+  if (status === 429) return tSrv('rateLimited');
+  if (status >= 500) return tSrv('serverError');
 
-  return 'حدث خطأ غير متوقع، يرجى المحاولة مجددًا';
+  return tSrv('unexpected');
 }
 
 export default function RegisterForm() {
+  const t = useTranslations('auth.registerPage');
+  const tV = useTranslations('auth.registerPage.validation');
+  const tSrv = useTranslations('auth.registerPage.serverErrors');
+  const tAuth = useTranslations('auth');
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [serverError, setServerError] = useState('');
+
+  const schema = useMemo(
+    () =>
+      z
+        .object({
+          full_name: z
+            .string()
+            .min(2, tV('fullNameMin'))
+            .max(100, tV('fullNameMax')),
+          username: z
+            .string()
+            .min(3, tV('usernameMin'))
+            .max(30, tV('usernameMax'))
+            .regex(/^[a-z0-9_]+$/, tV('usernamePattern')),
+          email: z.string().email(tV('emailInvalid')),
+          password: z
+            .string()
+            .min(8, tV('passwordMin'))
+            .regex(/[A-Z]/, tV('passwordUpper'))
+            .regex(/[0-9]/, tV('passwordDigit'))
+            .regex(/[@$!%*?&\-_#]/, tV('passwordSymbol')),
+          confirm_password: z.string().min(1, tV('confirmRequired')),
+          country: z.string().optional(),
+          terms: z.boolean().refine((v) => v === true, tV('termsRequired')),
+        })
+        .refine((d) => d.password === d.confirm_password, {
+          message: tV('passwordsMismatch'),
+          path: ['confirm_password'],
+        }),
+    [tV],
+  );
 
   const {
     register,
@@ -100,13 +117,13 @@ export default function RegisterForm() {
       const user = body?.user;
       const tokens = body?.tokens;
       if (!user || !tokens?.accessToken || !tokens?.refreshToken) {
-        setServerError('استجابة غير متوقعة من الخادم');
+        setServerError(tSrv('unexpectedResponse'));
         return;
       }
       setAuth(user, tokens.accessToken, tokens.refreshToken);
       router.push('/dashboard');
     } catch (err: any) {
-      setServerError(parseServerError(err));
+      setServerError(parseServerError(err, tSrv));
     }
   };
 
@@ -119,26 +136,26 @@ export default function RegisterForm() {
       )}
 
       <Input
-        label="الاسم الكامل"
+        label={tAuth('fullName')}
         leftIcon={<User className="w-4 h-4" />}
         error={errors.full_name?.message}
-        placeholder="محمد العتيبي"
+        placeholder={t('fullNamePlaceholder')}
         autoComplete="name"
         {...register('full_name')}
       />
 
       <Input
-        label="اسم المستخدم"
+        label={tAuth('username')}
         leftIcon={<AtSign className="w-4 h-4" />}
         error={errors.username?.message}
-        placeholder="mohammed_ev"
+        placeholder={t('usernamePlaceholder')}
         dir="ltr"
         autoComplete="username"
         {...register('username')}
       />
 
       <Input
-        label="البريد الإلكتروني"
+        label={tAuth('email')}
         type="email"
         leftIcon={<Mail className="w-4 h-4" />}
         error={errors.email?.message}
@@ -149,22 +166,22 @@ export default function RegisterForm() {
       />
 
       <Input
-        label="الدولة (اختياري)"
+        label={t('countryLabel')}
         leftIcon={<Globe className="w-4 h-4" />}
         error={errors.country?.message}
-        placeholder="المملكة العربية السعودية"
+        placeholder={t('countryPlaceholder')}
         {...register('country')}
       />
 
       <Input
-        label="كلمة المرور"
+        label={tAuth('password')}
         type={showPassword ? 'text' : 'password'}
         leftIcon={<Lock className="w-4 h-4" />}
         rightIcon={
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+            aria-label={showPassword ? t('hidePassword') : t('showPassword')}
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -172,19 +189,19 @@ export default function RegisterForm() {
         error={errors.password?.message}
         placeholder="••••••••"
         autoComplete="new-password"
-        hint="8 أحرف على الأقل، حرف كبير، رقم، ورمز خاص"
+        hint={t('passwordHint')}
         {...register('password')}
       />
 
       <Input
-        label="تأكيد كلمة المرور"
+        label={tAuth('confirmPassword')}
         type={showConfirm ? 'text' : 'password'}
         leftIcon={<Lock className="w-4 h-4" />}
         rightIcon={
           <button
             type="button"
             onClick={() => setShowConfirm(!showConfirm)}
-            aria-label={showConfirm ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+            aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
           >
             {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -203,10 +220,10 @@ export default function RegisterForm() {
           {...register('terms')}
         />
         <label htmlFor="terms" className="text-sm text-gray-600 leading-relaxed">
-          أوافق على{' '}
-          <a href="/terms" className="text-emerald-600 hover:underline font-medium">الشروط والأحكام</a>
-          {' '}و{' '}
-          <a href="/privacy" className="text-emerald-600 hover:underline font-medium">سياسة الخصوصية</a>
+          {t('acceptTermsPrefix')}{' '}
+          <a href="/terms" className="text-emerald-600 hover:underline font-medium">{t('termsLink')}</a>
+          {' '}{t('and')}{' '}
+          <a href="/privacy" className="text-emerald-600 hover:underline font-medium">{t('privacyLink')}</a>
         </label>
       </div>
       {errors.terms && (
@@ -214,7 +231,7 @@ export default function RegisterForm() {
       )}
 
       <Button type="submit" loading={isSubmitting} fullWidth size="lg">
-        إنشاء الحساب
+        {t('submit')}
       </Button>
     </form>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store/auth.store';
 
 interface ShareTripCTAProps {
@@ -17,10 +18,12 @@ interface ShareTripCTAProps {
  */
 export function ShareTripCTA({
   variant = 'link',
-  label = 'شارك رحلتك',
+  label,
   className,
   children,
 }: ShareTripCTAProps) {
+  const t = useTranslations('shareCTA');
+  const effectiveLabel = label ?? t('label');
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const href = isAuthenticated ? '/trips/new' : '/login?redirect=/trips/new';
 
@@ -31,7 +34,7 @@ export function ShareTripCTA({
 
   return (
     <Link href={href} className={className ?? base}>
-      {children ?? label}
+      {children ?? effectiveLabel}
     </Link>
   );
 }
