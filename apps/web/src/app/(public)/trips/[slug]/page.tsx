@@ -1,10 +1,11 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { MapPin, ThumbsUp, Eye, Bookmark, Share2, ChevronLeft, Wind, Thermometer, Users, Briefcase, Gauge, CloudSun } from 'lucide-react';
+import { MapPin, Eye, ChevronLeft, Wind, Thermometer, Users, Briefcase, Gauge, CloudSun } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import TripTimeline from '@/components/trips/TripTimeline';
 import CommentSection from '@/components/comments/CommentSection';
 import TripCard from '@/components/trips/TripCard';
+import TripActionBar from '@/components/trips/TripActionBar';
 import { formatDate, formatNumber, getApiBaseUrl } from '@/lib/utils';
 
 const API_BASE = getApiBaseUrl();
@@ -325,22 +326,12 @@ export default async function TripDetailPage({ params }: PageProps) {
           {/* Sidebar */}
           <aside className="lg:col-span-4 space-y-6">
 
-            <div className="border border-[var(--line)] p-5 space-y-3">
-              <button className="btn-primary w-full gap-2">
-                <ThumbsUp className="h-4 w-4" />
-                {t('actionHelpful', { count: trip.helpful_count ?? 0 })}
-              </button>
-              <div className="grid grid-cols-2 gap-2">
-                <button className="btn-secondary gap-2 text-sm">
-                  <Bookmark className="h-3.5 w-3.5" />
-                  {t('actionSave')}
-                </button>
-                <button className="btn-secondary gap-2 text-sm">
-                  <Share2 className="h-3.5 w-3.5" />
-                  {t('actionShare')}
-                </button>
-              </div>
-            </div>
+            <TripActionBar
+              tripId={trip.id}
+              tripSlug={trip.slug}
+              tripTitle={trip.title}
+              initialHelpfulCount={trip.helpful_count ?? 0}
+            />
 
             <div className="border border-[var(--line)]">
               <div className="px-5 py-4 border-b border-[var(--line)]">

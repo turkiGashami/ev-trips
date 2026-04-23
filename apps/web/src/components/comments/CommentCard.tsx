@@ -32,7 +32,7 @@ export function CommentCard({ comment, replies = [], tripId, onDelete }: Comment
 
   const addReply = useMutation({
     mutationFn: (content: string) =>
-      commentsApi.replyToComment(comment.id, { content }).then((r) => r.data.data),
+      commentsApi.replyToComment(comment.id, tripId, { content }).then((r) => r.data.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['comments', tripId] });
       setShowReplyForm(false);

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { getTranslations, getLocale } from 'next-intl/server';
 import ShareTripCTA from '@/components/cta/ShareTripCTA';
+import BannerSlot from '@/components/banners/BannerSlot';
 import { getApiBaseUrl } from '@/lib/utils';
 
 export const revalidate = 60;
@@ -71,6 +72,9 @@ export default async function HomePage() {
 
   return (
     <main dir={dir} className="bg-[var(--cream)]">
+
+      {/* ── BANNER (top) ─────────────────────────────────────── */}
+      <BannerSlot position="home_top" />
 
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="relative min-h-[85vh] md:min-h-[88vh] flex items-end overflow-hidden"
@@ -214,6 +218,11 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── BANNER (middle) ──────────────────────────────────── */}
+      <div className="container-app my-6">
+        <BannerSlot position="home_middle" />
+      </div>
 
       {/* ── PRINCIPLES ───────────────────────────────────────── */}
       <section className="section" style={{ background: 'var(--sand)' }}>

@@ -80,7 +80,7 @@ export const tripsApi = {
 
   // Reactions & favorites
   react: (tripId: string, reactionType: 'helpful' | 'not_helpful') =>
-    apiClient.post(`/trips/${tripId}/react`, { reactionType }),
+    apiClient.post(`/trips/${tripId}/react`, { reaction_type: reactionType }),
 
   removeReaction: (tripId: string) =>
     apiClient.delete(`/trips/${tripId}/react`),

@@ -6,6 +6,7 @@ import { useState, useCallback, Suspense } from 'react';
 import { SlidersHorizontal, X, Search as SearchIcon, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import TripCard from '@/components/trips/TripCard';
+import BannerSlot from '@/components/banners/BannerSlot';
 import TripFilters, { FilterValues } from '@/components/trips/TripFilters';
 import Pagination from '@/components/ui/Pagination';
 import { useTrips } from '@/hooks/useTrips';
@@ -154,6 +155,7 @@ function SearchPage() {
 
   return (
     <div className="min-h-screen bg-[var(--cream)]">
+      <BannerSlot position="search_top" />
 
       <div className="border-b border-[var(--line)] bg-[var(--cream)]">
         <div className="container-app pt-10 md:pt-14 pb-6 md:pb-8">
