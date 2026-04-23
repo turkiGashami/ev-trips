@@ -5,23 +5,95 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ArrowLeft, Map, Star, ShieldCheck, ShieldOff, Ban, BadgeCheck,
-  Calendar, Phone, Mail, Clock, Edit2
+  ArrowRight, Star, ShieldCheck, ShieldOff, Ban, BadgeCheck,
+  Calendar, Phone, Clock, MapPin,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { AdminTopbar } from "@/components/layout/AdminTopbar";
-import { UserStatusBadge } from "@/components/users/UserStatusBadge";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { usersApi, tripsApi } from "@/lib/api/admin.api";
-import type { PlatformUser, Trip } from "@/types/admin.types";
-import { formatNumber, safeText } from "@/lib/format";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-dayjs.extend(relativeTime);
+import type { Trip } from "@/types/admin.types";
+import { formatNumber, formatDate, safeText } from "@/lib/format";
+
+// ─── Field accessors (handle both camelCase and snake_case from API) ─────
+const pickName = (u: any): string =>
+  u?.name ?? u?.full_name ?? u?.fullName ?? u?.username ?? u?.email ?? '—';
+const pickEmail = (u: any): string => u?.email ?? '—';
+const pickPhone = (u: any): string | undefined => u?.phone ?? u?.phone_number;
+const pickRole = (u: any): string => u?.role ?? 'user';
+const pickStatus = (u: any): string => u?.status ?? 'active';
+const pickAvatar = (u: any): string | undefined =>
+  u?.avatar ?? u?.avatar_url ?? u?.avatarUrl ?? undefined;
+const pickJoined = (u: any): string | undefined =>
+  u?.joinedAt ?? u?.joined_at ?? u?.created_at ?? u?.createdAt;
+const pickLastSeen = (u: any): string | undefined =>
+  u?.lastActiveAt ?? u?.last_active_at ?? u?.last_seen_at ?? u?.lastSeenAt;
+const pickTripsCount = (u: any): number =>
+  u?.tripsCount ?? u?.trips_count ?? u?.total_trips ?? 0;
+const pickBio = (u: any): string | undefined => u?.bio;
+const pickCity = (u: any): string => {
+  const c = u?.city;
+  if (!c) return '';
+  if (typeof c === 'string') return c;
+  return c?.name_ar ?? c?.name ?? '';
+};
+const pickVehicles = (u: any): any[] => {
+  const list = u?.vehicles ?? u?.user_vehicles ?? [];
+  return Array.isArray(list) ? list : [];
+};
+const pickBadges = (u: any): string[] => {
+  const list = u?.badges ?? u?.user_badges ?? [];
+  return Array.isArray(list) ? list.map((b: any) => (typeof b === 'string' ? b : b?.name ?? b?.title ?? '')) : [];
+};
+
+const ROLE_KEYS: Record<string, string> = {
+  super_admin: 'super_admin',
+  admin: 'admin',
+  moderator: 'moderator',
+  user: 'user',
+  verified: 'verified',
+  premium: 'premium',
+  guest: 'guest',
+};
+const STATUS_KEYS: Record<string, string> = {
+  active: 'active',
+  suspended: 'suspended',
+  banned: 'banned',
+  pending: 'pending',
+};
+const STATUS_TOKEN: Record<string, { bg: string; color: string }> = {
+  active:    { bg: 'rgba(45,74,62,.1)',  color: 'var(--forest)' },
+  suspended: { bg: 'rgba(180,94,66,.1)', color: 'var(--terra)' },
+  banned:    { bg: 'var(--ink-2)',       color: 'var(--cream)' },
+  pending:   { bg: 'var(--sand)',        color: 'var(--ink-3)' },
+};
+const ROLE_TOKEN: Record<string, { bg: string; color: string }> = {
+  super_admin: { bg: 'rgba(45,74,62,.15)', color: 'var(--forest)' },
+  admin:       { bg: 'rgba(45,74,62,.10)', color: 'var(--forest)' },
+  moderator:   { bg: 'rgba(107,142,156,.12)', color: 'var(--sky)' },
+  user:        { bg: 'var(--sand)', color: 'var(--ink-3)' },
+  verified:    { bg: 'rgba(107,142,156,.12)', color: 'var(--sky)' },
+  premium:     { bg: 'rgba(180,94,66,.10)', color: 'var(--terra)' },
+};
+
+function Pill({ text, tone }: { text: string; tone: { bg: string; color: string } }) {
+  return (
+    <span style={{
+      display: 'inline-flex', padding: '3px 10px', fontSize: 11, fontWeight: 500,
+      background: tone.bg, color: tone.color, borderRadius: 2,
+    }}>
+      {text}
+    </span>
+  );
+}
 
 export default function UserDetailPage() {
+  const t = useTranslations("users");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("status");
+  const tRoles = useTranslations("roles");
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [user, setUser] = useState<PlatformUser | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionModal, setActionModal] = useState<"suspend" | "ban" | "verify" | "activate" | "role" | "badge" | null>(null);
@@ -35,39 +107,15 @@ export default function UserDetailPage() {
       try {
         const [userData, tripsData] = await Promise.all([
           usersApi.get(id),
-          tripsApi.list({ page: 1, limit: 10 }),
+          tripsApi.list({ page: 1, limit: 10 }).catch(() => ({ data: [] } as any)),
         ]);
-        setUser(userData);
-        setTrips(tripsData.data);
+        // The API returns { success, data: { ... } } — unwrap one layer if needed.
+        const actual = (userData as any)?.data?.data ?? (userData as any)?.data ?? userData;
+        setUser(actual);
+        const tripsList = (tripsData as any)?.data ?? [];
+        setTrips(Array.isArray(tripsList) ? tripsList : []);
       } catch {
-        // mock
-        const mock: PlatformUser = {
-          id,
-          name: "Ahmed Al-Ghamdi",
-          email: "ahmed@example.com",
-          phone: "+966 50 123 4567",
-          avatar: undefined,
-          status: "active",
-          role: "verified",
-          badges: ["Early Adopter", "Top Contributor"],
-          tripsCount: 24,
-          joinedAt: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString(),
-          lastActiveAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          bio: "EV enthusiast driving a Tesla Model 3. Love exploring Saudi Arabia with zero emissions.",
-          vehicles: [
-            {
-              id: "v1",
-              userId: id,
-              brandId: "b1",
-              brand: { id: "b1", name: "Tesla", logo: undefined },
-              modelId: "m1",
-              model: { id: "m1", name: "Model 3", year: 2023 },
-              color: "Red",
-              isPrimary: true,
-            },
-          ],
-        };
-        setUser(mock);
+        setUser(null);
         setTrips([]);
       } finally {
         setIsLoading(false);
@@ -88,9 +136,10 @@ export default function UserDetailPage() {
       setActionModal(null);
       setReason("");
       const updated = await usersApi.get(user.id).catch(() => user);
-      setUser(updated);
+      const actual = (updated as any)?.data?.data ?? (updated as any)?.data ?? updated;
+      setUser(actual);
     } catch {
-      // handle error
+      // surface a toast later
     } finally {
       setActionLoading(false);
     }
@@ -99,58 +148,90 @@ export default function UserDetailPage() {
   if (isLoading) {
     return (
       <>
-        <AdminTopbar title="User Detail" />
+        <AdminTopbar title={t("detailTitle")} />
         <main className="admin-main">
-          <div className="flex items-center justify-center h-64">
-            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <div style={{ textAlign: 'center', padding: '64px 0', color: 'var(--ink-4)', fontSize: 13 }}>
+            {tCommon("loading")}
           </div>
         </main>
       </>
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <>
+        <AdminTopbar title={t("detailTitle")} />
+        <main className="admin-main">
+          <div style={{ textAlign: 'center', padding: '48px 16px', background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4 }}>
+            <p style={{ color: 'var(--ink-4)', fontSize: 13 }}>{t("loadDetailError")}</p>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  const displayName = pickName(user);
+  const email = pickEmail(user);
+  const phone = pickPhone(user);
+  const role = pickRole(user);
+  const status = pickStatus(user);
+  const avatar = pickAvatar(user);
+  const joined = pickJoined(user);
+  const lastSeen = pickLastSeen(user);
+  const tripsCount = pickTripsCount(user);
+  const bio = pickBio(user);
+  const city = pickCity(user);
+  const vehicles = pickVehicles(user);
+  const badges = pickBadges(user);
+
+  const pillBtn = (colorBg: string, colorText: string): React.CSSProperties => ({
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+    padding: '6px 14px', fontSize: 12, fontWeight: 500,
+    background: colorBg, color: colorText, border: `1px solid ${colorText}`,
+    borderRadius: 2, cursor: 'pointer',
+  });
 
   return (
     <>
-      <AdminTopbar title="User Detail" subtitle={safeText(user.name)} />
+      <AdminTopbar title={t("detailTitle")} subtitle={displayName} />
       <main className="admin-main">
         {/* Back */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors mb-5"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 16 }}
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Users
+          <ArrowRight style={{ width: 14, height: 14 }} />
+          {t("detail.backToUsers")}
         </button>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-          {/* Profile Card */}
-          <div className="xl:col-span-1 space-y-4">
-            <div className="card p-6">
-              <div className="flex flex-col items-center text-center mb-5">
-                <div className="w-20 h-20 rounded-full bg-slate-700 flex items-center justify-center text-2xl font-bold text-slate-200 mb-3 overflow-hidden">
-                  {user.avatar ? (
-                    <Image src={user.avatar} alt={safeText(user.name, '')} width={80} height={80} className="object-cover" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 2fr)', gap: 16 }}>
+          {/* Profile column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4, padding: 20 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 16 }}>
+                <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--sand)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 12, overflow: 'hidden' }}>
+                  {avatar ? (
+                    <Image src={avatar} alt={displayName} width={80} height={80} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                   ) : (
-                    (user.name?.charAt(0) ?? '?').toUpperCase()
+                    (displayName?.charAt(0) ?? '?').toUpperCase()
                   )}
                 </div>
-                <h2 className="text-lg font-bold text-slate-100">{safeText(user.name)}</h2>
-                <p className="text-sm text-slate-400 mt-0.5">{safeText(user.email)}</p>
-                <div className="flex gap-2 mt-3">
-                  <UserStatusBadge status={user.status} />
-                  <StatusBadge status={user.role} />
+                <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)' }}>{safeText(displayName)}</h2>
+                <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{safeText(email)}</p>
+                <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                  <Pill text={STATUS_KEYS[status] ? tStatus(STATUS_KEYS[status] as any) : status} tone={STATUS_TOKEN[status] ?? STATUS_TOKEN.active} />
+                  <Pill text={ROLE_KEYS[role] ? tRoles(ROLE_KEYS[role] as any) : role} tone={ROLE_TOKEN[role] ?? ROLE_TOKEN.user} />
                 </div>
               </div>
 
               {/* Badges */}
-              {(user.badges?.length ?? 0) > 0 && (
-                <div className="mb-4">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-2">Badges</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {user.badges?.map((b) => (
-                      <span key={b} className="px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 text-xs font-medium ring-1 ring-amber-500/30">
+              {badges.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <p className="eyebrow" style={{ marginBottom: 8 }}>{t("detail.badges")}</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {badges.map((b) => (
+                      <span key={b} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 500, background: 'rgba(180,94,66,.08)', color: 'var(--terra)', border: '1px solid rgba(180,94,66,.25)', borderRadius: 2 }}>
                         {b}
                       </span>
                     ))}
@@ -159,124 +240,142 @@ export default function UserDetailPage() {
               )}
 
               {/* Info */}
-              <div className="space-y-2.5 text-sm">
-                {user.phone && (
-                  <div className="flex items-center gap-2.5 text-slate-400">
-                    <Phone className="w-4 h-4 flex-shrink-0 text-slate-600" />
-                    {safeText(user.phone)}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
+                {phone && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)' }}>
+                    <Phone style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--ink-4)' }} />
+                    <span dir="ltr" className="nums-latin">{safeText(phone)}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2.5 text-slate-400">
-                  <Calendar className="w-4 h-4 flex-shrink-0 text-slate-600" />
-                  Joined {dayjs(user.joinedAt).format("MMM D, YYYY")}
+                {city && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)' }}>
+                    <MapPin style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--ink-4)' }} />
+                    {city}
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)' }}>
+                  <Calendar style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--ink-4)' }} />
+                  <span>{t("detail.joinedOn")} <span className="nums-latin">{joined ? formatDate(joined) : '—'}</span></span>
                 </div>
-                {user.lastActiveAt && (
-                  <div className="flex items-center gap-2.5 text-slate-400">
-                    <Clock className="w-4 h-4 flex-shrink-0 text-slate-600" />
-                    Active {dayjs(user.lastActiveAt).fromNow()}
+                {lastSeen && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)' }}>
+                    <Clock style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--ink-4)' }} />
+                    <span>{t("detail.lastActive")} <span className="nums-latin">{formatDate(lastSeen)}</span></span>
                   </div>
                 )}
               </div>
 
-              {user.bio && (
-                <div className="mt-4 pt-4 border-t border-slate-700/40">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1.5">Bio</p>
-                  <p className="text-sm text-slate-400 leading-relaxed">{safeText(user.bio)}</p>
+              {bio && (
+                <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
+                  <p className="eyebrow" style={{ marginBottom: 6 }}>{t("detail.bio")}</p>
+                  <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>{safeText(bio)}</p>
                 </div>
               )}
             </div>
 
             {/* Stats */}
-            <div className="card p-5 grid grid-cols-1 gap-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Total Trips</span>
-                <span className="text-lg font-bold text-slate-100">{formatNumber(user.tripsCount)}</span>
+            <div style={{ background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t("detail.tripsCount")}</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)' }} className="nums-latin">{formatNumber(tripsCount)}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Badges Earned</span>
-                <span className="text-lg font-bold text-slate-100">{formatNumber(user.badges?.length)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t("detail.badges")}</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)' }} className="nums-latin">{formatNumber(badges.length)}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Vehicles</span>
-                <span className="text-lg font-bold text-slate-100">{formatNumber(user.vehicles?.length)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t("detail.vehicles")}</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)' }} className="nums-latin">{formatNumber(vehicles.length)}</span>
               </div>
             </div>
 
             {/* Vehicles */}
-            {user.vehicles && user.vehicles.length > 0 && (
-              <div className="card p-5">
-                <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-3">Vehicles</p>
-                <div className="space-y-2">
-                  {user.vehicles.map((v) => (
-                    <div key={v.id} className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-200">
-                          {safeText(v.brand?.name, '')} {safeText(v.model?.name, '')} ({safeText(v.model?.year, '—')})
-                        </p>
-                        {v.color && <p className="text-xs text-slate-500">{safeText(v.color)}</p>}
+            {vehicles.length > 0 && (
+              <div style={{ background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4, padding: 18 }}>
+                <p className="eyebrow" style={{ marginBottom: 10 }}>{t("detail.vehicles")}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {vehicles.map((v: any) => {
+                    const brand = v?.brand?.name ?? v?.brand_name ?? '';
+                    const model = v?.model?.name ?? v?.model_name ?? '';
+                    const year = v?.year ?? v?.model?.year ?? '';
+                    const isDefault = v?.is_default ?? v?.isPrimary ?? false;
+                    return (
+                      <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, background: 'var(--sand)', borderRadius: 2 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)' }}>
+                            {safeText([brand, model].filter(Boolean).join(' '))}
+                            {year && <span className="nums-latin" style={{ marginInlineStart: 6, color: 'var(--ink-3)' }}>({year})</span>}
+                          </p>
+                        </div>
+                        {isDefault && (
+                          <span style={{ fontSize: 10, color: 'var(--forest)', fontWeight: 500 }}>{t("detail.default")}</span>
+                        )}
                       </div>
-                      {v.isPrimary && (
-                        <span className="text-[10px] text-emerald-400 font-medium">Primary</span>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Main Content */}
-          <div className="xl:col-span-2 space-y-5">
-            {/* Action Buttons */}
-            <div className="card p-5">
-              <h3 className="text-sm font-semibold text-slate-200 mb-4">Admin Actions</h3>
-              <div className="flex flex-wrap gap-2">
-                {user.status !== "active" && (
-                  <button onClick={() => setActionModal("activate")} className="btn-primary btn-sm">
-                    <BadgeCheck className="w-3.5 h-3.5" /> Activate
+          {/* Main content column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Actions */}
+            <div style={{ background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4, padding: 18 }}>
+              <h3 className="heading-3" style={{ marginBottom: 12 }}>{t("detail.adminActions")}</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {status !== "active" && (
+                  <button onClick={() => setActionModal("activate")} style={{ ...pillBtn('var(--forest)', 'var(--cream)'), border: '1px solid var(--forest)' }}>
+                    <BadgeCheck style={{ width: 14, height: 14 }} /> {t("actions.activate")}
                   </button>
                 )}
-                {user.status !== "suspended" && (
-                  <button onClick={() => setActionModal("suspend")} className="btn btn-sm bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30">
-                    <ShieldOff className="w-3.5 h-3.5" /> Suspend
+                {status !== "suspended" && (
+                  <button onClick={() => setActionModal("suspend")} style={pillBtn('rgba(217,119,6,.08)', '#d97706')}>
+                    <ShieldOff style={{ width: 14, height: 14 }} /> {t("actions.suspend")}
                   </button>
                 )}
-                {user.status !== "banned" && (
-                  <button onClick={() => setActionModal("ban")} className="btn-danger btn-sm">
-                    <Ban className="w-3.5 h-3.5" /> Ban
+                {status !== "banned" && (
+                  <button onClick={() => setActionModal("ban")} style={pillBtn('rgba(180,94,66,.10)', 'var(--terra)')}>
+                    <Ban style={{ width: 14, height: 14 }} /> {t("actions.ban")}
                   </button>
                 )}
-                <button onClick={() => setActionModal("verify")} className="btn btn-sm bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 border border-blue-500/30">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Verify
+                <button onClick={() => setActionModal("verify")} style={pillBtn('rgba(107,142,156,.12)', 'var(--sky)')}>
+                  <ShieldCheck style={{ width: 14, height: 14 }} /> {t("actions.verify")}
                 </button>
-                <button onClick={() => setActionModal("badge")} className="btn btn-sm bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30">
-                  <Star className="w-3.5 h-3.5" /> Award Badge
+                <button onClick={() => setActionModal("badge")} style={pillBtn('rgba(180,94,66,.08)', 'var(--terra)')}>
+                  <Star style={{ width: 14, height: 14 }} /> {t("actions.assignBadge")}
                 </button>
               </div>
             </div>
 
             {/* Trips */}
-            <div className="card">
-              <div className="card-header">
-                <h3 className="text-sm font-semibold text-slate-200">Recent Trips</h3>
+            <div style={{ background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4 }}>
+              <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)' }}>
+                <h3 className="heading-3">{t("detail.recentTrips")}</h3>
               </div>
               {trips.length === 0 ? (
-                <div className="px-5 py-10 text-center text-slate-500 text-sm">No trips found</div>
+                <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--ink-4)', fontSize: 13 }}>{t("detail.noTrips")}</div>
               ) : (
-                <div className="divide-y divide-slate-700/40">
-                  {trips.slice(0, 5).map((trip) => (
-                    <div key={trip.id} className="px-5 py-4 flex items-center gap-4">
-                      <div className="flex-1 min-w-0">
-                        <Link href={`/trips/${trip.id}`} className="text-sm font-medium text-slate-200 hover:text-emerald-400 truncate block">
-                          {safeText(trip.fromCity)} → {safeText(trip.toCity)}
-                        </Link>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {dayjs(trip.createdAt).format("MMM D, YYYY")} · {formatNumber(trip.distanceKm)} km
-                        </p>
+                <div>
+                  {trips.slice(0, 5).map((trip: any, idx) => {
+                    const from = trip?.fromCity ?? trip?.from_city?.name_ar ?? trip?.from_city?.name ?? trip?.departure_city?.name_ar ?? '';
+                    const to = trip?.toCity ?? trip?.to_city?.name_ar ?? trip?.to_city?.name ?? trip?.destination_city?.name_ar ?? '';
+                    const created = trip?.createdAt ?? trip?.created_at ?? trip?.published_at;
+                    const distance = trip?.distanceKm ?? trip?.distance_km;
+                    return (
+                      <div key={trip.id} style={{ padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: idx < Math.min(trips.length, 5) - 1 ? '1px solid var(--line)' : 'none' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <Link href={`/trips/${trip.id}`} style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {from && to ? `${from} ← ${to}` : safeText(trip.title)}
+                          </Link>
+                          <p style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 2 }} className="nums-latin">
+                            {created ? formatDate(created) : '—'}
+                            {distance ? ` · ${formatNumber(distance)} ${t("detail.km")}` : ''}
+                          </p>
+                        </div>
                       </div>
-                      <StatusBadge status={trip.status} />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -286,58 +385,60 @@ export default function UserDetailPage() {
 
       {/* Action Modal */}
       {actionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl">
-            <div className="px-6 py-5 border-b border-slate-700/60">
-              <h3 className="font-semibold text-slate-100 capitalize">
-                {actionModal === "badge" ? "Award Badge" : actionModal === "role" ? "Change Role" : `${actionModal} User`}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={() => { setActionModal(null); setReason(""); }} />
+          <div style={{ position: 'relative', width: '100%', maxWidth: 440, background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4 }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)' }}>
+              <h3 className="heading-3">
+                {actionModal === "badge" ? t("modal.badge")
+                  : actionModal === "role" ? t("modal.role")
+                  : actionModal === "suspend" ? t("modal.suspend")
+                  : actionModal === "ban" ? t("modal.ban")
+                  : actionModal === "verify" ? t("modal.verify")
+                  : t("modal.activate")}
               </h3>
             </div>
-            <div className="px-6 py-5 space-y-4">
+            <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
               {(actionModal === "suspend" || actionModal === "ban") && (
                 <div>
-                  <label className="form-label">Reason *</label>
-                  <textarea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Provide a reason…"
-                    rows={3}
-                    className="form-textarea"
-                  />
+                  <label className="form-label">{t("modal.reasonLabel")}</label>
+                  <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("modal.reasonShortPlaceholder")} rows={3} className="form-textarea" />
                 </div>
               )}
               {actionModal === "badge" && (
                 <div>
-                  <label className="form-label">Badge</label>
+                  <label className="form-label">{t("modal.badgeSelect")}</label>
                   <select value={selectedBadge} onChange={(e) => setSelectedBadge(e.target.value)} className="form-select">
-                    {["Early Adopter", "Top Contributor", "Road Master", "EV Pioneer", "Community Star"].map(b => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
+                    {["Early Adopter", "Top Contributor", "Road Master", "EV Pioneer", "Community Star"].map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
               )}
               {actionModal === "role" && (
                 <div>
-                  <label className="form-label">New Role</label>
+                  <label className="form-label">{t("modal.newRoleLabel")}</label>
                   <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className="form-select">
-                    <option value="user">User</option>
-                    <option value="verified">Verified</option>
-                    <option value="premium">Premium</option>
+                    <option value="user">{tRoles("user")}</option>
+                    <option value="verified">{tRoles("verified")}</option>
+                    <option value="premium">{tRoles("premium")}</option>
                   </select>
                 </div>
               )}
               {(actionModal === "verify" || actionModal === "activate") && (
-                <p className="text-sm text-slate-400">Confirm you want to {actionModal} {safeText(user.name)}?</p>
+                <p style={{ fontSize: 13, color: 'var(--ink-2)' }}>
+                  {actionModal === "verify"
+                    ? t("modal.confirmVerify", { name: safeText(displayName) })
+                    : t("modal.confirmActivate", { name: safeText(displayName) })}
+                </p>
               )}
             </div>
-            <div className="px-6 py-4 border-t border-slate-700/60 flex justify-end gap-3">
-              <button onClick={() => { setActionModal(null); setReason(""); }} className="btn-secondary btn-sm">Cancel</button>
-              <button
-                onClick={handleAction}
-                disabled={actionLoading || ((actionModal === "suspend" || actionModal === "ban") && !reason.trim())}
-                className={`btn btn-sm ${actionModal === "ban" ? "btn-danger" : "btn-primary"}`}
-              >
-                {actionLoading ? "Processing…" : "Confirm"}
+            <div style={{ padding: '12px 20px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={() => { setActionModal(null); setReason(""); }}
+                style={{ background: 'transparent', color: 'var(--ink-2)', border: '1px solid var(--line)', borderRadius: 2, padding: '7px 16px', fontSize: 13, cursor: 'pointer' }}>
+                {tCommon("cancel")}
+              </button>
+              <button onClick={handleAction} disabled={actionLoading || ((actionModal === "suspend" || actionModal === "ban") && !reason.trim())}
+                style={{ background: actionModal === "ban" ? 'var(--terra)' : 'var(--forest)', color: 'var(--cream)', border: `1px solid ${actionModal === "ban" ? 'var(--terra)' : 'var(--forest)'}`, borderRadius: 2, padding: '7px 16px', fontSize: 13, fontWeight: 500, cursor: actionLoading ? 'not-allowed' : 'pointer' }}>
+                {actionLoading ? tCommon("confirming") : tCommon("confirm")}
               </button>
             </div>
           </div>

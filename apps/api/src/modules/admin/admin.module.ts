@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
+import { PublicContentController } from './public-content.controller';
 import { User } from '../../entities/user.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Comment } from '../../entities/comment.entity';
@@ -27,7 +28,7 @@ import { Notification } from '../../entities/notification.entity';
       SystemSetting, Badge, UserBadge, Notification,
     ]),
   ],
-  controllers: [AdminController],
+  controllers: [AdminController, PublicContentController],
   providers: [AdminService],
   exports: [AdminService],
 })

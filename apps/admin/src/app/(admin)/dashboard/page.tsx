@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Users, Map, ShieldCheck, Flag, Zap, Clock } from "lucide-react";
 import { AdminTopbar } from "@/components/layout/AdminTopbar";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -20,13 +21,6 @@ const POPULAR_ROUTES = [
   { from: "الدمام", to: "الخبر",  trips: 156, avgBattery: 88 },
 ];
 
-const activityTypeLabel: Record<string, string> = {
-  user_joined:    "انضم مستخدم جديد",
-  trip_submitted: "رحلة مُرسَلة للمراجعة",
-  report_filed:   "بلاغ جديد",
-  trip_approved:  "رحلة مُعتمَدة",
-};
-
 function batteryColor(pct: number) {
   if (pct >= 70) return 'var(--forest)';
   if (pct >= 40) return 'var(--ink-2)';
@@ -34,6 +28,7 @@ function batteryColor(pct: number) {
 }
 
 export default function DashboardPage() {
+  const t = useTranslations("dashboard");
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [growth, setGrowth] = useState<GrowthDataPoint[]>([]);
   const [activity, setActivity] = useState<RecentActivity[]>([]);
@@ -56,7 +51,7 @@ export default function DashboardPage() {
       setStats(null);
       setGrowth([]);
       setActivity([]);
-      setError(err?.response?.data?.message || err?.message || "تعذّر الاتصال بالخادم لجلب الإحصائيات.");
+      setError(err?.response?.data?.message || err?.message || t("genericError"));
     } finally {
       setIsLoading(false);
     }
@@ -66,22 +61,22 @@ export default function DashboardPage() {
 
   return (
     <>
-      <AdminTopbar title="لوحة التحكم" subtitle="مرحباً — إليك ما يحدث الآن" />
+      <AdminTopbar title={t("title")} subtitle={t("subtitle")} />
       <main className="admin-main">
 
         {error && !isLoading && (
           <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(180,94,66,.08)', border: '1px solid var(--terra)', borderRadius: 2, color: 'var(--terra)', fontSize: 13 }}>
-            <strong>خطأ:</strong> {error}
-            <button onClick={() => load()} style={{ marginInlineStart: 12, padding: '2px 10px', background: 'var(--terra)', color: 'var(--cream)', border: 'none', borderRadius: 2, cursor: 'pointer', fontSize: 12 }}>إعادة المحاولة</button>
+            <strong>{t("error")}:</strong> {error}
+            <button onClick={() => load()} style={{ marginInlineStart: 12, padding: '2px 10px', background: 'var(--terra)', color: 'var(--cream)', border: 'none', borderRadius: 2, cursor: 'pointer', fontSize: 12 }}>{t("retry")}</button>
           </div>
         )}
 
         {/* Stats grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-          <StatsCard title="إجمالي المستخدمين" value={stats?.totalUsers ?? 0} growthPercent={stats?.usersGrowthPercent} subtitle="مقارنة بالشهر الماضي" icon={<Users style={{ width: 18, height: 18 }} />} isLoading={isLoading} />
-          <StatsCard title="رحلات اليوم"        value={stats?.tripsToday ?? 0} growthPercent={stats?.tripsTodayGrowthPercent} subtitle="مقارنة بالأمس" icon={<Map style={{ width: 18, height: 18 }} />} accentColor="var(--sky)" isLoading={isLoading} />
-          <StatsCard title="في انتظار المراجعة" value={stats?.pendingModeration ?? 0} subtitle="تحتاج إلى إجراء" icon={<ShieldCheck style={{ width: 18, height: 18 }} />} accentColor="var(--terra)" isLoading={isLoading} />
-          <StatsCard title="بلاغات مفتوحة"      value={stats?.openReports ?? 0} subtitle="تحتاج انتباه" icon={<Flag style={{ width: 18, height: 18 }} />} accentColor="var(--terra)" isLoading={isLoading} />
+          <StatsCard title={t("totalUsers")}       value={stats?.totalUsers ?? 0}       growthPercent={stats?.usersGrowthPercent}      subtitle={t("vsLastMonth")}   icon={<Users style={{ width: 18, height: 18 }} />}                                isLoading={isLoading} />
+          <StatsCard title={t("tripsToday")}       value={stats?.tripsToday ?? 0}       growthPercent={stats?.tripsTodayGrowthPercent} subtitle={t("vsYesterday")}   icon={<Map style={{ width: 18, height: 18 }} />}        accentColor="var(--sky)"  isLoading={isLoading} />
+          <StatsCard title={t("pendingModeration")} value={stats?.pendingModeration ?? 0}                                                subtitle={t("needsAction")}    icon={<ShieldCheck style={{ width: 18, height: 18 }} />} accentColor="var(--terra)" isLoading={isLoading} />
+          <StatsCard title={t("openReports")}      value={stats?.openReports ?? 0}                                                       subtitle={t("needsAttention")} icon={<Flag style={{ width: 18, height: 18 }} />}       accentColor="var(--terra)" isLoading={isLoading} />
         </div>
 
         {/* Charts + Activity */}
@@ -90,8 +85,8 @@ export default function DashboardPage() {
           <div className="card">
             <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <p className="eyebrow">النمو</p>
-                <h2 style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)', marginTop: 4 }}>المستخدمون والرحلات — آخر ٣٠ يوماً</h2>
+                <p className="eyebrow">{t("growthEyebrow")}</p>
+                <h2 style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)', marginTop: 4 }}>{t("growthTitle")}</h2>
               </div>
             </div>
             <div style={{ padding: 20 }}>
@@ -102,7 +97,7 @@ export default function DashboardPage() {
           {/* Recent Activity */}
           <div className="card" style={{ overflow: 'hidden' }}>
             <div className="card-header">
-              <p className="eyebrow">النشاط الأخير</p>
+              <p className="eyebrow">{t("recentActivity")}</p>
             </div>
             <div>
               {isLoading
@@ -142,10 +137,10 @@ export default function DashboardPage() {
         <div className="card" style={{ marginBottom: 24 }}>
           <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <p className="eyebrow">المسارات الشائعة</p>
+              <p className="eyebrow">{t("popularRoutes")}</p>
               <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>
-                أكثر مسارات EV في المنصة
-                <span style={{ marginInlineStart: 8, padding: '1px 6px', fontSize: 10, background: 'var(--sand)', color: 'var(--ink-4)', borderRadius: 2, textTransform: 'uppercase', letterSpacing: '0.08em' }}>DEMO</span>
+                {t("popularRoutesSubtitle")}
+                <span style={{ marginInlineStart: 8, padding: '1px 6px', fontSize: 10, background: 'var(--sand)', color: 'var(--ink-4)', borderRadius: 2, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t("demo")}</span>
               </p>
             </div>
           </div>
@@ -153,10 +148,10 @@ export default function DashboardPage() {
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>المسار</th>
-                  <th>عدد الرحلات</th>
-                  <th>متوسط البطارية المتبقية</th>
-                  <th>الشعبية</th>
+                  <th>{t("route")}</th>
+                  <th>{t("tripCount")}</th>
+                  <th>{t("avgBatteryRemaining")}</th>
+                  <th>{t("popularity")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -195,7 +190,7 @@ export default function DashboardPage() {
               <Zap style={{ width: 18, height: 18, color: 'var(--ink-2)' }} />
             </div>
             <div>
-              <p className="eyebrow">محطات الشحن</p>
+              <p className="eyebrow">{t("chargingStations")}</p>
               <p style={{ fontSize: 28, fontWeight: 500, color: 'var(--ink)', letterSpacing: '-0.03em', marginTop: 4 }}>{formatNumber(stats?.totalStations, '—')}</p>
             </div>
           </div>
@@ -204,7 +199,7 @@ export default function DashboardPage() {
               <Map style={{ width: 18, height: 18, color: 'var(--ink-2)' }} />
             </div>
             <div>
-              <p className="eyebrow">إجمالي الرحلات</p>
+              <p className="eyebrow">{t("totalTrips")}</p>
               <p style={{ fontSize: 28, fontWeight: 500, color: 'var(--ink)', letterSpacing: '-0.03em', marginTop: 4 }}>{formatNumber(stats?.totalTrips, '—')}</p>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { clsx } from "clsx";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard, Users, Map, MessageSquare, Flag, ShieldCheck,
   Zap, MapPin, FileText, Image as ImageIcon, Settings, ScrollText,
@@ -10,60 +10,61 @@ import {
 } from "lucide-react";
 import { useAdminAuthStore } from "@/store/admin-auth.store";
 
-interface NavItem { label: string; labelAr: string; href: string; icon: React.ReactNode; badge?: number; }
-interface NavGroup { title: string; titleAr: string; items: NavItem[]; }
+interface NavItem { labelKey: string; href: string; icon: React.ReactNode; badge?: number; }
+interface NavGroup { titleKey: string; items: NavItem[]; }
 
 const navGroups: NavGroup[] = [
   {
-    title: "Overview", titleAr: "نظرة عامة",
-    items: [{ label: "Dashboard", labelAr: "لوحة التحكم", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> }],
+    titleKey: "overview",
+    items: [{ labelKey: "dashboard", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> }],
   },
   {
-    title: "Moderation", titleAr: "الإشراف",
+    titleKey: "moderation",
     items: [
-      { label: "Pending Queue", labelAr: "طابور الانتظار", href: "/moderation", icon: <ShieldCheck className="w-4 h-4" /> },
-      { label: "Reports", labelAr: "البلاغات", href: "/reports", icon: <Flag className="w-4 h-4" /> },
+      { labelKey: "pendingQueue", href: "/moderation", icon: <ShieldCheck className="w-4 h-4" /> },
+      { labelKey: "reports",      href: "/reports",    icon: <Flag className="w-4 h-4" /> },
     ],
   },
   {
-    title: "Content", titleAr: "المحتوى",
+    titleKey: "content",
     items: [
-      { label: "Trips", labelAr: "الرحلات", href: "/trips", icon: <Map className="w-4 h-4" /> },
-      { label: "Comments", labelAr: "التعليقات", href: "/comments", icon: <MessageSquare className="w-4 h-4" /> },
+      { labelKey: "trips",    href: "/trips",    icon: <Map className="w-4 h-4" /> },
+      { labelKey: "comments", href: "/comments", icon: <MessageSquare className="w-4 h-4" /> },
     ],
   },
   {
-    title: "Users", titleAr: "المستخدمون",
-    items: [{ label: "All Users", labelAr: "جميع المستخدمين", href: "/users", icon: <Users className="w-4 h-4" /> }],
+    titleKey: "users",
+    items: [{ labelKey: "allUsers", href: "/users", icon: <Users className="w-4 h-4" /> }],
   },
   {
-    title: "Lookups", titleAr: "البيانات المرجعية",
+    titleKey: "lookups",
     items: [
-      { label: "Brands", labelAr: "الماركات", href: "/brands", icon: <Bolt className="w-4 h-4" /> },
-      { label: "Cities", labelAr: "المدن", href: "/cities", icon: <MapPin className="w-4 h-4" /> },
-      { label: "Charging Stations", labelAr: "محطات الشحن", href: "/charging-stations", icon: <Zap className="w-4 h-4" /> },
+      { labelKey: "brands",           href: "/brands",            icon: <Bolt className="w-4 h-4" /> },
+      { labelKey: "cities",           href: "/cities",            icon: <MapPin className="w-4 h-4" /> },
+      { labelKey: "chargingStations", href: "/charging-stations", icon: <Zap className="w-4 h-4" /> },
     ],
   },
   {
-    title: "CMS", titleAr: "إدارة المحتوى",
+    titleKey: "cms",
     items: [
-      { label: "Static Pages", labelAr: "الصفحات الثابتة", href: "/static-pages", icon: <FileText className="w-4 h-4" /> },
-      { label: "Banners", labelAr: "البانرات", href: "/banners", icon: <ImageIcon className="w-4 h-4" /> },
+      { labelKey: "staticPages", href: "/static-pages", icon: <FileText className="w-4 h-4" /> },
+      { labelKey: "banners",     href: "/banners",      icon: <ImageIcon className="w-4 h-4" /> },
     ],
   },
   {
-    title: "System", titleAr: "النظام",
+    titleKey: "system",
     items: [
-      { label: "Settings", labelAr: "الإعدادات", href: "/settings", icon: <Settings className="w-4 h-4" /> },
-      { label: "Logs", labelAr: "السجلات", href: "/logs", icon: <ScrollText className="w-4 h-4" /> },
+      { labelKey: "settings", href: "/settings", icon: <Settings className="w-4 h-4" /> },
+      { labelKey: "logs",     href: "/logs",     icon: <ScrollText className="w-4 h-4" /> },
     ],
   },
 ];
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const { admin, logout, language } = useAdminAuthStore();
-  const isAr = language === "ar";
+  const { admin, logout } = useAdminAuthStore();
+  const t = useTranslations("nav");
+  const tRoles = useTranslations("roles");
 
   const isActive = (href: string) => {
     const full = `/dashboard${href === "/dashboard" ? "" : href}`;
@@ -72,6 +73,10 @@ export function AdminSidebar() {
   };
 
   const initial = admin?.name?.charAt(0).toUpperCase() ?? "A";
+  const roleLabel = (() => {
+    if (!admin?.role) return "";
+    try { return tRoles(admin.role as any); } catch { return admin.role.replace("_", " "); }
+  })();
 
   return (
     <aside
@@ -83,16 +88,16 @@ export function AdminSidebar() {
           EV<span className="italic font-light" style={{ color: "var(--ink-3)" }}> Trips</span>
         </div>
         <p className="mt-1 text-[10px] tracking-[0.15em] uppercase" style={{ color: "var(--ink-3)" }}>
-          {isAr ? "لوحة الإدارة" : "Admin Panel"}
+          {t("adminPanel")}
         </p>
       </div>
 
       {/* Nav */}
       <nav className="scrollbar-thin" style={{ flex: 1, overflowY: 'auto', padding: '16px 12px' }}>
         {navGroups.map((group) => (
-          <div key={group.title} className="mb-6">
+          <div key={group.titleKey} className="mb-6">
             <p className="px-3 mb-2 text-[10px] font-medium uppercase tracking-[0.14em]" style={{ color: "var(--ink-4)" }}>
-              {isAr ? group.titleAr : group.title}
+              {t(group.titleKey as any)}
             </p>
             <ul className="space-y-0.5">
               {group.items.map((item) => {
@@ -108,7 +113,7 @@ export function AdminSidebar() {
                         {item.icon}
                       </span>
                       <span className="flex-1 truncate tracking-tight">
-                        {isAr ? item.labelAr : item.label}
+                        {t(item.labelKey as any)}
                       </span>
                       {item.badge !== undefined && (
                         <span
@@ -142,12 +147,13 @@ export function AdminSidebar() {
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium truncate" style={{ color: "var(--ink)" }}>{admin?.name}</p>
             <p className="text-[10px] capitalize truncate" style={{ color: "var(--ink-3)" }}>
-              {admin?.role?.replace("_", " ")}
+              {roleLabel}
             </p>
           </div>
           <button
             onClick={() => logout()}
-            title="Sign out"
+            title={t("signOut")}
+            aria-label={t("signOut")}
             className="flex-shrink-0 transition-colors"
             style={{ color: "var(--ink-3)" }}
             onMouseOver={(e) => (e.currentTarget.style.color = "var(--terra)")}

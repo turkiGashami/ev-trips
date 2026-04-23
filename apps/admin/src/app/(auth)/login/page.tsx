@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Zap, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { useAdminAuthStore, selectIsAuthenticated } from "@/store/admin-auth.store";
+import { LanguageToggle } from "@/components/layout/LanguageToggle";
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations("login");
   const { login, isLoading, error, clearError } = useAdminAuthStore();
   const isAuthenticated = useAdminAuthStore(selectIsAuthenticated);
 
@@ -20,10 +23,10 @@ export default function LoginPage() {
 
   const validate = () => {
     const errors: { email?: string; password?: string } = {};
-    if (!email.trim()) errors.email = "البريد الإلكتروني مطلوب";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "بريد إلكتروني غير صحيح";
-    if (!password) errors.password = "كلمة المرور مطلوبة";
-    else if (password.length < 6) errors.password = "٦ أحرف على الأقل";
+    if (!email.trim()) errors.email = t("errors.emailRequired");
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = t("errors.emailInvalid");
+    if (!password) errors.password = t("errors.passwordRequired");
+    else if (password.length < 6) errors.password = t("errors.passwordTooShort");
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -40,27 +43,30 @@ export default function LoginPage() {
 
   return (
     <div style={{ background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4, padding: 40 }}>
-      {/* Wordmark */}
-      <div style={{ marginBottom: 40 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-          <div style={{ width: 32, height: 32, background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Zap style={{ width: 16, height: 16, color: 'var(--cream)' }} />
+      {/* Wordmark + language toggle */}
+      <div style={{ marginBottom: 40, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <div style={{ width: 32, height: 32, background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Zap style={{ width: 16, height: 16, color: 'var(--cream)' }} />
+            </div>
+            <span style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--ink)' }}>
+              EV<span style={{ fontWeight: 300, fontStyle: 'italic', color: 'var(--ink-3)' }}> Trips</span>
+            </span>
           </div>
-          <span style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--ink)' }}>
-            EV<span style={{ fontWeight: 300, fontStyle: 'italic', color: 'var(--ink-3)' }}> Trips</span>
-          </span>
+          <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', marginTop: 2 }}>
+            {t("panelLabel")}
+          </p>
         </div>
-        <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', marginTop: 2 }}>
-          لوحة الإدارة
-        </p>
+        <LanguageToggle />
       </div>
 
       <div style={{ marginBottom: 32, paddingBottom: 32, borderBottom: '1px solid var(--line)' }}>
         <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.025em', color: 'var(--ink)', margin: 0 }}>
-          تسجيل الدخول
+          {t("title")}
         </h1>
         <p style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 6 }}>
-          مخصص للمشرفين والمسؤولين فقط
+          {t("subtitle")}
         </p>
       </div>
 
@@ -73,12 +79,12 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div>
-          <label htmlFor="email" className="form-label">البريد الإلكتروني</label>
+          <label htmlFor="email" className="form-label">{t("email")}</label>
           <input
             id="email" type="email" autoComplete="email"
             value={email}
             onChange={(e) => { setEmail(e.target.value); if (fieldErrors.email) setFieldErrors(p => ({ ...p, email: undefined })); }}
-            placeholder="admin@evcartrip.com"
+            placeholder={t("emailPlaceholder")}
             className="form-input"
             style={fieldErrors.email ? { borderColor: 'var(--terra)' } : {}}
           />
@@ -86,7 +92,7 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label htmlFor="password" className="form-label">كلمة المرور</label>
+          <label htmlFor="password" className="form-label">{t("password")}</label>
           <div style={{ position: 'relative' }}>
             <input
               id="password"
@@ -116,8 +122,8 @@ export default function LoginPage() {
           style={{ justifyContent: 'center', padding: '11px 16px', marginTop: 8, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}
         >
           {isLoading
-            ? <><Loader2 style={{ width: 14, height: 14 }} /> جارٍ الدخول…</>
-            : "دخول للوحة الإدارة"
+            ? <><Loader2 style={{ width: 14, height: 14 }} /> {t("submitting")}</>
+            : t("submit")
           }
         </button>
       </form>

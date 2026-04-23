@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslations } from 'next-intl';
 import { ArrowRight, Car, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useCreateVehicle } from '../../../../hooks/useVehicles';
@@ -14,37 +15,51 @@ import { Input } from '../../../../components/ui/Input';
 import { Select } from '../../../../components/ui/Select';
 import { ProtectedRoute } from '../../../../components/auth/ProtectedRoute';
 
-// ─── Zod schema ──────────────────────────────────────────────────────────────
-
-const addVehicleSchema = z.object({
-  brand_id: z.string().min(1, 'يرجى اختيار الشركة المصنعة'),
-  model_id: z.string().min(1, 'يرجى اختيار الموديل'),
-  trim_id: z.string().min(1, 'يرجى اختيار الإصدار'),
-  year: z
-    .number({ invalid_type_error: 'يرجى إدخال السنة' })
-    .int()
-    .min(2010, 'السنة يجب أن تكون 2010 أو أحدث')
-    .max(new Date().getFullYear() + 1, 'السنة غير صحيحة'),
-  custom_name: z.string().max(60, 'الاسم لا يتجاوز 60 حرفاً').optional().or(z.literal('')),
-  battery_capacity_kwh: z
-    .union([
-      z.literal(''),
-      z.coerce
-        .number()
-        .min(1, 'حجم البطارية يجب أن يكون 1 كيلوواط على الأقل')
-        .max(999, 'حجم البطارية غير صحيح'),
-    ])
-    .optional(),
-  is_default: z.boolean().default(false),
-});
-
-type AddVehicleFormValues = z.infer<typeof addVehicleSchema>;
+type AddVehicleFormValues = {
+  brand_id: string;
+  model_id: string;
+  trim_id: string;
+  year: number;
+  custom_name?: string;
+  battery_capacity_kwh?: number | '';
+  is_default: boolean;
+};
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function NewVehiclePage() {
+  const t = useTranslations('vehicles.new');
+  const tV = useTranslations('vehicles.new.validation');
+  const tVehicles = useTranslations('vehicles');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const createVehicle = useCreateVehicle();
+
+  const addVehicleSchema = useMemo(
+    () =>
+      z.object({
+        brand_id: z.string().min(1, tV('brandRequired')),
+        model_id: z.string().min(1, tV('modelRequired')),
+        trim_id: z.string().min(1, tV('trimRequired')),
+        year: z
+          .number({ invalid_type_error: tV('yearRequired') })
+          .int()
+          .min(2010, tV('yearMin'))
+          .max(new Date().getFullYear() + 1, tV('yearInvalid')),
+        custom_name: z.string().max(60, tV('customNameMax')).optional().or(z.literal('')),
+        battery_capacity_kwh: z
+          .union([
+            z.literal(''),
+            z.coerce
+              .number()
+              .min(1, tV('batteryMin'))
+              .max(999, tV('batteryMax')),
+          ])
+          .optional(),
+        is_default: z.boolean().default(false),
+      }),
+    [tV],
+  );
 
   const {
     register,
@@ -135,8 +150,8 @@ export default function NewVehiclePage() {
             </button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">إضافة سيارة</h1>
-            <p className="text-gray-500 text-sm mt-0.5">أضف سيارتك الكهربائية لتوثيق رحلاتك</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('pageTitle')}</h1>
+            <p className="text-gray-500 text-sm mt-0.5">{t('pageSubtitle')}</p>
           </div>
         </div>
 
@@ -145,8 +160,8 @@ export default function NewVehiclePage() {
 
             {/* Brand */}
             <Select
-              label="الشركة المصنعة"
-              placeholder={brandsLoading ? 'جاري التحميل...' : 'اختر الشركة'}
+              label={tVehicles('make')}
+              placeholder={brandsLoading ? t('loadingGeneric') : t('chooseBrand')}
               options={brandOptions}
               error={errors.brand_id?.message}
               required
@@ -156,15 +171,15 @@ export default function NewVehiclePage() {
 
             {/* Model */}
             <Select
-              label="الموديل"
+              label={tVehicles('modelShort')}
               placeholder={
                 !selectedBrandId
-                  ? 'اختر الشركة أولاً'
+                  ? t('chooseBrandFirst')
                   : modelsLoading
-                  ? 'جاري التحميل...'
+                  ? t('loadingGeneric')
                   : modelOptions.length === 0
-                  ? 'لا توجد موديلات'
-                  : 'اختر الموديل'
+                  ? t('noModels')
+                  : t('chooseModel')
               }
               options={modelOptions}
               error={errors.model_id?.message}
@@ -175,15 +190,15 @@ export default function NewVehiclePage() {
 
             {/* Trim */}
             <Select
-              label="الإصدار"
+              label={tVehicles('trim')}
               placeholder={
                 !selectedModelId
-                  ? 'اختر الموديل أولاً'
+                  ? t('chooseModelFirst')
                   : trimsLoading
-                  ? 'جاري التحميل...'
+                  ? t('loadingGeneric')
                   : trimOptions.length === 0
-                  ? 'لا توجد إصدارات'
-                  : 'اختر الإصدار'
+                  ? t('noTrims')
+                  : t('chooseTrim')
               }
               options={trimOptions}
               error={errors.trim_id?.message}
@@ -194,9 +209,9 @@ export default function NewVehiclePage() {
 
             {/* Year */}
             <Input
-              label="سنة الصنع"
+              label={tVehicles('year')}
               type="number"
-              placeholder="مثال: 2023"
+              placeholder={t('yearPlaceholder')}
               min={2010}
               max={new Date().getFullYear() + 1}
               error={errors.year?.message}
@@ -206,27 +221,27 @@ export default function NewVehiclePage() {
 
             {/* Battery capacity (optional) */}
             <Input
-              label="حجم البطارية (اختياري)"
+              label={t('batteryLabel')}
               type="number"
               step="0.1"
               min={1}
               max={999}
               placeholder={
                 selectedTrim?.batteryCapacity
-                  ? `${selectedTrim.batteryCapacity} (من الإصدار)`
-                  : 'مثال: 75'
+                  ? t('batteryFromTrim', { value: selectedTrim.batteryCapacity })
+                  : t('batteryPlaceholder')
               }
-              hint="بالكيلوواط/ساعة — اتركه فارغاً لاستخدام القيمة الافتراضية للإصدار"
+              hint={t('batteryHint')}
               error={errors.battery_capacity_kwh?.message as string | undefined}
               {...register('battery_capacity_kwh')}
             />
 
             {/* Custom name (optional) */}
             <Input
-              label="اسم مخصص للسيارة (اختياري)"
+              label={t('customNameLabel')}
               type="text"
-              placeholder="مثال: سيارتي البيضاء"
-              hint="اسم تعريفي شخصي لا يظهر للعموم"
+              placeholder={t('customNamePlaceholder')}
+              hint={t('customNameHint')}
               error={errors.custom_name?.message}
               {...register('custom_name')}
             />
@@ -253,9 +268,9 @@ export default function NewVehiclePage() {
               </div>
               <div>
                 <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
-                  تعيين كسيارة افتراضية
+                  {t('setDefaultLabel')}
                 </span>
-                <p className="text-xs text-gray-400 mt-0.5">ستُستخدم هذه السيارة تلقائياً عند إضافة رحلات جديدة</p>
+                <p className="text-xs text-gray-400 mt-0.5">{t('setDefaultHint')}</p>
               </div>
             </label>
           </div>
@@ -271,35 +286,35 @@ export default function NewVehiclePage() {
                   <p className="font-semibold text-emerald-900">
                     {selectedBrand.name} {selectedModel.name} {selectedTrim.name}
                   </p>
-                  <p className="text-xs text-emerald-700">معاينة السيارة</p>
+                  <p className="text-xs text-emerald-700">{t('previewTitle')}</p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {selectedTrim.batteryCapacity && (
                   <div className="bg-white rounded-xl p-3 text-center">
-                    <p className="text-xs text-gray-400 mb-1">البطارية</p>
+                    <p className="text-xs text-gray-400 mb-1">{tVehicles('batteryShort')}</p>
                     <p className="font-bold text-gray-900 text-sm">
                       {selectedTrim.batteryCapacity}
-                      <span className="text-xs text-gray-400 font-normal"> كيلوواط/ساعة</span>
+                      <span className="text-xs text-gray-400 font-normal"> {tCommon('kwhUnit')}</span>
                     </p>
                   </div>
                 )}
                 {selectedTrim.wltp && (
                   <div className="bg-white rounded-xl p-3 text-center">
-                    <p className="text-xs text-gray-400 mb-1">مدى WLTP</p>
+                    <p className="text-xs text-gray-400 mb-1">{t('previewWltp')}</p>
                     <p className="font-bold text-gray-900 text-sm">
                       {selectedTrim.wltp}
-                      <span className="text-xs text-gray-400 font-normal"> كم</span>
+                      <span className="text-xs text-gray-400 font-normal"> {tCommon('kmUnit')}</span>
                     </p>
                   </div>
                 )}
                 {selectedTrim.chargingSpeedDc && (
                   <div className="bg-white rounded-xl p-3 text-center">
-                    <p className="text-xs text-gray-400 mb-1">شحن DC</p>
+                    <p className="text-xs text-gray-400 mb-1">{t('previewDcCharging')}</p>
                     <p className="font-bold text-gray-900 text-sm flex items-center justify-center gap-1">
                       <Zap className="w-3.5 h-3.5 text-amber-500" />
                       {selectedTrim.chargingSpeedDc}
-                      <span className="text-xs text-gray-400 font-normal">كيلوواط</span>
+                      <span className="text-xs text-gray-400 font-normal">{tCommon('kwhUnit')}</span>
                     </p>
                   </div>
                 )}
@@ -310,7 +325,7 @@ export default function NewVehiclePage() {
           {/* Error from mutation */}
           {createVehicle.isError && (
             <div className="mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-              حدث خطأ أثناء إضافة السيارة. يرجى المحاولة مجدداً.
+              {t('errorCreate')}
             </div>
           )}
 
@@ -321,11 +336,11 @@ export default function NewVehiclePage() {
               fullWidth
               loading={isSubmitting || createVehicle.isPending}
             >
-              إضافة السيارة
+              {t('submit')}
             </Button>
             <Link href="/vehicles" className="shrink-0">
               <Button type="button" variant="outline">
-                إلغاء
+                {tCommon('cancel')}
               </Button>
             </Link>
           </div>

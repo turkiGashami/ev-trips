@@ -1,23 +1,28 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { authApi } from '@/lib/api/auth.api';
 
-const schema = z.object({
-  email: z.string().email('بريد إلكتروني غير صحيح'),
-});
-type FormData = z.infer<typeof schema>;
+type FormData = { email: string };
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations('auth.forgotPage');
+  const tAuth = useTranslations('auth');
   const [sent, setSent] = useState(false);
   const [email, setEmail] = useState('');
+
+  const schema = useMemo(
+    () => z.object({ email: z.string().email(t('validation.emailInvalid')) }),
+    [t],
+  );
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -37,22 +42,22 @@ export default function ForgotPasswordPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <span className="eyebrow">— تم الإرسال</span>
-        <h2 className="heading-2 mt-3 mb-3">تحقق من بريدك</h2>
-        <p className="body-md mb-1">أرسلنا رابط إعادة التعيين إلى:</p>
+        <span className="eyebrow">{t('sentEyebrow')}</span>
+        <h2 className="heading-2 mt-3 mb-3">{t('sentTitle')}</h2>
+        <p className="body-md mb-1">{t('sentIntro')}</p>
         <p className="font-medium text-[var(--ink)] mb-6 nums-latin">{email}</p>
         <p className="text-sm text-[var(--ink-3)] mb-8">
-          لم يصلك البريد؟ تحقق من مجلد الرسائل المزعجة أو{' '}
+          {t('spamPrefix')}{' '}
           <button
             onClick={() => setSent(false)}
             className="text-[var(--ink)] underline underline-offset-4 hover:text-[var(--forest)] transition-colors"
           >
-            أعد المحاولة
+            {t('tryAgain')}
           </button>
         </p>
         <Link href="/login" className="inline-flex items-center gap-2 text-sm text-[var(--ink-3)] hover:text-[var(--ink)] transition-colors">
           <ArrowRight className="h-4 w-4 flip-rtl" />
-          العودة لتسجيل الدخول
+          {t('backToLogin')}
         </Link>
       </div>
     );
@@ -61,14 +66,14 @@ export default function ForgotPasswordPage() {
   return (
     <div dir="rtl">
       <div className="mb-8">
-        <span className="eyebrow">— استعادة الحساب</span>
-        <h1 className="heading-1 mt-3">نسيت كلمة المرور؟</h1>
-        <p className="body-md mt-2">أدخل بريدك وسنرسل لك رابط إعادة التعيين</p>
+        <span className="eyebrow">{t('eyebrow')}</span>
+        <h1 className="heading-1 mt-3">{t('title')}</h1>
+        <p className="body-md mt-2">{t('subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <Input
-          label="البريد الإلكتروني"
+          label={tAuth('email')}
           type="email"
           placeholder="example@email.com"
           dir="ltr"
@@ -77,14 +82,14 @@ export default function ForgotPasswordPage() {
           {...register('email')}
         />
         <Button type="submit" loading={isSubmitting} fullWidth size="lg">
-          إرسال رابط إعادة التعيين
+          {t('submit')}
         </Button>
       </form>
 
       <div className="mt-6 pt-6 border-t border-[var(--line)] text-center">
         <Link href="/login" className="inline-flex items-center gap-2 text-sm text-[var(--ink-3)] hover:text-[var(--ink)] transition-colors">
           <ArrowRight className="h-4 w-4 flip-rtl" />
-          العودة لتسجيل الدخول
+          {t('backToLogin')}
         </Link>
       </div>
     </div>

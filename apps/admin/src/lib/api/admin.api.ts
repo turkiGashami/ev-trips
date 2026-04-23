@@ -203,10 +203,11 @@ export const commentsApi = {
     apiClient
       .get<PaginatedResponse<Comment>>("/admin/comments", { params })
       .then((r) => r.data),
+  // API uses PATCH for the hide action.
   hide: (id: string) =>
-    apiClient.post(`/admin/comments/${id}/hide`).then((r) => r.data),
+    apiClient.patch(`/admin/comments/${id}/hide`).then((r) => r.data),
   restore: (id: string) =>
-    apiClient.post(`/admin/comments/${id}/restore`).then((r) => r.data),
+    apiClient.patch(`/admin/comments/${id}/restore`).then((r) => r.data),
   delete: (id: string) =>
     apiClient.delete(`/admin/comments/${id}`).then((r) => r.data),
 };

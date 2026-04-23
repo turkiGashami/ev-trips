@@ -2,8 +2,9 @@
 export const dynamic = 'force-dynamic';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import Spinner from '@/components/ui/Spinner';
 import Button from '@/components/ui/Button';
 import { verifyEmail, resendVerification } from '@/lib/api/auth.api';
@@ -11,6 +12,8 @@ import { verifyEmail, resendVerification } from '@/lib/api/auth.api';
 type Status = 'verifying' | 'success' | 'error' | 'no-token';
 
 function VerifyEmailPage() {
+  const t = useTranslations('auth.verifyPage');
+  const tAuth = useTranslations('auth');
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const [status, setStatus] = useState<Status>(token ? 'verifying' : 'no-token');
@@ -39,8 +42,8 @@ function VerifyEmailPage() {
     return (
       <div className="text-center py-8">
         <Spinner size="lg" className="mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-gray-900">جاري التحقق من بريدك...</h2>
-        <p className="text-gray-500 mt-2">يرجى الانتظار</p>
+        <h2 className="text-xl font-bold text-gray-900">{t('verifyingTitle')}</h2>
+        <p className="text-gray-500 mt-2">{t('verifyingWait')}</p>
       </div>
     );
   }
@@ -53,11 +56,11 @@ function VerifyEmailPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">تم التحقق بنجاح!</h2>
-        <p className="text-gray-600 mb-6">بريدك الإلكتروني مُفعّل الآن. يمكنك البدء في استخدام المنصة.</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('successTitle')}</h2>
+        <p className="text-gray-600 mb-6">{t('successDesc')}</p>
         <Link href="/login">
           <Button variant="primary" size="lg" className="w-full">
-            تسجيل الدخول
+            {tAuth('login')}
           </Button>
         </Link>
       </div>
@@ -72,10 +75,10 @@ function VerifyEmailPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">فشل التحقق</h2>
-        <p className="text-gray-600 mb-6">الرابط غير صالح أو منتهي الصلاحية.</p>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">{t('errorTitle')}</h2>
+        <p className="text-gray-600 mb-6">{t('errorDesc')}</p>
         {resent ? (
-          <p className="text-emerald-600 text-sm">تم إرسال رابط تحقق جديد إلى بريدك</p>
+          <p className="text-emerald-600 text-sm">{t('resentNew')}</p>
         ) : (
           <Button
             variant="outline"
@@ -83,12 +86,12 @@ function VerifyEmailPage() {
             loading={resending}
             className="w-full"
           >
-            إعادة إرسال رابط التحقق
+            {t('resendNew')}
           </Button>
         )}
         <div className="mt-4">
           <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900">
-            ← العودة لتسجيل الدخول
+            {t('backToLogin')}
           </Link>
         </div>
       </div>
@@ -103,12 +106,12 @@ function VerifyEmailPage() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
       </div>
-      <h2 className="text-xl font-bold text-gray-900 mb-2">تحقق من بريدك</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-2">{t('checkEmailTitle')}</h2>
       <p className="text-gray-600 mb-6">
-        أرسلنا رابط تحقق إلى بريدك الإلكتروني. انقر على الرابط لتفعيل حسابك.
+        {t('checkEmailDesc')}
       </p>
       {resent ? (
-        <p className="text-emerald-600 text-sm">تم إعادة إرسال رابط التحقق</p>
+        <p className="text-emerald-600 text-sm">{t('resentAgain')}</p>
       ) : (
         <Button
           variant="outline"
@@ -116,19 +119,18 @@ function VerifyEmailPage() {
           loading={resending}
           className="w-full"
         >
-          إعادة إرسال الرابط
+          {t('resendAgain')}
         </Button>
       )}
       <div className="mt-4">
         <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900">
-          ← العودة لتسجيل الدخول
+          {t('backToLogin')}
         </Link>
       </div>
     </div>
   );
 }
 
-import { Suspense } from 'react';
 export default function VerifyEmailPageWrapper() {
   return <Suspense><VerifyEmailPage /></Suspense>;
 }

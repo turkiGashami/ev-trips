@@ -1,7 +1,8 @@
 "use client";
 
-import { Bell, Search, Globe } from "lucide-react";
-import { useAdminAuthStore, selectLanguage } from "@/store/admin-auth.store";
+import { Bell, Search } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { LanguageToggle } from "./LanguageToggle";
 
 interface AdminTopbarProps {
   title: string;
@@ -9,12 +10,7 @@ interface AdminTopbarProps {
 }
 
 export function AdminTopbar({ title, subtitle }: AdminTopbarProps) {
-  const { setLanguage } = useAdminAuthStore();
-  const language = useAdminAuthStore(selectLanguage);
-
-  const toggleLanguage = () => {
-    setLanguage(language === "en" ? "ar" : "en");
-  };
+  const t = useTranslations("topbar");
 
   return (
     <header
@@ -33,6 +29,8 @@ export function AdminTopbar({ title, subtitle }: AdminTopbarProps) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <button
+          aria-label={t("search")}
+          title={t("search")}
           className="w-9 h-9 flex items-center justify-center transition-colors rounded-[2px]"
           style={{ color: "var(--ink-3)" }}
           onMouseOver={(e) => { e.currentTarget.style.color = "var(--ink)"; e.currentTarget.style.background = "var(--sand)"; }}
@@ -42,6 +40,8 @@ export function AdminTopbar({ title, subtitle }: AdminTopbarProps) {
         </button>
 
         <button
+          aria-label={t("notifications")}
+          title={t("notifications")}
           className="relative w-9 h-9 flex items-center justify-center transition-colors rounded-[2px]"
           style={{ color: "var(--ink-3)" }}
           onMouseOver={(e) => { e.currentTarget.style.color = "var(--ink)"; e.currentTarget.style.background = "var(--sand)"; }}
@@ -54,17 +54,7 @@ export function AdminTopbar({ title, subtitle }: AdminTopbarProps) {
           />
         </button>
 
-        <button
-          onClick={toggleLanguage}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors rounded-[2px]"
-          style={{ color: "var(--ink-2)", border: "1px solid var(--line)" }}
-          onMouseOver={(e) => { e.currentTarget.style.borderColor = "var(--ink)"; }}
-          onMouseOut={(e) => { e.currentTarget.style.borderColor = "var(--line)"; }}
-          title="Toggle language"
-        >
-          <Globe className="w-3.5 h-3.5" />
-          {language === "en" ? "عربي" : "EN"}
-        </button>
+        <LanguageToggle />
       </div>
     </header>
   );

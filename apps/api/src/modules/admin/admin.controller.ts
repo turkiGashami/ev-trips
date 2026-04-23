@@ -116,6 +116,16 @@ export class AdminController {
     return this.adminService.hideComment(actor.id, id);
   }
 
+  @Patch('comments/:id/restore')
+  restoreComment(@CurrentUser() actor: any, @Param('id') id: string) {
+    return this.adminService.restoreComment(actor.id, id);
+  }
+
+  @Delete('comments/:id')
+  deleteComment(@CurrentUser() actor: any, @Param('id') id: string) {
+    return this.adminService.deleteComment(actor.id, id);
+  }
+
   // ── REPORTS ────────────────────────────────────────────────────────────
   @Get('reports')
   getReports(@Query() query: any) {
@@ -157,6 +167,11 @@ export class AdminController {
   @Post('models')
   createModel(@CurrentUser() actor: any, @Body() dto: any) {
     return this.adminService.createModel(actor.id, dto);
+  }
+
+  @Delete('models/:id')
+  deleteModel(@CurrentUser() actor: any, @Param('id') id: string) {
+    return this.adminService.deleteModel(actor.id, id);
   }
 
   @Get('trims')

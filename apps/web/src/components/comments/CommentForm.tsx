@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
 
@@ -16,9 +17,10 @@ export function CommentForm({
   onSubmit,
   loading,
   onCancel,
-  placeholder = 'اكتب تعليقاً...',
+  placeholder,
   compact,
 }: CommentFormProps) {
+  const t = useTranslations('comments');
   const [content, setContent] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +35,7 @@ export function CommentForm({
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('defaultPlaceholder')}
         rows={compact ? 2 : 3}
         className={cn(
           'flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm resize-none',
@@ -43,11 +45,11 @@ export function CommentForm({
       />
       <div className="flex flex-col gap-1">
         <Button type="submit" loading={loading} disabled={!content.trim()} size="sm">
-          إرسال
+          {t('send')}
         </Button>
         {onCancel && (
           <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-            إلغاء
+            {t('cancel')}
           </Button>
         )}
       </div>

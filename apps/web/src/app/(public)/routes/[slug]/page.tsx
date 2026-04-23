@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft, Route as RouteIcon } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import { getApiBaseUrl } from '@/lib/utils';
 
 export const revalidate = 60;
@@ -34,9 +35,7 @@ function parseSlug(slug: string): { from: string; to: string } | null {
   if (!clean) return null;
   const parts = clean.split(/-to-|--|-/).filter(Boolean);
   if (parts.length < 2) return null;
-  // Support both "riyadh-jeddah" (2 tokens) and "riyadh-to-jeddah".
   if (parts.length === 2) return { from: parts[0], to: parts[1] };
-  // Fallback: first and last tokens.
   return { from: parts[0], to: parts[parts.length - 1] };
 }
 
@@ -88,36 +87,38 @@ async function getRoute(slug: string) {
 }
 
 export async function generateMetadata({ params }: PageProps) {
+  const t = await getTranslations('routeInsights');
   const route = await getRoute(params.slug);
-  if (!route) return { title: 'مسار | رحلات EV' };
+  if (!route) return { title: t('metaTitleNotFound') };
   const from = route.fromCity.name_ar ?? route.fromCity.name;
   const to = route.toCity.name_ar ?? route.toCity.name;
   return {
-    title: `مسار ${from} إلى ${to} | رحلات EV`,
-    description: `${route.count} رحلة موثّقة على مسار ${from} - ${to}.`,
+    title: t('metaTitle', { from, to }),
+    description: t('metaDescription', { count: route.count, from, to }),
   };
 }
 
 export default async function RouteInsightsPage({ params }: PageProps) {
+  const t = await getTranslations('routeInsights');
+  const tCommon = await getTranslations('common');
   const route = await getRoute(params.slug);
 
   if (!route) {
     return (
       <div dir="rtl" className="bg-[var(--cream)]">
         <div className="container-app py-20 md:py-28 max-w-3xl">
-          <span className="eyebrow">— مسار</span>
-          <h1 className="heading-1 mt-4">لم نعثر على هذا المسار</h1>
+          <span className="eyebrow">{t('notFoundEyebrow')}</span>
+          <h1 className="heading-1 mt-4">{t('notFoundTitle')}</h1>
           <p className="body-md mt-4 text-[var(--ink-3)]">
-            الرابط الذي اتبعته قد يكون قديمًا أو غير مدعوم حاليًا. يمكنك استعراض
-            جميع المسارات أو البحث عن رحلة بين مدينتين.
+            {t('notFoundDesc')}
           </p>
           <div className="mt-10 flex items-center gap-3">
             <Link href="/popular-routes" className="btn-primary text-sm">
-              المسارات الشائعة
+              {t('popularRoutes')}
               <ArrowLeft className="h-4 w-4 flip-rtl" />
             </Link>
             <Link href="/search" className="btn-secondary text-sm">
-              تصفّح الرحلات
+              {t('browseTrips')}
             </Link>
           </div>
         </div>
@@ -127,6 +128,7 @@ export default async function RouteInsightsPage({ params }: PageProps) {
 
   const from = route.fromCity.name_ar ?? route.fromCity.name;
   const to = route.toCity.name_ar ?? route.toCity.name;
+  const dash = tCommon('dash');
 
   return (
     <div dir="rtl" className="bg-[var(--cream)]">
@@ -134,7 +136,7 @@ export default async function RouteInsightsPage({ params }: PageProps) {
         <div className="max-w-3xl">
           <div className="flex items-center gap-2 text-[var(--ink-3)] text-xs mb-4">
             <RouteIcon className="h-3.5 w-3.5" />
-            <span>مسار</span>
+            <span>{t('routeLabel')}</span>
           </div>
           <h1 className="heading-1">
             {from}
@@ -142,86 +144,85 @@ export default async function RouteInsightsPage({ params }: PageProps) {
             {to}
           </h1>
           <p className="body-md mt-4 text-[var(--ink-3)]">
-            ملخّص بيانات فعلية من رحلات المجتمع على هذا المسار.
+            {t('summaryBody')}
           </p>
         </div>
 
         {route.count === 0 ? (
           <div className="mt-12 border border-[var(--line)] bg-[var(--sand)]/40 py-16 px-6 text-center">
-            <span className="eyebrow">— لا توجد رحلات بعد</span>
-            <h2 className="heading-2 mt-3">كن أول من يوثّق هذا المسار</h2>
+            <span className="eyebrow">{t('emptyEyebrow')}</span>
+            <h2 className="heading-2 mt-3">{t('emptyTitle')}</h2>
             <p className="body-md mt-3 max-w-md mx-auto text-[var(--ink-3)]">
-              لم يسجّل أحد رحلة على هذا المسار حتى الآن. شارك تجربتك وساعد
-              السائقين القادمين.
+              {t('emptyBody')}
             </p>
             <div className="mt-8 flex items-center justify-center gap-3">
               <Link href="/register" className="btn-primary text-sm">
-                أنشئ حسابك وابدأ
+                {t('createAccount')}
                 <ArrowLeft className="h-4 w-4 flip-rtl" />
               </Link>
               <Link href="/search" className="btn-secondary text-sm">
-                تصفّح رحلات أخرى
+                {t('browseOther')}
               </Link>
             </div>
           </div>
         ) : (
           <>
             <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--line)] border border-[var(--line)]">
-              <Stat label="رحلات موثّقة" value={`${route.count}`} />
+              <Stat label={t('stat.count')} value={`${route.count}`} />
               <Stat
-                label="متوسط بطارية الانطلاق"
-                value={route.avgDeparture != null ? `${route.avgDeparture}%` : '—'}
+                label={t('stat.avgDeparture')}
+                value={route.avgDeparture != null ? `${route.avgDeparture}%` : dash}
               />
               <Stat
-                label="متوسط بطارية الوصول"
-                value={route.avgArrival != null ? `${route.avgArrival}%` : '—'}
+                label={t('stat.avgArrival')}
+                value={route.avgArrival != null ? `${route.avgArrival}%` : dash}
               />
               <Stat
-                label="متوسط المسافة"
-                value={route.avgDistance != null ? `${route.avgDistance} كم` : '—'}
+                label={t('stat.avgDistance')}
+                value={route.avgDistance != null ? `${route.avgDistance} ${tCommon('kmUnit')}` : dash}
               />
             </div>
 
             <div className="mt-16">
               <div className="flex items-end justify-between mb-8">
                 <div>
-                  <span className="eyebrow">— الرحلات</span>
-                  <h2 className="heading-2 mt-3">رحلات على هذا المسار</h2>
+                  <span className="eyebrow">{t('tripsEyebrow')}</span>
+                  <h2 className="heading-2 mt-3">{t('tripsTitle')}</h2>
                 </div>
                 <Link
                   href={`/search?q=${encodeURIComponent(`${from} ${to}`)}`}
                   className="link-editorial text-sm hidden md:inline-block"
                 >
-                  البحث الكامل
+                  {t('fullSearch')}
                 </Link>
               </div>
 
               <div className="divide-y divide-[var(--line)] border-t border-b border-[var(--line)]">
-                {route.trips.map((t) => {
-                  const vehicle = [t.snap_brand_name, t.snap_model_name].filter(Boolean).join(' ');
-                  const author = t.user?.full_name || t.user?.username || '';
-                  const distance = t.distance_km != null ? Number(t.distance_km) : null;
+                {route.trips.map((tr) => {
+                  const vehicle = [tr.snap_brand_name, tr.snap_model_name].filter(Boolean).join(' ');
+                  const author = tr.user?.full_name || tr.user?.username || '';
+                  const distance = tr.distance_km != null ? Number(tr.distance_km) : null;
                   return (
                     <Link
-                      key={t.id}
-                      href={`/trips/${t.slug}`}
+                      key={tr.id}
+                      href={`/trips/${tr.slug}`}
                       className="group grid grid-cols-12 gap-4 items-center py-6 hover:bg-[var(--sand)]/50 transition-colors px-2 -mx-2"
                     >
                       <div className="col-span-12 md:col-span-6 min-w-0">
                         <div className="text-[var(--ink)] text-lg font-medium tracking-tight group-hover:text-[var(--forest)] transition-colors">
-                          {t.title}
+                          {tr.title}
                         </div>
                         {(vehicle || author) && (
                           <div className="mt-1 text-xs text-[var(--ink-3)]">
-                            {[vehicle, author && `بقلم ${author}`].filter(Boolean).join(' · ')}
+                            {[vehicle, author && t('byAuthor', { author })].filter(Boolean).join(' · ')}
                           </div>
                         )}
                       </div>
                       <div className="col-span-4 md:col-span-2 nums-latin text-sm text-[var(--ink-3)]">
-                        {t.departure_battery_pct}% → {t.arrival_battery_pct}%
+                        {tr.departure_battery_pct}% → {tr.arrival_battery_pct}%
                       </div>
                       <div className="col-span-4 md:col-span-2 nums-latin text-sm text-[var(--ink-3)]">
-                        {distance != null ? `${distance} كم` : '—'}
+                        {distance != null ? `${distance} ${tCommon('kmUnit')}` : dash}
                       </div>
                       <div className="col-span-4 md:col-span-2 text-left text-[var(--ink-3)]">
                         <ArrowLeft className="h-4 w-4 flip-rtl inline-block opacity-60 group-hover:opacity-100 transition-opacity" />
@@ -236,7 +237,7 @@ export default async function RouteInsightsPage({ params }: PageProps) {
 
         <div className="mt-16 text-center">
           <Link href="/popular-routes" className="link-editorial text-sm">
-            عرض كل المسارات
+            {t('viewAll')}
           </Link>
         </div>
       </div>

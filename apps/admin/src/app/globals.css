@@ -176,6 +176,32 @@
     letter-spacing: 0.14em;
     color: var(--ink-3);
   }
+
+  /* Headings */
+  .heading-1 {
+    @apply text-2xl font-medium tracking-tight;
+    color: var(--ink);
+  }
+  .heading-2 {
+    @apply text-lg font-medium tracking-tight;
+    color: var(--ink);
+  }
+  .heading-3 {
+    @apply text-base font-medium;
+    color: var(--ink);
+  }
+  .body-sm {
+    @apply text-sm;
+    color: var(--ink-2);
+  }
+
+  /* Latin numerals — force tabular latin digits for dates/counts in RTL */
+  .nums-latin {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
+    direction: ltr;
+    unicode-bidi: embed;
+  }
 }
 
 [dir="rtl"] .rtl\:flip { transform: scaleX(-1); }

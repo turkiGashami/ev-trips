@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import {
   Edit2, MapPin, Calendar, Route, Users, UserCheck, BadgeCheck, Star, Car, ArrowLeft,
 } from 'lucide-react';
@@ -62,6 +63,9 @@ function QuickLink({
 }
 
 export default function ProfilePage() {
+  const t = useTranslations('profile');
+  const tCommon = useTranslations('common');
+  const tStatus = useTranslations('trips.status');
   const { user: authUser } = useAuthStore();
 
   const profileQ = useQuery({
@@ -125,13 +129,13 @@ export default function ProfilePage() {
                 {initials}
               </div>
               <div className="min-w-0">
-                <span className="eyebrow">— ملفّي الشخصي</span>
+                <span className="eyebrow">{t('myProfileEyebrow')}</span>
                 <h1 className="heading-2 mt-2 flex items-center gap-2 flex-wrap">
                   {displayName || username}
                   {isVerified && (
                     <span className="inline-flex items-center gap-1 text-xs text-[var(--forest)] border border-[var(--forest)]/30 bg-[var(--forest)]/5 px-2 py-0.5 rounded-[2px]">
                       <BadgeCheck className="h-3 w-3" />
-                      موثّق
+                      {t('verifiedBadge')}
                     </span>
                   )}
                 </h1>
@@ -147,7 +151,7 @@ export default function ProfilePage() {
                   {joinedLabel && (
                     <span className="flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5" />
-                      انضم {joinedLabel}
+                      {t('joinedLabel', { when: joinedLabel })}
                     </span>
                   )}
                   {city && (
@@ -159,7 +163,7 @@ export default function ProfilePage() {
                   {reputation > 0 && (
                     <span className="flex items-center gap-1.5 nums-latin">
                       <Star className="h-3.5 w-3.5" />
-                      {reputation} نقطة
+                      {t('pointsWithNumber', { points: reputation })}
                     </span>
                   )}
                 </div>
@@ -168,7 +172,7 @@ export default function ProfilePage() {
 
             <Link href="/profile/edit" className="btn-secondary self-start sm:self-auto text-sm">
               <Edit2 className="h-4 w-4" />
-              تعديل الملف
+              {t('editShort')}
             </Link>
           </div>
         </section>
@@ -176,13 +180,13 @@ export default function ProfilePage() {
         {/* Stats grid */}
         <section>
           <div className="flex items-center justify-between pb-4 mb-5 border-b border-[var(--line)]">
-            <span className="eyebrow">— أرقامي</span>
+            <span className="eyebrow">{t('eyebrowNumbers')}</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            <Stat label="رحلاتي"    value={totalTrips}     icon={Route} />
-            <Stat label="المشاهدات" value={totalViews}     icon={Users} />
-            <Stat label="المفضلات"  value={totalFavorites} icon={Star} />
-            <Stat label="النقاط"    value={reputation}     icon={BadgeCheck} />
+            <Stat label={t('statTrips')}     value={totalTrips}     icon={Route} />
+            <Stat label={t('statViews')}     value={totalViews}     icon={Users} />
+            <Stat label={t('statFavorites')} value={totalFavorites} icon={Star} />
+            <Stat label={t('statPoints')}    value={reputation}     icon={BadgeCheck} />
           </div>
         </section>
 
@@ -190,49 +194,49 @@ export default function ProfilePage() {
         <section>
           <div className="flex items-center justify-between pb-4 mb-5 border-b border-[var(--line)]">
             <div>
-              <span className="eyebrow">— نشاطي</span>
-              <h2 className="mt-2 heading-3">آخر رحلاتي</h2>
+              <span className="eyebrow">{t('eyebrowActivity')}</span>
+              <h2 className="mt-2 heading-3">{t('recentTrips')}</h2>
             </div>
-            <Link href="/trips" className="link-editorial text-xs">عرض الكل</Link>
+            <Link href="/trips" className="link-editorial text-xs">{tCommon('viewAll')}</Link>
           </div>
 
           {myTripsQ.isLoading ? (
-            <p className="text-sm text-[var(--ink-3)] py-4">جارٍ التحميل…</p>
+            <p className="text-sm text-[var(--ink-3)] py-4">{tCommon('loadingShort')}</p>
           ) : recentTrips.length === 0 ? (
             <div className="text-center py-10 border border-dashed border-[var(--line)]">
               <Route className="h-6 w-6 mx-auto text-[var(--ink-4)] mb-3" />
-              <p className="text-sm text-[var(--ink-2)] mb-1">لم توثّق أي رحلة بعد</p>
-              <p className="text-xs text-[var(--ink-3)] mb-4">ابدأ الآن وشارك تجربتك مع المجتمع</p>
-              <Link href="/trips/new" className="btn-primary text-sm">أضف رحلة جديدة</Link>
+              <p className="text-sm text-[var(--ink-2)] mb-1">{t('noTripsTitle')}</p>
+              <p className="text-xs text-[var(--ink-3)] mb-4">{t('noTripsDesc')}</p>
+              <Link href="/trips/new" className="btn-primary text-sm">{t('addTripCta')}</Link>
             </div>
           ) : (
             <ul className="border border-[var(--line)] divide-y divide-[var(--line-soft)]">
-              {recentTrips.map((t: any) => (
-                <li key={t.id}>
+              {recentTrips.map((trip: any) => (
+                <li key={trip.id}>
                   <Link
-                    href={`/trips/${t.slug}`}
+                    href={`/trips/${trip.slug}`}
                     className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-[var(--sand)]/60 transition-colors"
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-[var(--ink)] truncate">
-                        {(t.departure_city?.name_ar ?? t.departure_city?.name ?? '—')} ← {(t.destination_city?.name_ar ?? t.destination_city?.name ?? '—')}
+                        {(trip.departure_city?.name_ar ?? trip.departure_city?.name ?? tCommon('dash'))} ← {(trip.destination_city?.name_ar ?? trip.destination_city?.name ?? tCommon('dash'))}
                       </p>
                       <p className="text-xs text-[var(--ink-3)] mt-0.5 nums-latin">
-                        {t.trip_date ? new Date(t.trip_date).toLocaleDateString('ar-SA') : ''}
+                        {trip.trip_date ? new Date(trip.trip_date).toLocaleDateString('ar-SA') : ''}
                       </p>
                     </div>
                     <span className={cn(
                       'text-[10px] uppercase tracking-[0.1em] border px-2 py-0.5 rounded-[2px]',
-                      t.status === 'published'      && 'border-[var(--forest)]/30 text-[var(--forest)]',
-                      t.status === 'pending_review' && 'border-[var(--ink)]/30 text-[var(--ink-2)]',
-                      t.status === 'draft'          && 'border-[var(--line)] text-[var(--ink-3)]',
-                      t.status === 'rejected'       && 'border-[var(--terra)]/30 text-[var(--terra)]',
+                      trip.status === 'published'      && 'border-[var(--forest)]/30 text-[var(--forest)]',
+                      trip.status === 'pending_review' && 'border-[var(--ink)]/30 text-[var(--ink-2)]',
+                      trip.status === 'draft'          && 'border-[var(--line)] text-[var(--ink-3)]',
+                      trip.status === 'rejected'       && 'border-[var(--terra)]/30 text-[var(--terra)]',
                     )}>
-                      {t.status === 'published' ? 'منشورة'
-                        : t.status === 'pending_review' ? 'قيد المراجعة'
-                        : t.status === 'draft' ? 'مسودة'
-                        : t.status === 'rejected' ? 'مرفوضة'
-                        : t.status}
+                      {trip.status === 'published' ? tStatus('publishedFem')
+                        : trip.status === 'pending_review' ? tStatus('pending_review')
+                        : trip.status === 'draft' ? tStatus('draft')
+                        : trip.status === 'rejected' ? tStatus('rejected')
+                        : trip.status}
                     </span>
                   </Link>
                 </li>
@@ -244,13 +248,13 @@ export default function ProfilePage() {
         {/* Quick links */}
         <section className="border border-[var(--line)]">
           <div className="px-5 py-4 border-b border-[var(--line)]">
-            <span className="eyebrow">— اختصارات</span>
+            <span className="eyebrow">{t('eyebrowShortcuts')}</span>
           </div>
           <nav>
-            <QuickLink href="/trips"        label="رحلاتي"            icon={Route} trailing={`${totalTrips}`} />
-            <QuickLink href="/saved-trips"  label="الرحلات المحفوظة"  icon={Star}  trailing={`${savedCount}`} />
-            <QuickLink href="/vehicles"     label="سياراتي"           icon={Car} />
-            <QuickLink href="/profile/edit" label="تعديل الملف"       icon={Edit2} />
+            <QuickLink href="/trips"        label={t('quickMyTrips')}     icon={Route} trailing={`${totalTrips}`} />
+            <QuickLink href="/saved-trips"  label={t('quickSavedTrips')}  icon={Star}  trailing={`${savedCount}`} />
+            <QuickLink href="/vehicles"     label={t('quickMyCars')}      icon={Car} />
+            <QuickLink href="/profile/edit" label={t('quickEditProfile')} icon={Edit2} />
           </nav>
         </section>
       </div>

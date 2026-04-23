@@ -1,32 +1,50 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, Lock, Globe, User, Check } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { notificationsApi } from '@/lib/api/notifications.api';
 import { authApi } from '@/lib/api/auth.api';
 import { useToast } from '@/components/ui/Toast';
 
-const passwordSchema = z.object({
-  current_password: z.string().min(1, 'كلمة المرور الحالية مطلوبة'),
-  new_password: z.string().min(8, 'كلمة المرور 8 أحرف على الأقل'),
-  confirm_password: z.string(),
-}).refine((d) => d.new_password === d.confirm_password, {
-  message: 'كلمتا المرور غير متطابقتين',
-  path: ['confirm_password'],
-});
-
-type PasswordFormData = z.infer<typeof passwordSchema>;
-
-const TABS = [
-  { id: 'notifications', label: 'الإشعارات', icon: Bell },
-  { id: 'security', label: 'الأمان', icon: Lock },
-];
+type PasswordFormData = {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+};
 
 export default function SettingsPage() {
+  const t = useTranslations('settings');
+  const tItems = useTranslations('settings.items');
+  const tToast = useTranslations('settings.notifToast');
+  const tTabs = useTranslations('settings.tabs');
+  const tPwd = useTranslations('settings.password');
+  const tCommon = useTranslations('common');
+
+  const TABS = [
+    { id: 'notifications', label: tTabs('notifications'), icon: Bell },
+    { id: 'security', label: tTabs('security'), icon: Lock },
+  ];
+
+  const passwordSchema = useMemo(
+    () =>
+      z
+        .object({
+          current_password: z.string().min(1, tPwd('currentRequired')),
+          new_password: z.string().min(8, tPwd('newMin')),
+          confirm_password: z.string(),
+        })
+        .refine((d) => d.new_password === d.confirm_password, {
+          message: tPwd('mismatch'),
+          path: ['confirm_password'],
+        }),
+    [tPwd],
+  );
+
   const [activeTab, setActiveTab] = useState('notifications');
   const [savedKey, setSavedKey] = useState<string | null>(null);
   const { success, error } = useToast();
@@ -40,12 +58,12 @@ export default function SettingsPage() {
   const updateNotifMutation = useMutation({
     mutationFn: notificationsApi.updateSettings,
     onSuccess: (_data, variables) => {
-      success('تم الحفظ', 'تم تحديث إعدادات الإشعارات');
+      success(tToast('savedTitle'), tToast('savedDesc'));
       queryClient.invalidateQueries({ queryKey: ['notification-settings'] });
       const key = Object.keys(variables ?? {})[0] ?? null;
       if (key) setSavedKey(key);
     },
-    onError: () => error('خطأ', 'تعذر حفظ الإعدادات'),
+    onError: () => error(tToast('errorTitle'), tToast('errorDesc')),
   });
 
   useEffect(() => {
@@ -64,16 +82,16 @@ export default function SettingsPage() {
     mutationFn: (data: PasswordFormData) =>
       authApi.changePassword(data.current_password, data.new_password),
     onSuccess: () => {
-      success('تم التغيير', 'تم تغيير كلمة المرور بنجاح');
+      success(tToast('passwordSavedTitle'), tToast('passwordSavedDesc'));
       reset();
     },
     onError: (err: any) =>
-      error('خطأ', err?.response?.data?.message || 'كلمة المرور الحالية غير صحيحة'),
+      error(tToast('errorTitle'), err?.response?.data?.message || tToast('passwordErrorFallback')),
   });
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">الإعدادات</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-8">{t('title')}</h1>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-8">
@@ -99,14 +117,14 @@ export default function SettingsPage() {
       {activeTab === 'notifications' && (
         <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
           {[
-            { key: 'comments', label: 'التعليقات الجديدة', desc: 'عند تعليق شخص على رحلتك' },
-            { key: 'replies', label: 'الردود', desc: 'عند الرد على تعليقك' },
-            { key: 'favorites', label: 'المفضلة', desc: 'عند إضافة رحلتك إلى المفضلة' },
-            { key: 'helpful_reactions', label: 'التفاعلات المفيدة', desc: 'عند الإشارة إلى رحلتك كمفيدة' },
-            { key: 'follows', label: 'المتابعون الجدد', desc: 'عند متابعة شخص لك' },
-            { key: 'system_updates', label: 'التحديثات', desc: 'تحديثات وإعلانات النظام' },
-            { key: 'email_notifications', label: 'إشعارات البريد الإلكتروني', desc: 'استلام الإشعارات على البريد' },
-            { key: 'push_notifications', label: 'الإشعارات الفورية', desc: 'استلام الإشعارات الفورية' },
+            { key: 'comments', label: tItems('commentsLabel'), desc: tItems('commentsDesc') },
+            { key: 'replies', label: tItems('repliesLabel'), desc: tItems('repliesDesc') },
+            { key: 'favorites', label: tItems('favoritesLabel'), desc: tItems('favoritesDesc') },
+            { key: 'helpful_reactions', label: tItems('helpfulLabel'), desc: tItems('helpfulDesc') },
+            { key: 'follows', label: tItems('followsLabel'), desc: tItems('followsDesc') },
+            { key: 'system_updates', label: tItems('systemLabel'), desc: tItems('systemDesc') },
+            { key: 'email_notifications', label: tItems('emailLabel'), desc: tItems('emailDesc') },
+            { key: 'push_notifications', label: tItems('pushLabel'), desc: tItems('pushDesc') },
           ].map((item) => {
             // Only default to true when settings haven't loaded yet; otherwise
             // use the actual stored boolean (including false).
@@ -127,12 +145,12 @@ export default function SettingsPage() {
                   <p className="font-medium text-gray-900 flex items-center gap-2">
                     {item.label}
                     {saving && (
-                      <span className="text-[10px] text-gray-400 nums-latin">جارٍ الحفظ…</span>
+                      <span className="text-[10px] text-gray-400 nums-latin">{t('saving')}</span>
                     )}
                     {justSaved && !saving && (
                       <span className="inline-flex items-center gap-1 text-[10px] text-[var(--forest)] nums-latin">
                         <Check className="h-3 w-3" />
-                        تم الحفظ
+                        {t('saved')}
                       </span>
                     )}
                   </p>
@@ -152,7 +170,7 @@ export default function SettingsPage() {
                       : 'bg-gray-300 border-gray-400 focus:ring-gray-300'
                   }`}
                 >
-                  <span className="sr-only">{isOn ? 'مفعّل' : 'معطّل'}</span>
+                  <span className="sr-only">{isOn ? t('on') : t('off')}</span>
                   <span
                     aria-hidden
                     className={`absolute top-[2px] h-5 w-5 rounded-full bg-white shadow transition-all duration-200 ${
@@ -168,10 +186,10 @@ export default function SettingsPage() {
 
       {activeTab === 'security' && (
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">تغيير كلمة المرور</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-6">{t('changePassword')}</h2>
           <form onSubmit={handleSubmit((d) => changePasswordMutation.mutate(d))} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور الحالية</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('currentPassword')}</label>
               <input
                 type="password"
                 {...register('current_password')}
@@ -183,7 +201,7 @@ export default function SettingsPage() {
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور الجديدة</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('newPassword')}</label>
               <input
                 type="password"
                 {...register('new_password')}
@@ -195,7 +213,7 @@ export default function SettingsPage() {
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">تأكيد كلمة المرور</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('confirmPassword')}</label>
               <input
                 type="password"
                 {...register('confirm_password')}
@@ -211,7 +229,7 @@ export default function SettingsPage() {
               disabled={isSubmitting || changePasswordMutation.isPending}
               className="btn-primary px-6 py-2.5"
             >
-              {changePasswordMutation.isPending ? 'جارٍ التغيير...' : 'تغيير كلمة المرور'}
+              {changePasswordMutation.isPending ? t('changingPassword') : t('changePassword')}
             </button>
           </form>
         </div>

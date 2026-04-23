@@ -1,0 +1,602 @@
+{
+  "nav": {
+    "overview": "Overview",
+    "dashboard": "Dashboard",
+    "moderation": "Moderation",
+    "pendingQueue": "Pending Queue",
+    "reports": "Reports",
+    "content": "Content",
+    "trips": "Trips",
+    "comments": "Comments",
+    "users": "Users",
+    "allUsers": "All Users",
+    "lookups": "Lookups",
+    "brands": "Brands",
+    "cities": "Cities",
+    "chargingStations": "Charging Stations",
+    "cms": "CMS",
+    "staticPages": "Static Pages",
+    "banners": "Banners",
+    "system": "System",
+    "settings": "Settings",
+    "logs": "Logs",
+    "adminPanel": "Admin Panel",
+    "signOut": "Sign out"
+  },
+  "topbar": {
+    "search": "Search",
+    "notifications": "Notifications",
+    "toggleLanguage": "Toggle language",
+    "english": "EN",
+    "arabic": "عربي"
+  },
+  "login": {
+    "panelLabel": "Admin Panel",
+    "title": "Sign in",
+    "subtitle": "For moderators and administrators only",
+    "email": "Email",
+    "emailPlaceholder": "admin@evcartrip.com",
+    "password": "Password",
+    "submit": "Sign in to admin",
+    "submitting": "Signing in…",
+    "errors": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email address",
+      "passwordRequired": "Password is required",
+      "passwordTooShort": "At least 6 characters",
+      "loginFailed": "Login failed. Please check your credentials."
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Welcome — here's what's happening now",
+    "error": "Error",
+    "retry": "Retry",
+    "genericError": "Could not reach the server to load stats.",
+    "totalUsers": "Total Users",
+    "tripsToday": "Trips Today",
+    "pendingModeration": "Pending Moderation",
+    "openReports": "Open Reports",
+    "vsLastMonth": "vs last month",
+    "vsYesterday": "vs yesterday",
+    "needsAction": "Needs action",
+    "needsAttention": "Needs attention",
+    "growthEyebrow": "Growth",
+    "growthTitle": "Users & trips — last 30 days",
+    "recentActivity": "Recent Activity",
+    "popularRoutes": "Popular Routes",
+    "popularRoutesSubtitle": "Most-traveled EV routes on the platform",
+    "demo": "DEMO",
+    "route": "Route",
+    "tripCount": "Trip Count",
+    "avgBatteryRemaining": "Avg Battery Remaining",
+    "popularity": "Popularity",
+    "chargingStations": "Charging Stations",
+    "totalTrips": "Total Trips",
+    "activity": {
+      "user_joined": "New user joined",
+      "trip_submitted": "Trip submitted for review",
+      "report_filed": "New report filed",
+      "trip_approved": "Trip approved"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "confirming": "Working…",
+    "add": "Add",
+    "loading": "Loading…",
+    "verifying": "Verifying…",
+    "noData": "No data",
+    "noTrips": "No trips yet",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "required": "Required",
+    "optional": "Optional",
+    "yes": "Yes",
+    "no": "No",
+    "success": "Success",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "search": "Search",
+    "filter": "Filter",
+    "refresh": "Refresh",
+    "close": "Close",
+    "view": "View",
+    "actions": "Actions",
+    "allStatuses": "All statuses",
+    "noResults": "No results",
+    "dash": "—",
+    "na": "N/A",
+    "undo": "Undo"
+  },
+  "status": {
+    "active": "Active",
+    "suspended": "Suspended",
+    "banned": "Banned",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "hidden": "Hidden",
+    "archived": "Archived",
+    "draft": "Draft",
+    "published": "Published",
+    "pending_review": "Pending Review"
+  },
+  "roles": {
+    "super_admin": "Super Admin",
+    "admin": "Admin",
+    "moderator": "Moderator",
+    "user": "User",
+    "verified": "Verified",
+    "premium": "Premium",
+    "guest": "Guest"
+  },
+  "users": {
+    "title": "Users",
+    "detailTitle": "User Details",
+    "count": "{count} users",
+    "searchPlaceholder": "Search by name or email…",
+    "allRoles": "All roles",
+    "loadError": "Could not load users from the server.",
+    "loadDetailError": "Could not load user data",
+    "empty": "No users found",
+    "columns": {
+      "user": "User",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "joined": "Joined",
+      "trips": "Trips"
+    },
+    "pagination": {
+      "pageOf": "Page {page} of {total}",
+      "countTotal": "({count} total)"
+    },
+    "actions": {
+      "profile": "Profile",
+      "activate": "Activate",
+      "suspend": "Suspend",
+      "ban": "Ban",
+      "verify": "Verify",
+      "assignBadge": "Assign badge",
+      "changeRole": "Change role"
+    },
+    "modal": {
+      "activate": "Activate User",
+      "suspend": "Suspend User",
+      "ban": "Ban User",
+      "verify": "Verify User",
+      "badge": "Assign Badge",
+      "role": "Change Role",
+      "reasonLabel": "Reason *",
+      "reasonPlaceholder": "Please provide a reason…",
+      "reasonShortPlaceholder": "State the reason…",
+      "badgeLabel": "Choose a badge",
+      "badgeSelect": "Badge",
+      "newRoleLabel": "New role",
+      "confirmGeneric": "Confirm this action for the user?",
+      "confirmVerify": "Verify user {name}?",
+      "confirmActivate": "Activate user {name}?"
+    },
+    "detail": {
+      "backToUsers": "Back to users",
+      "badges": "Badges",
+      "joinedOn": "Joined on",
+      "lastActive": "Last active",
+      "bio": "Bio",
+      "tripsCount": "Trips count",
+      "vehicles": "Vehicles",
+      "default": "Default",
+      "adminActions": "Admin Actions",
+      "recentTrips": "Recent Trips",
+      "noTrips": "No trips",
+      "km": "km"
+    }
+  },
+  "trips": {
+    "title": "Trips",
+    "count": "{count} trips total",
+    "searchPlaceholder": "Search trips…",
+    "empty": "No trips match the selected criteria",
+    "tabs": {
+      "all": "All",
+      "draft": "Draft",
+      "pending_review": "Pending Review",
+      "published": "Published",
+      "rejected": "Rejected",
+      "hidden": "Hidden",
+      "archived": "Archived"
+    },
+    "columns": {
+      "route": "Trip / Route",
+      "author": "Author",
+      "status": "Status",
+      "publishedAt": "Published",
+      "views": "Views"
+    },
+    "untitled": "Untitled",
+    "actions": {
+      "view": "View",
+      "hide": "Hide",
+      "show": "Show",
+      "feature": "Feature",
+      "unfeature": "Unfeature",
+      "delete": "Delete"
+    },
+    "confirm": {
+      "hideTitle": "Hide Trip",
+      "hideMessage": "Hide the trip \"{from} → {to}\"?",
+      "hideConfirm": "Hide",
+      "deleteTitle": "Delete Trip",
+      "deleteMessage": "Delete this trip permanently? This action cannot be undone.",
+      "deleteConfirm": "Delete"
+    }
+  },
+  "moderation": {
+    "title": "Trip Moderation",
+    "count": "{count} trips awaiting review",
+    "loadError": "An error occurred while loading trips. Please try again.",
+    "emptyTitle": "No trips pending review",
+    "emptySubtitle": "All submitted trips have been reviewed.",
+    "pendingBadge": "Pending Review",
+    "km": "km",
+    "batteryStart": "Start:",
+    "batteryEnd": "End:",
+    "stations": "Stations:",
+    "vehicle": "Vehicle:",
+    "approve": "Approve",
+    "reject": "Reject",
+    "pageOf": "Page {page} of {total} ({count} trips)",
+    "approveModal": {
+      "title": "Approve Trip",
+      "message": "Are you sure you want to approve this trip and publish it publicly?",
+      "confirm": "Approve"
+    },
+    "rejectModal": {
+      "title": "Reject Trip",
+      "reasonLabel": "Reason for rejection *",
+      "reasonPlaceholder": "Write the reason here…",
+      "hint": "This reason will be sent to the trip owner.",
+      "confirm": "Confirm rejection"
+    }
+  },
+  "comments": {
+    "title": "Manage Comments",
+    "empty": "No comments yet",
+    "inTrip": "On trip:",
+    "statuses": {
+      "visible": "Visible",
+      "hidden": "Hidden",
+      "reported": "Reported",
+      "deleted": "Deleted"
+    },
+    "actions": {
+      "hide": "Hide",
+      "restore": "Restore",
+      "delete": "Delete"
+    },
+    "deleteTitle": "Delete Comment",
+    "deleteMessage": "Are you sure you want to delete this comment? This cannot be undone."
+  },
+  "brands": {
+    "title": "Brands & Models",
+    "count": "{count} brands",
+    "addBrand": "Add brand",
+    "addBrandTitle": "Add a new brand",
+    "addModel": "Add model",
+    "emptyBrands": "No brands yet",
+    "emptyModels": "No models yet",
+    "modelsHeader": "Models",
+    "modelsCount": "{count} models",
+    "trimsCount": "{count} trims",
+    "form": {
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "slug": "Slug",
+      "logoUrl": "Logo URL",
+      "nameRequired": "Name is required",
+      "nameEnRequired": "English name is required",
+      "addBrandError": "Could not add brand",
+      "addModelError": "Could not add model"
+    },
+    "confirm": {
+      "deleteBrandTitle": "Delete Brand",
+      "deleteBrandMessage": "The brand and all its models will be deleted. This cannot be undone.",
+      "deleteModelTitle": "Delete Model",
+      "deleteModelMessage": "This model and all its trims will be deleted. This cannot be undone."
+    },
+    "deleteBrand": "Delete brand",
+    "deleteModel": "Delete",
+    "new": {
+      "title": "Add a new brand",
+      "brandInfo": "Brand info",
+      "nameAr": "Name (Arabic) *",
+      "nameArPlaceholder": "e.g. Tesla",
+      "nameEn": "Name (English)",
+      "modelsSection": "Models",
+      "modelNamePlaceholder": "Model name {index}",
+      "rangeKmPlaceholder": "Range km",
+      "saveBrand": "Save brand",
+      "saveError": "An error occurred while saving"
+    }
+  },
+  "cities": {
+    "title": "Manage Cities",
+    "addCity": "Add city",
+    "newCity": "New city",
+    "empty": "No cities",
+    "form": {
+      "nameAr": "Name (Arabic)",
+      "nameEn": "Name (English)",
+      "slug": "Slug"
+    },
+    "confirm": {
+      "deleteTitle": "Delete City",
+      "deleteMessage": "The city will be deleted. This cannot be undone."
+    }
+  },
+  "stations": {
+    "title": "Charging Stations",
+    "count": "{count} stations",
+    "addStation": "Add station",
+    "addStationTitle": "Add a new charging station",
+    "editStationTitle": "Edit charging station",
+    "searchPlaceholder": "Search stations…",
+    "empty": "No charging stations registered",
+    "loadError": "An error occurred while loading stations.",
+    "columns": {
+      "name": "Station",
+      "city": "City",
+      "connectors": "Connector types",
+      "power": "Power (kW)",
+      "slots": "Slots",
+      "status": "Status"
+    },
+    "activeLabel": "Active",
+    "inactiveLabel": "Inactive",
+    "verifiedLabel": "Verified",
+    "actions": {
+      "edit": "Edit",
+      "enable": "Enable",
+      "disable": "Disable",
+      "delete": "Delete"
+    },
+    "form": {
+      "nameEn": "Name (English)",
+      "nameAr": "Name (Arabic)",
+      "nameEnPlaceholder": "Station Name",
+      "nameArPlaceholder": "اسم المحطة",
+      "city": "City",
+      "cityPlaceholder": "Riyadh",
+      "address": "Address",
+      "addressPlaceholder": "Street, district…",
+      "mapsUrl": "Google Maps URL (optional)",
+      "mapsUrlPlaceholder": "https://maps.google.com/... or https://goo.gl/maps/...",
+      "mapsOk": "Location extracted from the link — latitude & longitude below",
+      "mapsFail": "Could not extract coordinates — check the URL or enter values manually",
+      "lat": "Latitude",
+      "lng": "Longitude",
+      "maxPower": "Max power (kW)",
+      "totalSlots": "Total slots",
+      "availableSlots": "Available slots",
+      "connectors": "Connector types",
+      "openHours": "Hours of operation",
+      "openHoursPlaceholder": "24/7 or 8am – 10pm",
+      "phone": "Phone number",
+      "website": "Website",
+      "isActive": "Active station",
+      "isVerified": "Verified station",
+      "saveEdits": "Save changes",
+      "addStation": "Add station"
+    },
+    "confirm": {
+      "deleteTitle": "Delete Station",
+      "deleteMessage": "Delete station \"{name}\" permanently?"
+    }
+  },
+  "banners": {
+    "title": "Manage Banners",
+    "count": "{count} banners",
+    "addBanner": "Add banner",
+    "allBanners": "All banners",
+    "newBanner": "New banner",
+    "editBanner": "Edit banner",
+    "noImage": "No image",
+    "empty": "No banners",
+    "workflowHint": "Banners appear on the public site home page at the selected position, only when is_active = yes and within the period between starts_at and ends_at. Leave dates empty to run indefinitely.",
+    "positionLabel": "Position",
+    "periodLabel": "Period",
+    "noEnd": "No end",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "scheduled": "Scheduled"
+    },
+    "position": {
+      "home_top": "Home — top",
+      "home_middle": "Home — middle",
+      "search_top": "Search — top",
+      "home_mid": "Home — middle",
+      "search": "Search — top",
+      "trips": "Trips page"
+    },
+    "form": {
+      "titleAr": "Title (Arabic) *",
+      "titleEn": "Title (English)",
+      "imageUrl": "Image URL",
+      "linkUrl": "Click-through URL",
+      "position": "Position",
+      "startsAt": "Starts at (optional)",
+      "endsAt": "Ends at (optional)",
+      "isActive": "Active"
+    },
+    "confirm": {
+      "deleteTitle": "Delete Banner",
+      "deleteMessage": "The banner will be permanently deleted."
+    }
+  },
+  "pages": {
+    "title": "Static Pages",
+    "count": "{count} pages",
+    "editTitle": "Edit page",
+    "hint": "These pages appear on the public site at /pages/:key — changes propagate within minutes thanks to ISR",
+    "empty": "No pages",
+    "columns": {
+      "key": "Key",
+      "titleAr": "Title (Arabic)",
+      "titleEn": "Title (English)",
+      "updatedAt": "Last updated",
+      "actions": "Actions"
+    },
+    "edit": "Edit",
+    "backToList": "Back to static pages",
+    "saveSuccess": "Saved ✓ Changes will appear on the site within minutes",
+    "saveError": "Could not save, please try again",
+    "fields": {
+      "titleAr": "Arabic title",
+      "titleArPlaceholder": "Arabic title",
+      "titleEn": "English title",
+      "titleEnPlaceholder": "English title",
+      "contentAr": "Content (Arabic) — Markdown",
+      "contentEn": "Content (English) — Markdown",
+      "published": "Published",
+      "slug": "Slug",
+      "lastUpdated": "Last updated"
+    },
+    "preview": "Preview",
+    "publicLinkHint": "To view the page on the public site after publishing, open the link below:",
+    "publishChanges": "Publish changes",
+    "saveDraft": "Save as draft"
+  },
+  "reports": {
+    "title": "Manage Reports",
+    "count": "{count} reports",
+    "loadError": "An error occurred while loading reports.",
+    "empty": "No reports match the selected criteria",
+    "tabs": {
+      "all": "All",
+      "open": "Open",
+      "resolved": "Resolved",
+      "dismissed": "Dismissed"
+    },
+    "columns": {
+      "reporter": "Reporter",
+      "type": "Type",
+      "reason": "Reason",
+      "details": "Details",
+      "status": "Status",
+      "createdAt": "Filed at"
+    },
+    "type": {
+      "trip": "Trip",
+      "comment": "Comment",
+      "user": "User"
+    },
+    "reason": {
+      "spam": "Spam",
+      "inappropriate": "Inappropriate content",
+      "misleading": "Misleading information",
+      "harassment": "Harassment",
+      "other": "Other"
+    },
+    "statusLabel": {
+      "open": "Open",
+      "resolved": "Resolved",
+      "dismissed": "Dismissed"
+    },
+    "actions": {
+      "resolve": "Resolve",
+      "dismiss": "Dismiss"
+    },
+    "confirm": {
+      "resolveTitle": "Confirm report review",
+      "resolveMessage": "Mark this report as resolved?",
+      "dismissTitle": "Dismiss Report",
+      "dismissMessage": "Dismiss this report as invalid?"
+    }
+  },
+  "settings": {
+    "title": "System Settings",
+    "subtitle": "Manage platform settings",
+    "loadError": "An error occurred while loading settings.",
+    "saveError": "Failed to save the setting.",
+    "unsavedCount": "You have {count} unsaved changes",
+    "saveAll": "Save all",
+    "dirty": "{count} changed",
+    "empty": "No settings",
+    "categoryOther": "Other",
+    "category": {
+      "general": "General",
+      "users": "Users",
+      "moderation": "Moderation",
+      "trips": "Trips",
+      "email": "Email",
+      "notifications": "Notifications"
+    },
+    "keys": {
+      "app_name": "App name (English)",
+      "app_name_ar": "App name (Arabic)",
+      "app_version": "App version",
+      "maintenance_mode": "Maintenance mode",
+      "registration_enabled": "Registration enabled",
+      "max_trips_per_user": "Max trips per user",
+      "require_email_verification": "Require email verification",
+      "moderation_auto_approve": "Auto-approve trips",
+      "moderation_min_score": "Minimum moderation score",
+      "reports_threshold": "Reports threshold before hiding",
+      "max_images_per_trip": "Max images per trip",
+      "max_trip_distance_km": "Max trip distance (km)",
+      "featured_trips_limit": "Featured trips limit",
+      "smtp_host": "SMTP host",
+      "smtp_port": "SMTP port",
+      "smtp_from": "Sender email",
+      "notification_welcome_enabled": "Send welcome notification",
+      "notification_moderation_enabled": "Moderation notifications"
+    }
+  },
+  "logs": {
+    "title": "Activity Logs",
+    "count": "{count} entries",
+    "readOnlyHint": "These logs are read-only. They refresh automatically every 30 seconds.",
+    "loadError": "An error occurred while loading logs.",
+    "searchPlaceholder": "Search logs…",
+    "empty": "No logs match the selected criteria",
+    "system": "System",
+    "viewDetails": "View details",
+    "tabs": {
+      "all": "All",
+      "info": "Info",
+      "warn": "Warn",
+      "error": "Error",
+      "debug": "Debug"
+    },
+    "columns": {
+      "level": "Level",
+      "admin": "Admin",
+      "action": "Action",
+      "message": "Message",
+      "time": "Time"
+    },
+    "level": {
+      "info": "Info",
+      "warn": "Warn",
+      "error": "Error",
+      "debug": "Debug"
+    },
+    "detailTitle": "Log details",
+    "detail": {
+      "level": "Level",
+      "time": "Time",
+      "action": "Action",
+      "admin": "Admin",
+      "message": "Message",
+      "meta": "Meta data"
+    }
+  }
+}

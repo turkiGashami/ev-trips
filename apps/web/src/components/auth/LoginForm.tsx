@@ -1,29 +1,36 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useAuthStore } from '../../store/auth.store';
 import { authApi } from '../../lib/api/auth.api';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
-const schema = z.object({
-  email: z.string().email('البريد الإلكتروني غير صحيح'),
-  password: z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
-});
-
-type FormData = z.infer<typeof schema>;
+type FormData = { email: string; password: string };
 
 export default function LoginForm() {
+  const t = useTranslations('auth.loginPage');
+  const tAuth = useTranslations('auth');
   const router = useRouter();
   const searchParams = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState('');
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(t('validation.emailInvalid')),
+        password: z.string().min(6, t('validation.passwordMin')),
+      }),
+    [t],
+  );
 
   const {
     register,
@@ -51,14 +58,14 @@ export default function LoginForm() {
       }
     } catch (err: any) {
       if (!err?.response) {
-        setServerError('تعذر الاتصال بالخادم، تحقق من اتصالك بالإنترنت');
+        setServerError(t('errors.networkFail'));
         return;
       }
       const status = err.response.status;
-      if (status === 401) setServerError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
-      else if (status === 403) setServerError('الحساب موقوف أو محظور، تواصل مع الدعم');
-      else if (status === 429) setServerError('محاولات كثيرة، يرجى الانتظار قليلًا');
-      else setServerError('حدث خطأ، يرجى المحاولة مجددًا');
+      if (status === 401) setServerError(t('errors.invalidCredentials'));
+      else if (status === 403) setServerError(t('errors.suspended'));
+      else if (status === 429) setServerError(t('errors.rateLimited'));
+      else setServerError(t('errors.generic'));
     }
   };
 
@@ -71,7 +78,7 @@ export default function LoginForm() {
       )}
 
       <Input
-        label="البريد الإلكتروني"
+        label={tAuth('email')}
         type="email"
         placeholder="name@example.com"
         leftIcon={<Mail className="w-4 h-4" />}
@@ -81,7 +88,7 @@ export default function LoginForm() {
       />
 
       <Input
-        label="كلمة المرور"
+        label={tAuth('password')}
         type={showPassword ? 'text' : 'password'}
         placeholder="••••••••"
         leftIcon={<Lock className="w-4 h-4" />}
@@ -100,7 +107,7 @@ export default function LoginForm() {
       />
 
       <Button type="submit" loading={isSubmitting} fullWidth size="lg">
-        تسجيل الدخول
+        {tAuth('login')}
       </Button>
     </form>
   );

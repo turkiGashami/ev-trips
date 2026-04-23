@@ -389,6 +389,39 @@ export class AdminService {
     return comment;
   }
 
+  async restoreComment(actorId: string, commentId: string) {
+    const comment = await this.commentRepo.findOne({ where: { id: commentId } });
+    if (!comment) throw new NotFoundException('Comment not found');
+
+    comment.status = 'visible' as any;
+    await this.commentRepo.save(comment);
+
+    await logAdminAction(this.dataSource, {
+      actorId,
+      action: 'comment.restored',
+      targetType: 'comment',
+      targetId: commentId,
+    });
+
+    return comment;
+  }
+
+  async deleteComment(actorId: string, commentId: string) {
+    const comment = await this.commentRepo.findOne({ where: { id: commentId } });
+    if (!comment) throw new NotFoundException('Comment not found');
+
+    await this.commentRepo.remove(comment);
+
+    await logAdminAction(this.dataSource, {
+      actorId,
+      action: 'comment.deleted',
+      targetType: 'comment',
+      targetId: commentId,
+    });
+
+    return { id: commentId, deleted: true };
+  }
+
   // ── REPORTS ───────────────────────────────────────────────────────────────
 
   async getReports(query: { status?: string; page?: number; limit?: number }) {
@@ -466,6 +499,14 @@ export class AdminService {
     await this.modelRepo.save(model);
     await logAdminAction(this.dataSource, { actorId, action: 'model.created', targetType: 'car_model', targetId: model.id, payload: dto });
     return model;
+  }
+
+  async deleteModel(actorId: string, id: string) {
+    const model = await this.modelRepo.findOne({ where: { id } });
+    if (!model) throw new NotFoundException('Model not found');
+    await this.modelRepo.remove(model);
+    await logAdminAction(this.dataSource, { actorId, action: 'model.deleted', targetType: 'car_model', targetId: id });
+    return { id, deleted: true };
   }
 
   async getTrims(modelId?: string) {
@@ -582,16 +623,29 @@ export class AdminService {
     return this.pageRepo.find({ order: { key: 'ASC' } });
   }
 
-  async updateStaticPage(actorId: string, key: string, dto: { title?: string; title_ar?: string; content?: string; content_ar?: string }) {
-    let page = await this.pageRepo.findOne({ where: { key } });
+  async updateStaticPage(
+    actorId: string,
+    key: string,
+    dto: { title?: string; title_ar?: string; content?: string; content_ar?: string; status?: 'draft' | 'published' | string },
+  ) {
+    // Whitelist only columns that exist on the StaticPage entity so a rogue
+    // admin payload cannot write arbitrary fields.
+    const allowed: Record<string, unknown> = {};
+    if (dto.title !== undefined) allowed.title = dto.title;
+    if (dto.title_ar !== undefined) allowed.title_ar = dto.title_ar;
+    if (dto.content !== undefined) allowed.content = dto.content;
+    if (dto.content_ar !== undefined) allowed.content_ar = dto.content_ar;
+    if (dto.status !== undefined) allowed.status = dto.status;
+
+    let page: StaticPage | null = await this.pageRepo.findOne({ where: { key } });
     if (!page) {
-      page = this.pageRepo.create({ key, ...dto });
+      page = this.pageRepo.create({ key, ...allowed } as Partial<StaticPage>);
     } else {
-      Object.assign(page, dto);
+      Object.assign(page, allowed);
     }
     page.updated_by_id = actorId;
-    await this.pageRepo.save(page);
-    await logAdminAction(this.dataSource, { actorId, action: 'page.updated', targetType: 'static_page', payload: { key } });
+    await this.pageRepo.save(page as StaticPage);
+    await logAdminAction(this.dataSource, { actorId, action: 'page.updated', targetType: 'static_page', payload: { key, status: allowed.status } });
     return page;
   }
 

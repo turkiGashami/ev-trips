@@ -1,0 +1,602 @@
+{
+  "nav": {
+    "overview": "نظرة عامة",
+    "dashboard": "لوحة التحكم",
+    "moderation": "الإشراف",
+    "pendingQueue": "طابور الانتظار",
+    "reports": "البلاغات",
+    "content": "المحتوى",
+    "trips": "الرحلات",
+    "comments": "التعليقات",
+    "users": "المستخدمون",
+    "allUsers": "جميع المستخدمين",
+    "lookups": "البيانات المرجعية",
+    "brands": "الماركات",
+    "cities": "المدن",
+    "chargingStations": "محطات الشحن",
+    "cms": "إدارة المحتوى",
+    "staticPages": "الصفحات الثابتة",
+    "banners": "البانرات",
+    "system": "النظام",
+    "settings": "الإعدادات",
+    "logs": "السجلات",
+    "adminPanel": "لوحة الإدارة",
+    "signOut": "تسجيل الخروج"
+  },
+  "topbar": {
+    "search": "بحث",
+    "notifications": "الإشعارات",
+    "toggleLanguage": "تبديل اللغة",
+    "english": "EN",
+    "arabic": "عربي"
+  },
+  "login": {
+    "panelLabel": "لوحة الإدارة",
+    "title": "تسجيل الدخول",
+    "subtitle": "مخصص للمشرفين والمسؤولين فقط",
+    "email": "البريد الإلكتروني",
+    "emailPlaceholder": "admin@evcartrip.com",
+    "password": "كلمة المرور",
+    "submit": "دخول للوحة الإدارة",
+    "submitting": "جارٍ الدخول…",
+    "errors": {
+      "emailRequired": "البريد الإلكتروني مطلوب",
+      "emailInvalid": "بريد إلكتروني غير صحيح",
+      "passwordRequired": "كلمة المرور مطلوبة",
+      "passwordTooShort": "٦ أحرف على الأقل",
+      "loginFailed": "فشل تسجيل الدخول. تحقق من بياناتك."
+    }
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "subtitle": "مرحباً — إليك ما يحدث الآن",
+    "error": "خطأ",
+    "retry": "إعادة المحاولة",
+    "genericError": "تعذّر الاتصال بالخادم لجلب الإحصائيات.",
+    "totalUsers": "إجمالي المستخدمين",
+    "tripsToday": "رحلات اليوم",
+    "pendingModeration": "في انتظار المراجعة",
+    "openReports": "بلاغات مفتوحة",
+    "vsLastMonth": "مقارنة بالشهر الماضي",
+    "vsYesterday": "مقارنة بالأمس",
+    "needsAction": "تحتاج إلى إجراء",
+    "needsAttention": "تحتاج انتباه",
+    "growthEyebrow": "النمو",
+    "growthTitle": "المستخدمون والرحلات — آخر ٣٠ يوماً",
+    "recentActivity": "النشاط الأخير",
+    "popularRoutes": "المسارات الشائعة",
+    "popularRoutesSubtitle": "أكثر مسارات EV في المنصة",
+    "demo": "DEMO",
+    "route": "المسار",
+    "tripCount": "عدد الرحلات",
+    "avgBatteryRemaining": "متوسط البطارية المتبقية",
+    "popularity": "الشعبية",
+    "chargingStations": "محطات الشحن",
+    "totalTrips": "إجمالي الرحلات",
+    "activity": {
+      "user_joined": "انضم مستخدم جديد",
+      "trip_submitted": "رحلة مُرسَلة للمراجعة",
+      "report_filed": "بلاغ جديد",
+      "trip_approved": "رحلة مُعتمَدة"
+    }
+  },
+  "common": {
+    "save": "حفظ",
+    "saving": "جارٍ الحفظ...",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "confirm": "تأكيد",
+    "confirming": "جارٍ التنفيذ...",
+    "add": "إضافة",
+    "loading": "جارٍ التحميل...",
+    "verifying": "جارٍ التحقق…",
+    "noData": "لا توجد بيانات",
+    "noTrips": "لا توجد رحلات بعد",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "required": "مطلوب",
+    "optional": "اختياري",
+    "yes": "نعم",
+    "no": "لا",
+    "success": "تم بنجاح",
+    "error": "حدث خطأ",
+    "retry": "إعادة المحاولة",
+    "search": "بحث",
+    "filter": "تصفية",
+    "refresh": "تحديث",
+    "close": "إغلاق",
+    "view": "عرض",
+    "actions": "الإجراءات",
+    "allStatuses": "جميع الحالات",
+    "noResults": "لا توجد نتائج",
+    "dash": "—",
+    "na": "غير متاح",
+    "undo": "تراجع"
+  },
+  "status": {
+    "active": "نشط",
+    "suspended": "موقوف",
+    "banned": "محظور",
+    "pending": "معلّق",
+    "approved": "معتمد",
+    "rejected": "مرفوضة",
+    "hidden": "مخفية",
+    "archived": "مؤرشفة",
+    "draft": "مسودة",
+    "published": "منشورة",
+    "pending_review": "قيد المراجعة"
+  },
+  "roles": {
+    "super_admin": "مدير عام",
+    "admin": "مدير",
+    "moderator": "مشرف",
+    "user": "مستخدم",
+    "verified": "موثّق",
+    "premium": "مميّز",
+    "guest": "ضيف"
+  },
+  "users": {
+    "title": "المستخدمون",
+    "detailTitle": "تفاصيل المستخدم",
+    "count": "{count} مستخدم",
+    "searchPlaceholder": "البحث بالاسم أو البريد…",
+    "allRoles": "جميع الأدوار",
+    "loadError": "تعذّر تحميل المستخدمين من الخادم.",
+    "loadDetailError": "تعذّر تحميل بيانات المستخدم",
+    "empty": "لا يوجد مستخدمون",
+    "columns": {
+      "user": "المستخدم",
+      "email": "البريد",
+      "role": "الدور",
+      "status": "الحالة",
+      "joined": "الانضمام",
+      "trips": "الرحلات"
+    },
+    "pagination": {
+      "pageOf": "صفحة {page} من {total}",
+      "countTotal": "({count} إجمالاً)"
+    },
+    "actions": {
+      "profile": "الملف الشخصي",
+      "activate": "تفعيل",
+      "suspend": "إيقاف مؤقت",
+      "ban": "حظر",
+      "verify": "توثيق",
+      "assignBadge": "منح شارة",
+      "changeRole": "تغيير الدور"
+    },
+    "modal": {
+      "activate": "تفعيل مستخدم",
+      "suspend": "إيقاف مستخدم",
+      "ban": "حظر مستخدم",
+      "verify": "توثيق مستخدم",
+      "badge": "منح شارة",
+      "role": "تغيير الدور",
+      "reasonLabel": "السبب *",
+      "reasonPlaceholder": "يرجى ذكر سبب الإجراء…",
+      "reasonShortPlaceholder": "اذكر السبب...",
+      "badgeLabel": "اختر الشارة",
+      "badgeSelect": "الشارة",
+      "newRoleLabel": "الدور الجديد",
+      "confirmGeneric": "هل تريد تأكيد هذا الإجراء للمستخدم؟",
+      "confirmVerify": "هل تريد توثيق المستخدم {name}؟",
+      "confirmActivate": "هل تريد تفعيل المستخدم {name}؟"
+    },
+    "detail": {
+      "backToUsers": "العودة إلى المستخدمين",
+      "badges": "الشارات",
+      "joinedOn": "انضم في",
+      "lastActive": "آخر نشاط",
+      "bio": "نبذة",
+      "tripsCount": "عدد الرحلات",
+      "vehicles": "السيارات",
+      "default": "الافتراضية",
+      "adminActions": "إجراءات الإدارة",
+      "recentTrips": "أحدث الرحلات",
+      "noTrips": "لا توجد رحلات",
+      "km": "كم"
+    }
+  },
+  "trips": {
+    "title": "الرحلات",
+    "count": "{count} رحلة إجمالاً",
+    "searchPlaceholder": "البحث في الرحلات…",
+    "empty": "لا توجد رحلات تطابق المعايير المحددة",
+    "tabs": {
+      "all": "الكل",
+      "draft": "مسودة",
+      "pending_review": "قيد المراجعة",
+      "published": "منشورة",
+      "rejected": "مرفوضة",
+      "hidden": "مخفية",
+      "archived": "مؤرشفة"
+    },
+    "columns": {
+      "route": "الرحلة / المسار",
+      "author": "الكاتب",
+      "status": "الحالة",
+      "publishedAt": "تاريخ النشر",
+      "views": "المشاهدات"
+    },
+    "untitled": "بدون عنوان",
+    "actions": {
+      "view": "عرض",
+      "hide": "إخفاء",
+      "show": "إظهار",
+      "feature": "تمييز",
+      "unfeature": "إلغاء التمييز",
+      "delete": "حذف"
+    },
+    "confirm": {
+      "hideTitle": "إخفاء الرحلة",
+      "hideMessage": "هل تريد إخفاء رحلة \"{from} → {to}\"؟",
+      "hideConfirm": "إخفاء",
+      "deleteTitle": "حذف الرحلة",
+      "deleteMessage": "هل تريد حذف هذه الرحلة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
+      "deleteConfirm": "حذف"
+    }
+  },
+  "moderation": {
+    "title": "مراجعة الرحلات",
+    "count": "{count} رحلة بانتظار المراجعة",
+    "loadError": "حدث خطأ أثناء تحميل الرحلات. يرجى المحاولة مجدداً.",
+    "emptyTitle": "لا توجد رحلات بانتظار المراجعة",
+    "emptySubtitle": "تم مراجعة جميع الرحلات المقدمة.",
+    "pendingBadge": "قيد المراجعة",
+    "km": "كم",
+    "batteryStart": "البدء:",
+    "batteryEnd": "النهاية:",
+    "stations": "محطات:",
+    "vehicle": "المركبة:",
+    "approve": "موافقة",
+    "reject": "رفض",
+    "pageOf": "صفحة {page} من {total} ({count} رحلة)",
+    "approveModal": {
+      "title": "الموافقة على الرحلة",
+      "message": "هل أنت متأكد من الموافقة على هذه الرحلة ونشرها للعامة؟",
+      "confirm": "موافقة"
+    },
+    "rejectModal": {
+      "title": "رفض الرحلة",
+      "reasonLabel": "سبب الرفض *",
+      "reasonPlaceholder": "اكتب سبب الرفض هنا…",
+      "hint": "سيتم إرسال هذا السبب إلى صاحب الرحلة.",
+      "confirm": "تأكيد الرفض"
+    }
+  },
+  "comments": {
+    "title": "إدارة التعليقات",
+    "empty": "لا توجد تعليقات بعد",
+    "inTrip": "في رحلة:",
+    "statuses": {
+      "visible": "ظاهر",
+      "hidden": "مخفي",
+      "reported": "مُبلَّغ عنه",
+      "deleted": "محذوف"
+    },
+    "actions": {
+      "hide": "إخفاء",
+      "restore": "استعادة",
+      "delete": "حذف"
+    },
+    "deleteTitle": "حذف التعليق",
+    "deleteMessage": "هل أنت متأكد من حذف هذا التعليق؟ لا يمكن التراجع."
+  },
+  "brands": {
+    "title": "الماركات والموديلات",
+    "count": "{count} ماركة",
+    "addBrand": "إضافة ماركة",
+    "addBrandTitle": "إضافة ماركة جديدة",
+    "addModel": "إضافة موديل",
+    "emptyBrands": "لا توجد ماركات بعد",
+    "emptyModels": "لا توجد موديلات بعد",
+    "modelsHeader": "الموديلات",
+    "modelsCount": "{count} موديل",
+    "trimsCount": "{count} فئة",
+    "form": {
+      "nameEn": "الاسم (إنجليزي)",
+      "nameAr": "الاسم (عربي)",
+      "slug": "المعرّف (slug)",
+      "logoUrl": "رابط الشعار",
+      "nameRequired": "الاسم مطلوب",
+      "nameEnRequired": "الاسم بالإنجليزية مطلوب",
+      "addBrandError": "تعذّر إضافة الماركة",
+      "addModelError": "تعذّر إضافة الموديل"
+    },
+    "confirm": {
+      "deleteBrandTitle": "حذف الماركة",
+      "deleteBrandMessage": "سيتم حذف الماركة وجميع موديلاتها. هذا الإجراء لا يمكن التراجع عنه.",
+      "deleteModelTitle": "حذف الموديل",
+      "deleteModelMessage": "سيُحذف هذا الموديل وكل فئاته (trims). لا يمكن التراجع."
+    },
+    "deleteBrand": "حذف الماركة",
+    "deleteModel": "حذف",
+    "new": {
+      "title": "إضافة ماركة جديدة",
+      "brandInfo": "معلومات الماركة",
+      "nameAr": "الاسم بالعربية *",
+      "nameArPlaceholder": "مثال: تسلا",
+      "nameEn": "الاسم بالإنجليزية",
+      "modelsSection": "الموديلات",
+      "modelNamePlaceholder": "اسم الموديل {index}",
+      "rangeKmPlaceholder": "النطاق كم",
+      "saveBrand": "حفظ الماركة",
+      "saveError": "حدث خطأ أثناء الحفظ"
+    }
+  },
+  "cities": {
+    "title": "إدارة المدن",
+    "addCity": "إضافة مدينة",
+    "newCity": "مدينة جديدة",
+    "empty": "لا توجد مدن",
+    "form": {
+      "nameAr": "الاسم بالعربية",
+      "nameEn": "الاسم بالإنجليزية",
+      "slug": "المعرف (slug)"
+    },
+    "confirm": {
+      "deleteTitle": "حذف المدينة",
+      "deleteMessage": "سيتم حذف المدينة. هذا الإجراء لا يمكن التراجع عنه."
+    }
+  },
+  "stations": {
+    "title": "محطات الشحن",
+    "count": "{count} محطة",
+    "addStation": "إضافة محطة",
+    "addStationTitle": "إضافة محطة شحن جديدة",
+    "editStationTitle": "تعديل محطة الشحن",
+    "searchPlaceholder": "البحث عن محطة…",
+    "empty": "لا توجد محطات شحن مسجلة",
+    "loadError": "حدث خطأ أثناء تحميل المحطات.",
+    "columns": {
+      "name": "اسم المحطة",
+      "city": "المدينة",
+      "connectors": "أنواع الشحن",
+      "power": "الطاقة (كيلوواط)",
+      "slots": "المنافذ",
+      "status": "الحالة"
+    },
+    "activeLabel": "نشطة",
+    "inactiveLabel": "غير نشطة",
+    "verifiedLabel": "موثقة",
+    "actions": {
+      "edit": "تعديل",
+      "enable": "تفعيل",
+      "disable": "تعطيل",
+      "delete": "حذف"
+    },
+    "form": {
+      "nameEn": "الاسم بالإنجليزية",
+      "nameAr": "الاسم بالعربية",
+      "nameEnPlaceholder": "Station Name",
+      "nameArPlaceholder": "اسم المحطة",
+      "city": "المدينة",
+      "cityPlaceholder": "الرياض",
+      "address": "العنوان",
+      "addressPlaceholder": "شارع، حي...",
+      "mapsUrl": "رابط Google Maps (اختياري)",
+      "mapsUrlPlaceholder": "https://maps.google.com/... أو https://goo.gl/maps/...",
+      "mapsOk": "تم استخراج الموقع من الرابط — خط العرض والطول أدناه",
+      "mapsFail": "تعذّر استخراج الإحداثيات — تأكد من الرابط أو أدخل القيم يدوياً",
+      "lat": "خط العرض (Lat)",
+      "lng": "خط الطول (Lng)",
+      "maxPower": "أقصى طاقة (كيلوواط)",
+      "totalSlots": "إجمالي المنافذ",
+      "availableSlots": "المنافذ المتاحة",
+      "connectors": "أنواع الموصلات",
+      "openHours": "أوقات العمل",
+      "openHoursPlaceholder": "24/7 أو 8 صباحاً - 10 مساءً",
+      "phone": "رقم الهاتف",
+      "website": "الموقع الإلكتروني",
+      "isActive": "محطة نشطة",
+      "isVerified": "محطة موثقة",
+      "saveEdits": "حفظ التعديلات",
+      "addStation": "إضافة المحطة"
+    },
+    "confirm": {
+      "deleteTitle": "حذف المحطة",
+      "deleteMessage": "هل تريد حذف محطة \"{name}\" نهائياً؟"
+    }
+  },
+  "banners": {
+    "title": "إدارة البنرات",
+    "count": "{count} بنر",
+    "addBanner": "إضافة بنر",
+    "allBanners": "كل البنرات",
+    "newBanner": "بنر جديد",
+    "editBanner": "تعديل بنر",
+    "noImage": "لا توجد صورة",
+    "empty": "لا توجد بنرات",
+    "workflowHint": "البنرات تظهر على الصفحة الرئيسية للموقع العام حسب الموقع المحدد، فقط عند is_active = نعم وضمن الفترة بين starts_at و ends_at. إذا تركت التواريخ فارغة فهي تعمل دائماً.",
+    "positionLabel": "الموقع",
+    "periodLabel": "الفترة",
+    "noEnd": "بلا نهاية",
+    "status": {
+      "active": "فعّال",
+      "inactive": "غير فعّال",
+      "scheduled": "مجدول"
+    },
+    "position": {
+      "home_top": "رأس الصفحة الرئيسية",
+      "home_middle": "منتصف الصفحة الرئيسية",
+      "search_top": "أعلى نتائج البحث",
+      "home_mid": "منتصف الصفحة الرئيسية",
+      "search": "أعلى نتائج البحث",
+      "trips": "صفحة الرحلات"
+    },
+    "form": {
+      "titleAr": "العنوان (عربي) *",
+      "titleEn": "العنوان (إنجليزي)",
+      "imageUrl": "رابط الصورة",
+      "linkUrl": "رابط عند النقر",
+      "position": "الموقع",
+      "startsAt": "تبدأ في (اختياري)",
+      "endsAt": "تنتهي في (اختياري)",
+      "isActive": "فعّال"
+    },
+    "confirm": {
+      "deleteTitle": "حذف البنر",
+      "deleteMessage": "سيتم حذف البنر نهائياً."
+    }
+  },
+  "pages": {
+    "title": "الصفحات الثابتة",
+    "count": "{count} صفحة",
+    "editTitle": "تعديل صفحة",
+    "hint": "هذه الصفحات تظهر في الموقع العام على /pages/:key — التعديلات تنعكس خلال دقائق بفضل ISR",
+    "empty": "لا توجد صفحات",
+    "columns": {
+      "key": "المفتاح",
+      "titleAr": "العنوان (عربي)",
+      "titleEn": "العنوان (إنجليزي)",
+      "updatedAt": "آخر تعديل",
+      "actions": "إجراءات"
+    },
+    "edit": "تعديل",
+    "backToList": "العودة إلى الصفحات الثابتة",
+    "saveSuccess": "تم الحفظ ✓ ستنعكس التغييرات على الموقع خلال دقائق",
+    "saveError": "تعذّر الحفظ، حاول مرة أخرى",
+    "fields": {
+      "titleAr": "عنوان عربي",
+      "titleArPlaceholder": "عنوان بالعربية",
+      "titleEn": "عنوان إنجليزي",
+      "titleEnPlaceholder": "English title",
+      "contentAr": "المحتوى (عربي) — Markdown",
+      "contentEn": "المحتوى (إنجليزي) — Markdown",
+      "published": "منشور",
+      "slug": "المعرف",
+      "lastUpdated": "آخر تعديل"
+    },
+    "preview": "معاينة",
+    "publicLinkHint": "لعرض الصفحة على الموقع العام بعد النشر، افتح الرابط أدناه:",
+    "publishChanges": "نشر التغييرات",
+    "saveDraft": "حفظ كمسودة"
+  },
+  "reports": {
+    "title": "إدارة البلاغات",
+    "count": "{count} بلاغ",
+    "loadError": "حدث خطأ أثناء تحميل البلاغات.",
+    "empty": "لا توجد بلاغات بالمعايير المحددة",
+    "tabs": {
+      "all": "الكل",
+      "open": "مفتوح",
+      "resolved": "تمت المراجعة",
+      "dismissed": "مرفوض"
+    },
+    "columns": {
+      "reporter": "المُبلِّغ",
+      "type": "نوع البلاغ",
+      "reason": "السبب",
+      "details": "التفاصيل",
+      "status": "الحالة",
+      "createdAt": "تاريخ البلاغ"
+    },
+    "type": {
+      "trip": "رحلة",
+      "comment": "تعليق",
+      "user": "مستخدم"
+    },
+    "reason": {
+      "spam": "بريد مزعج",
+      "inappropriate": "محتوى غير لائق",
+      "misleading": "معلومات مضللة",
+      "harassment": "مضايقة",
+      "other": "أخرى"
+    },
+    "statusLabel": {
+      "open": "مفتوح",
+      "resolved": "تمت المراجعة",
+      "dismissed": "مرفوض"
+    },
+    "actions": {
+      "resolve": "تمت المراجعة",
+      "dismiss": "رفض البلاغ"
+    },
+    "confirm": {
+      "resolveTitle": "تأكيد مراجعة البلاغ",
+      "resolveMessage": "هل تريد تحديد هذا البلاغ كـ«تمت المراجعة»؟",
+      "dismissTitle": "رفض البلاغ",
+      "dismissMessage": "هل تريد رفض هذا البلاغ واعتباره غير صالح؟"
+    }
+  },
+  "settings": {
+    "title": "إعدادات النظام",
+    "subtitle": "إدارة إعدادات المنصة",
+    "loadError": "حدث خطأ أثناء تحميل الإعدادات.",
+    "saveError": "فشل حفظ الإعداد.",
+    "unsavedCount": "لديك {count} تعديل غير محفوظ",
+    "saveAll": "حفظ الكل",
+    "dirty": "{count} تعديل",
+    "empty": "لا توجد إعدادات",
+    "categoryOther": "أخرى",
+    "category": {
+      "general": "عام",
+      "users": "المستخدمون",
+      "moderation": "الإشراف",
+      "trips": "الرحلات",
+      "email": "البريد الإلكتروني",
+      "notifications": "الإشعارات"
+    },
+    "keys": {
+      "app_name": "اسم التطبيق (إنجليزي)",
+      "app_name_ar": "اسم التطبيق (عربي)",
+      "app_version": "إصدار التطبيق",
+      "maintenance_mode": "وضع الصيانة",
+      "registration_enabled": "تفعيل التسجيل",
+      "max_trips_per_user": "الحد الأقصى للرحلات لكل مستخدم",
+      "require_email_verification": "التحقق من البريد",
+      "moderation_auto_approve": "الموافقة التلقائية على الرحلات",
+      "moderation_min_score": "الحد الأدنى لنتيجة الإشراف",
+      "reports_threshold": "حد عدد البلاغات قبل الإخفاء",
+      "max_images_per_trip": "الحد الأقصى للصور في الرحلة",
+      "max_trip_distance_km": "الحد الأقصى لمسافة الرحلة (كم)",
+      "featured_trips_limit": "عدد الرحلات المميزة",
+      "smtp_host": "خادم البريد (SMTP Host)",
+      "smtp_port": "منفذ البريد (SMTP Port)",
+      "smtp_from": "بريد الإرسال",
+      "notification_welcome_enabled": "إرسال رسالة ترحيب",
+      "notification_moderation_enabled": "إشعارات الإشراف"
+    }
+  },
+  "logs": {
+    "title": "سجلات النشاط",
+    "count": "{count} سجل",
+    "readOnlyHint": "هذه السجلات للقراءة فقط. تُحدَّث تلقائياً كل 30 ثانية.",
+    "loadError": "حدث خطأ أثناء تحميل السجلات.",
+    "searchPlaceholder": "البحث في السجلات…",
+    "empty": "لا توجد سجلات تطابق المعايير المحددة",
+    "system": "النظام",
+    "viewDetails": "عرض التفاصيل",
+    "tabs": {
+      "all": "الكل",
+      "info": "معلومات",
+      "warn": "تحذير",
+      "error": "خطأ",
+      "debug": "تتبع"
+    },
+    "columns": {
+      "level": "المستوى",
+      "admin": "المشرف",
+      "action": "الإجراء",
+      "message": "الرسالة",
+      "time": "التوقيت"
+    },
+    "level": {
+      "info": "معلومات",
+      "warn": "تحذير",
+      "error": "خطأ",
+      "debug": "تتبع"
+    },
+    "detailTitle": "تفاصيل السجل",
+    "detail": {
+      "level": "المستوى",
+      "time": "الوقت",
+      "action": "الإجراء",
+      "admin": "المشرف",
+      "message": "الرسالة",
+      "meta": "البيانات الإضافية"
+    }
+  }
+}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Save, RotateCcw, CheckCircle, AlertTriangle, Settings, ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { AdminTopbar } from "@/components/layout/AdminTopbar";
 import { AdminButton } from "@/components/ui/AdminButton";
 import { settingsApi } from "@/lib/api/admin.api";
@@ -18,35 +19,36 @@ interface SettingEntry {
 }
 
 const CATEGORY_MAP: Record<string, string> = {
-  app_name: "عام", app_name_ar: "عام", app_version: "عام", maintenance_mode: "عام",
-  registration_enabled: "المستخدمون", max_trips_per_user: "المستخدمون", require_email_verification: "المستخدمون",
-  moderation_auto_approve: "الإشراف", moderation_min_score: "الإشراف", reports_threshold: "الإشراف",
-  max_images_per_trip: "الرحلات", max_trip_distance_km: "الرحلات", featured_trips_limit: "الرحلات",
-  smtp_host: "البريد الإلكتروني", smtp_port: "البريد الإلكتروني", smtp_from: "البريد الإلكتروني",
-  notification_welcome_enabled: "الإشعارات", notification_moderation_enabled: "الإشعارات",
+  app_name: "general", app_name_ar: "general", app_version: "general", maintenance_mode: "general",
+  registration_enabled: "users", max_trips_per_user: "users", require_email_verification: "users",
+  moderation_auto_approve: "moderation", moderation_min_score: "moderation", reports_threshold: "moderation",
+  max_images_per_trip: "trips", max_trip_distance_km: "trips", featured_trips_limit: "trips",
+  smtp_host: "email", smtp_port: "email", smtp_from: "email",
+  notification_welcome_enabled: "notifications", notification_moderation_enabled: "notifications",
 };
 
-const KEY_LABELS: Record<string, string> = {
-  app_name: "اسم التطبيق (إنجليزي)", app_name_ar: "اسم التطبيق (عربي)", app_version: "إصدار التطبيق",
-  maintenance_mode: "وضع الصيانة", registration_enabled: "تفعيل التسجيل",
-  max_trips_per_user: "الحد الأقصى للرحلات لكل مستخدم", require_email_verification: "التحقق من البريد",
-  moderation_auto_approve: "الموافقة التلقائية على الرحلات", moderation_min_score: "الحد الأدنى لنتيجة الإشراف",
-  reports_threshold: "حد عدد البلاغات قبل الإخفاء", max_images_per_trip: "الحد الأقصى للصور في الرحلة",
-  max_trip_distance_km: "الحد الأقصى لمسافة الرحلة (كم)", featured_trips_limit: "عدد الرحلات المميزة",
-  smtp_host: "خادم البريد (SMTP Host)", smtp_port: "منفذ البريد (SMTP Port)", smtp_from: "بريد الإرسال",
-  notification_welcome_enabled: "إرسال رسالة ترحيب", notification_moderation_enabled: "إشعارات الإشراف",
-};
+const KEY_KEYS = [
+  'app_name', 'app_name_ar', 'app_version', 'maintenance_mode',
+  'registration_enabled', 'max_trips_per_user', 'require_email_verification',
+  'moderation_auto_approve', 'moderation_min_score', 'reports_threshold',
+  'max_images_per_trip', 'max_trip_distance_km', 'featured_trips_limit',
+  'smtp_host', 'smtp_port', 'smtp_from',
+  'notification_welcome_enabled', 'notification_moderation_enabled',
+];
 
-function getCategory(key: string) { return CATEGORY_MAP[key] ?? "أخرى"; }
+function getCategoryKey(key: string): string { return CATEGORY_MAP[key] ?? ""; }
 
 function SettingRow({ entry, onChange, onSave, onReset }: { entry: SettingEntry; onChange: (k: string, v: string) => void; onSave: (k: string) => void; onReset: (k: string) => void }) {
+  const t = useTranslations("settings");
+  const tCommon = useTranslations("common");
   const isBoolLike = entry.originalValue === "true" || entry.originalValue === "false" || entry.value === "true" || entry.value === "false";
   const isOn = entry.value === "true";
+  const keyLabel = KEY_KEYS.includes(entry.key) ? t(`keys.${entry.key}` as any) : entry.key;
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', borderBottom: '1px solid var(--line-soft)' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.3 }}>{KEY_LABELS[entry.key] ?? entry.key}</p>
+        <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.3 }}>{keyLabel}</p>
         <p style={{ fontSize: 10, color: 'var(--ink-4)', fontFamily: 'monospace', marginTop: 2 }}>{entry.key}</p>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -63,12 +65,12 @@ function SettingRow({ entry, onChange, onSave, onReset }: { entry: SettingEntry;
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, opacity: entry.isDirty ? 1 : 0 }}>
         {entry.isDirty && (
-          <button onClick={() => onReset(entry.key)} style={{ padding: 5, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', display: 'flex', borderRadius: 2 }} title="تراجع">
+          <button onClick={() => onReset(entry.key)} style={{ padding: 5, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', display: 'flex', borderRadius: 2 }} title={tCommon('undo')}>
             <RotateCcw style={{ width: 13, height: 13 }} />
           </button>
         )}
         <button onClick={() => onSave(entry.key)} disabled={!entry.isDirty || entry.isSaving}
-          style={{ padding: 5, background: 'none', border: 'none', cursor: entry.isDirty ? 'pointer' : 'default', color: entry.isDirty ? 'var(--forest)' : 'var(--ink-4)', display: 'flex', borderRadius: 2 }} title="حفظ">
+          style={{ padding: 5, background: 'none', border: 'none', cursor: entry.isDirty ? 'pointer' : 'default', color: entry.isDirty ? 'var(--forest)' : 'var(--ink-4)', display: 'flex', borderRadius: 2 }} title={tCommon('save')}>
           {entry.isSaving ? <div style={{ width: 13, height: 13, borderRadius: '50%', border: '2px solid var(--line)', borderTopColor: 'var(--forest)', animation: 'spin 1s linear infinite' }} /> : <Save style={{ width: 13, height: 13 }} />}
         </button>
       </div>
@@ -77,18 +79,19 @@ function SettingRow({ entry, onChange, onSave, onReset }: { entry: SettingEntry;
 }
 
 function CategorySection({ title, entries, onChange, onSave, onReset }: { title: string; entries: SettingEntry[]; onChange: (k: string, v: string) => void; onSave: (k: string) => void; onReset: (k: string) => void }) {
+  const t = useTranslations("settings");
   const [collapsed, setCollapsed] = useState(false);
   const dirtyCount = entries.filter((e) => e.isDirty).length;
 
   return (
     <div className="card" style={{ overflow: 'hidden' }}>
       <button type="button" onClick={() => setCollapsed((c) => !c)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'right' }}>
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'start' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Settings style={{ width: 14, height: 14, color: 'var(--forest)' }} />
           <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)' }}>{title}</span>
           {dirtyCount > 0 && (
-            <span style={{ padding: '1px 8px', fontSize: 10, fontWeight: 500, background: 'rgba(217,119,6,.1)', color: '#d97706', borderRadius: 2 }}>{dirtyCount} تعديل</span>
+            <span style={{ padding: '1px 8px', fontSize: 10, fontWeight: 500, background: 'rgba(217,119,6,.1)', color: '#d97706', borderRadius: 2 }}>{t('dirty', { count: dirtyCount })}</span>
           )}
         </div>
         {collapsed ? <ChevronDown style={{ width: 14, height: 14, color: 'var(--ink-4)' }} /> : <ChevronUp style={{ width: 14, height: 14, color: 'var(--ink-4)' }} />}
@@ -103,6 +106,7 @@ function CategorySection({ title, entries, onChange, onSave, onReset }: { title:
 }
 
 export default function SettingsPage() {
+  const t = useTranslations("settings");
   const [settings, setSettings] = useState<SettingEntry[]>([]);
 
   const { data: rawSettings, isLoading, isError } = useQuery({
@@ -130,34 +134,39 @@ export default function SettingsPage() {
       await updateMutation.mutateAsync({ key, value: entry.value });
       setSettings((prev) => prev.map((s) => s.key === key ? { ...s, isSaving: false, isDirty: false, originalValue: entry.value, savedAt: Date.now() } : s));
     } catch {
-      setSettings((prev) => prev.map((s) => s.key === key ? { ...s, isSaving: false, error: "فشل حفظ الإعداد." } : s));
+      setSettings((prev) => prev.map((s) => s.key === key ? { ...s, isSaving: false, error: t("saveError") } : s));
     }
   };
 
   const grouped = settings.reduce<Record<string, SettingEntry[]>>((acc, entry) => {
-    const cat = getCategory(entry.key);
+    const cat = getCategoryKey(entry.key);
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(entry);
     return acc;
   }, {});
+
+  const categoryLabel = (catKey: string) => {
+    if (!catKey) return t('categoryOther');
+    return t(`category.${catKey}` as any);
+  };
 
   const totalDirty = settings.filter((s) => s.isDirty).length;
   const handleSaveAll = async () => { for (const entry of settings.filter((s) => s.isDirty)) await handleSave(entry.key); };
 
   return (
     <>
-      <AdminTopbar title="إعدادات النظام" subtitle="إدارة إعدادات المنصة" />
-      <main className="admin-main" dir="rtl">
+      <AdminTopbar title={t("title")} subtitle={t("subtitle")} />
+      <main className="admin-main">
         {isError && (
           <div style={{ background: 'rgba(180,94,66,0.08)', border: '1px solid rgba(180,94,66,0.3)', borderRadius: 3, padding: '10px 14px', fontSize: 13, color: 'var(--terra)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <AlertTriangle style={{ width: 14, height: 14, flexShrink: 0 }} /> حدث خطأ أثناء تحميل الإعدادات.
+            <AlertTriangle style={{ width: 14, height: 14, flexShrink: 0 }} /> {t("loadError")}
           </div>
         )}
 
         {totalDirty > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.3)', borderRadius: 3, padding: '10px 16px', marginBottom: 16 }}>
-            <p style={{ fontSize: 13, color: '#d97706' }}>لديك <strong>{totalDirty}</strong> تعديل غير محفوظ</p>
-            <AdminButton variant="primary" size="sm" leftIcon={<Save style={{ width: 14, height: 14 }} />} onClick={handleSaveAll}>حفظ الكل</AdminButton>
+            <p style={{ fontSize: 13, color: '#d97706' }}>{t("unsavedCount", { count: totalDirty })}</p>
+            <AdminButton variant="primary" size="sm" leftIcon={<Save style={{ width: 14, height: 14 }} />} onClick={handleSaveAll}>{t("saveAll")}</AdminButton>
           </div>
         )}
 
@@ -175,12 +184,12 @@ export default function SettingsPage() {
         {!isLoading && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {Object.entries(grouped).map(([category, entries]) => (
-              <CategorySection key={category} title={category} entries={entries} onChange={handleChange} onSave={handleSave} onReset={handleReset} />
+              <CategorySection key={category} title={categoryLabel(category)} entries={entries} onChange={handleChange} onSave={handleSave} onReset={handleReset} />
             ))}
             {settings.length === 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', color: 'var(--ink-4)' }}>
                 <Settings style={{ width: 40, height: 40, marginBottom: 12, opacity: 0.3 }} />
-                <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink-2)', marginBottom: 4 }}>لا توجد إعدادات</p>
+                <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink-2)', marginBottom: 4 }}>{t("empty")}</p>
               </div>
             )}
           </div>
