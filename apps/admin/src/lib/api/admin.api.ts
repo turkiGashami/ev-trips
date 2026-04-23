@@ -20,11 +20,59 @@ import type {
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
+/**
+ * Admin login uses the shared /auth/login endpoint and validates the returned
+ * role. The public API returns `{ data: { user, tokens } }` so we adapt it
+ * here to the admin frontend's `{ token, admin }` shape.
+ */
+const ADMIN_ROLES = new Set(["super_admin", "admin", "moderator"]);
+
 export const authApi = {
-  login: (payload: LoginPayload) =>
-    apiClient.post<AuthResponse>("/admin/auth/login", payload).then((r) => r.data),
-  logout: () => apiClient.post("/admin/auth/logout").then((r) => r.data),
-  me: () => apiClient.get<AuthResponse["admin"]>("/admin/auth/me").then((r) => r.data),
+  login: async (payload: LoginPayload): Promise<AuthResponse> => {
+    const { data: envelope } = await apiClient.post<any>("/auth/login", payload);
+    const body = envelope?.data ?? envelope;
+    const user = body?.user;
+    const accessToken =
+      body?.tokens?.accessToken ??
+      body?.accessToken ??
+      body?.token;
+
+    if (!user || !accessToken) {
+      throw new Error("Invalid login response");
+    }
+
+    const role = user.role as string;
+    if (!ADMIN_ROLES.has(role)) {
+      throw Object.assign(new Error("غير مصرّح لك بدخول لوحة الإدارة"), {
+        response: { status: 403, data: { message: "غير مصرّح لك بدخول لوحة الإدارة" } },
+      });
+    }
+
+    return {
+      token: accessToken,
+      admin: {
+        id: user.id,
+        email: user.email,
+        name: user.full_name ?? user.fullName ?? user.name ?? user.username ?? user.email,
+        role: role as AuthResponse["admin"]["role"],
+        avatar: user.avatar_url ?? user.avatarUrl ?? undefined,
+        createdAt: user.created_at ?? user.createdAt ?? new Date().toISOString(),
+      },
+    };
+  },
+  logout: () => apiClient.post("/auth/logout").then((r) => r.data).catch(() => null),
+  me: async (): Promise<AuthResponse["admin"]> => {
+    const { data: envelope } = await apiClient.get<any>("/auth/me");
+    const user = envelope?.data ?? envelope;
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.full_name ?? user.fullName ?? user.name ?? user.username ?? user.email,
+      role: user.role,
+      avatar: user.avatar_url ?? user.avatarUrl ?? undefined,
+      createdAt: user.created_at ?? user.createdAt ?? new Date().toISOString(),
+    };
+  },
 };
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
