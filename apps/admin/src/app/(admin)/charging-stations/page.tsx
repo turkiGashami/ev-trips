@@ -29,15 +29,60 @@ interface StationFormData {
 
 const EMPTY_FORM: StationFormData = { name: "", nameAr: "", city: "", address: "", lat: "", lng: "", maxPowerKw: "", totalSlots: "", availableSlots: "", connectorTypes: [], openHours: "", phone: "", website: "", isVerified: false, isActive: true };
 
+// Extract a city name from either a string or an object {name/name_ar/ar/en}.
+// Prevents the notorious "[object Object]" rendering in inputs and cells.
+function cityToText(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    const v = value as any;
+    return v.name_ar ?? v.nameAr ?? v.name ?? v.ar ?? v.en ?? '';
+  }
+  return '';
+}
+
+// Parse lat/lng from a Google Maps share URL. Supports:
+//  • https://www.google.com/maps/@24.71,46.67,15z
+//  • https://maps.google.com/?q=24.71,46.67
+//  • https://www.google.com/maps/place/.../@24.71,46.67,15z
+//  • https://www.google.com/maps/dir/.../!3d24.71!4d46.67
+function parseGoogleMapsUrl(url: string): { lat: string; lng: string } | null {
+  const patterns = [
+    /@(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,
+    /[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return { lat: m[1], lng: m[2] };
+  }
+  return null;
+}
+
 function StationFormModal({ station, onClose, onSaved }: { station?: ChargingStation | null; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState<StationFormData>(station ? {
-    name: station.name, nameAr: station.nameAr ?? "", city: station.city, address: station.address,
+    name: station.name, nameAr: station.nameAr ?? "", city: cityToText(station.city), address: station.address,
     lat: String(station.lat), lng: String(station.lng), maxPowerKw: String(station.maxPowerKw),
     totalSlots: String(station.totalSlots), availableSlots: String(station.availableSlots),
     connectorTypes: station.connectorTypes ?? [], openHours: station.openHours ?? "",
     phone: station.phone ?? "", website: station.website ?? "", isVerified: station.isVerified, isActive: station.isActive,
   } : EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mapsUrl, setMapsUrl] = useState("");
+  const [mapsParsed, setMapsParsed] = useState<null | 'ok' | 'fail'>(null);
+
+  const applyMapsUrl = (value: string) => {
+    setMapsUrl(value);
+    if (!value.trim()) { setMapsParsed(null); return; }
+    const coords = parseGoogleMapsUrl(value.trim());
+    if (coords) {
+      setForm((f) => ({ ...f, lat: coords.lat, lng: coords.lng }));
+      setMapsParsed('ok');
+    } else {
+      setMapsParsed('fail');
+    }
+  };
 
   const toggleConnector = (c: string) => setForm((f) => ({ ...f, connectorTypes: f.connectorTypes.includes(c) ? f.connectorTypes.filter((x) => x !== c) : [...f.connectorTypes, c] }));
 
@@ -71,6 +116,35 @@ function StationFormModal({ station, onClose, onSaved }: { station?: ChargingSta
             {field("الاسم بالعربية", <input type="text" placeholder="اسم المحطة" value={form.nameAr} onChange={(e) => setForm((f) => ({ ...f, nameAr: e.target.value }))} className="form-input" />)}
             {field("المدينة", <input type="text" required placeholder="الرياض" value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} className="form-input" />)}
             {field("العنوان", <input type="text" placeholder="شارع، حي..." value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} className="form-input" />)}
+            <div style={{ gridColumn: '1 / -1' }}>
+              {field(
+                "رابط Google Maps (اختياري)",
+                <>
+                  <input
+                    type="url"
+                    placeholder="https://maps.google.com/... أو https://goo.gl/maps/..."
+                    value={mapsUrl}
+                    onChange={(e) => applyMapsUrl(e.target.value)}
+                    onPaste={(e) => {
+                      const pasted = e.clipboardData.getData('text');
+                      if (pasted) setTimeout(() => applyMapsUrl(pasted), 0);
+                    }}
+                    className="form-input"
+                    dir="ltr"
+                  />
+                  {mapsParsed === 'ok' && (
+                    <p style={{ fontSize: 11, color: 'var(--forest)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <CheckCircle style={{ width: 11, height: 11 }} /> تم استخراج الموقع من الرابط — خط العرض والطول أدناه
+                    </p>
+                  )}
+                  {mapsParsed === 'fail' && (
+                    <p style={{ fontSize: 11, color: 'var(--terra)', marginTop: 4 }}>
+                      تعذّر استخراج الإحداثيات — تأكد من الرابط أو أدخل القيم يدوياً
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
             {field("خط العرض (Lat)", <input type="number" step="any" placeholder="24.6877" value={form.lat} onChange={(e) => setForm((f) => ({ ...f, lat: e.target.value }))} className="form-input" dir="ltr" />)}
             {field("خط الطول (Lng)", <input type="number" step="any" placeholder="46.7220" value={form.lng} onChange={(e) => setForm((f) => ({ ...f, lng: e.target.value }))} className="form-input" dir="ltr" />)}
             {field("أقصى طاقة (كيلوواط)", <input type="number" placeholder="150" value={form.maxPowerKw} onChange={(e) => setForm((f) => ({ ...f, maxPowerKw: e.target.value }))} className="form-input" dir="ltr" />)}
@@ -158,7 +232,7 @@ export default function ChargingStationsPage() {
       key: "city", header: "المدينة",
       render: (s) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--ink-3)' }} dir="rtl">
-          <MapPin style={{ width: 12, height: 12, flexShrink: 0 }} />{safeText(s.city)}
+          <MapPin style={{ width: 12, height: 12, flexShrink: 0 }} />{safeText(cityToText(s.city))}
         </div>
       ),
     },

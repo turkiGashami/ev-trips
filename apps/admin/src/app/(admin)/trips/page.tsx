@@ -13,23 +13,30 @@ import { formatDate, formatNumber, safeText } from "@/lib/format";
 
 const PAGE_LIMIT = 15;
 
-const STATUS_LABELS: Record<string, string> = {
-  "": "الكل", draft: "مسودة", pending: "قيد المراجعة", approved: "منشورة", rejected: "مرفوضة", hidden: "مخفية",
+// API status → UI meta. The API returns `published`, `pending_review`,
+// `draft`, `rejected`, `hidden`, `archived`; we accept the old short aliases
+// (`approved`, `pending`) too for backward compat.
+const STATUS_META: Record<string, { label: string; bg: string; color: string }> = {
+  "":              { label: "الكل",         bg: 'transparent',                    color: 'var(--ink-3)' },
+  draft:           { label: "مسودة",        bg: 'var(--sand)',                    color: 'var(--ink-3)' },
+  pending:         { label: "قيد المراجعة", bg: 'rgba(217,119,6,.1)',             color: '#d97706' },
+  pending_review:  { label: "قيد المراجعة", bg: 'rgba(217,119,6,.1)',             color: '#d97706' },
+  approved:        { label: "منشورة",       bg: 'rgba(45,74,62,.1)',              color: 'var(--forest)' },
+  published:       { label: "منشورة",       bg: 'rgba(45,74,62,.1)',              color: 'var(--forest)' },
+  rejected:        { label: "مرفوضة",       bg: 'rgba(180,94,66,.1)',             color: 'var(--terra)' },
+  hidden:          { label: "مخفية",        bg: 'var(--sand)',                    color: 'var(--ink-4)' },
+  archived:        { label: "مؤرشفة",       bg: 'var(--sand)',                    color: 'var(--ink-4)' },
 };
 
-const STATUS_COLOR: Record<TripStatus, { bg: string; color: string }> = {
-  draft:    { bg: 'var(--sand)',                  color: 'var(--ink-3)' },
-  pending:  { bg: 'rgba(217,119,6,.1)',            color: '#d97706' },
-  approved: { bg: 'rgba(45,74,62,.1)',             color: 'var(--forest)' },
-  rejected: { bg: 'rgba(180,94,66,.1)',            color: 'var(--terra)' },
-  hidden:   { bg: 'var(--sand)',                   color: 'var(--ink-4)' },
-};
+const STATUS_LABELS: Record<string, string> = Object.fromEntries(
+  Object.entries(STATUS_META).map(([k, v]) => [k, v.label])
+);
 
-function StatusBadge({ status }: { status: TripStatus }) {
-  const s = STATUS_COLOR[status] ?? STATUS_COLOR.draft;
+function StatusBadge({ status }: { status: TripStatus | string }) {
+  const meta = STATUS_META[status as string] ?? STATUS_META.draft;
   return (
-    <span style={{ display: 'inline-flex', padding: '2px 8px', fontSize: 10, fontWeight: 500, background: s.bg, color: s.color, borderRadius: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-      {STATUS_LABELS[status] ?? status}
+    <span style={{ display: 'inline-flex', padding: '2px 8px', fontSize: 10, fontWeight: 500, background: meta.bg, color: meta.color, borderRadius: 2, letterSpacing: '0.02em' }}>
+      {meta.label}
     </span>
   );
 }
@@ -67,30 +74,53 @@ export default function TripsPage() {
 
   const handleSort = (key: string) => { setSort((s) => ({ key, dir: s.key === key && s.dir === "asc" ? "desc" : "asc" })); setPage(1); };
 
-  const STATUS_TABS = ["", "pending", "approved", "rejected", "hidden", "draft"];
+  const STATUS_TABS = ["", "pending_review", "published", "rejected", "hidden", "draft"];
+
+  // Field accessors that tolerate both camelCase (old admin shape) and snake_case
+  // (real API shape) so the table renders real data instead of "—" placeholders.
+  const pickAuthor = (t: any): string =>
+    t?.author?.name ??
+    t?.user?.full_name ??
+    t?.user?.fullName ??
+    t?.user?.username ??
+    t?.user?.email ??
+    '';
+  const pickDate = (t: any): string | undefined =>
+    t?.createdAt ?? t?.created_at ?? t?.published_at ?? t?.publishedAt ?? undefined;
+  const pickViews = (t: any): number | undefined =>
+    t?.viewsCount ?? t?.view_count ?? t?.views ?? undefined;
+  const pickFrom = (t: any): string =>
+    t?.fromCity ?? t?.from_city?.name_ar ?? t?.from_city?.name ?? t?.departure_city?.name_ar ?? t?.departure_city?.name ?? '';
+  const pickTo = (t: any): string =>
+    t?.toCity ?? t?.to_city?.name_ar ?? t?.to_city?.name ?? t?.destination_city?.name_ar ?? t?.destination_city?.name ?? '';
 
   const iconBtnStyle: React.CSSProperties = { padding: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-4)', borderRadius: 2, display: 'flex', alignItems: 'center' };
 
   const columns: Column<Trip>[] = [
     {
       key: "route", header: "الرحلة / المسار",
-      render: (trip) => (
-        <div dir="rtl">
-          <p style={{ fontWeight: 500, color: 'var(--ink)', fontSize: 13, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {trip.title || `${trip.fromCity} → ${trip.toCity}`}
-          </p>
-          {trip.title && (
-            <p style={{ fontSize: 11, color: 'var(--ink-4)', display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
-              <MapPin style={{ width: 10, height: 10 }} />{trip.fromCity} → {trip.toCity}
+      render: (trip) => {
+        const from = pickFrom(trip);
+        const to = pickTo(trip);
+        const hasTitle = !!trip.title && trip.title !== 'Untitled Trip';
+        return (
+          <div dir="rtl">
+            <p style={{ fontWeight: 500, color: 'var(--ink)', fontSize: 13, maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {hasTitle ? trip.title : (from && to ? `${from} ← ${to}` : 'بدون عنوان')}
             </p>
-          )}
-        </div>
-      ),
+            {hasTitle && from && to && (
+              <p style={{ fontSize: 11, color: 'var(--ink-4)', display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
+                <MapPin style={{ width: 10, height: 10 }} />{from} ← {to}
+              </p>
+            )}
+          </div>
+        );
+      },
     },
-    { key: "author", header: "الكاتب", render: (trip) => <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{safeText(trip.author?.name)}</span> },
+    { key: "author", header: "الكاتب", render: (trip) => <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{safeText(pickAuthor(trip))}</span> },
     { key: "status", header: "الحالة", render: (trip) => <StatusBadge status={trip.status} /> },
-    { key: "createdAt", header: "تاريخ النشر", sortable: true, render: (trip) => <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{formatDate(trip.createdAt)}</span> },
-    { key: "viewsCount", header: "المشاهدات", sortable: true, render: (trip) => <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{formatNumber(trip.viewsCount, '—')}</span> },
+    { key: "createdAt", header: "تاريخ النشر", sortable: true, render: (trip) => <span style={{ fontSize: 12, color: 'var(--ink-3)' }} className="nums-latin">{pickDate(trip) ? formatDate(pickDate(trip)!) : '—'}</span> },
+    { key: "viewsCount", header: "المشاهدات", sortable: true, render: (trip) => <span style={{ fontSize: 12, color: 'var(--ink-3)' }} className="nums-latin">{formatNumber(pickViews(trip), '—')}</span> },
     {
       key: "actions", header: "", width: "140px",
       render: (trip) => (
