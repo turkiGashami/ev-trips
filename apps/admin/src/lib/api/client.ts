@@ -1,7 +1,23 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001/api/v1";
+/**
+ * Normalize the API base URL so `/api/v1` isn't duplicated if the env var
+ * already includes it. Falls back to the CranL beta production URL so the
+ * bundle works even when build-time env vars aren't injected.
+ */
+function resolveBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const raw =
+    (envUrl && envUrl.trim()) ||
+    (typeof window !== "undefined" && window.location.hostname.endsWith(".cranl.net")
+      ? "https://ev-trips-api-beta-yoo9rq.cranl.net/api/v1"
+      : "http://localhost:3001/api/v1");
+  const stripped = raw.replace(/\/+$/, "");
+  return stripped.endsWith("/api/v1") ? stripped : `${stripped}/api/v1`;
+}
+
+const BASE_URL = resolveBaseUrl();
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
