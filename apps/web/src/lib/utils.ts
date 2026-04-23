@@ -97,3 +97,13 @@ export function slugify(text: string): string {
     .replace(/--+/g, '-')
     .trim();
 }
+
+/**
+ * Returns NEXT_PUBLIC_API_URL normalized: strips trailing slashes and any
+ * trailing `/api/v1` so callers can safely append `/api/v1/...` themselves
+ * without risking `/api/v1/api/v1/...`.
+ */
+export function getApiBaseUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  return raw.replace(/\/+$/, '').replace(/\/api\/v1$/, '');
+}

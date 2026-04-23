@@ -61,13 +61,13 @@ const optionalNumber = () =>
   );
 
 const schema = z.object({
-  departure_city_id: z.string().optional(),
+  departure_city_id: z.string().min(1, 'اختر مدينة الانطلاق من القائمة'),
   departure_city_name: z.string().min(1, 'مدينة الانطلاق مطلوبة'),
 
-  destination_city_id: z.string().optional(),
+  destination_city_id: z.string().min(1, 'اختر مدينة الوصول من القائمة'),
   destination_city_name: z.string().min(1, 'مدينة الوصول مطلوبة'),
 
-  trip_date: z.string().optional(),
+  trip_date: z.string().min(1, 'حدد تاريخ الرحلة'),
 
   departure_time: z.string().optional(),
   arrival_time: z.string().optional(),
@@ -141,8 +141,13 @@ const STEPS = [
   { id: 'notes', label: 'الملاحظات', icon: FileText },
 ] as const;
 
+const STEP_LABELS = STEPS.map((s) => s.label);
+
 const STEP_FIELDS: Record<number, (keyof FormData)[]> = {
   0: [
+    'departure_city_id',
+    'destination_city_id',
+    'trip_date',
     'departure_city_name',
     'destination_city_name',
     'departure_time',
@@ -364,25 +369,43 @@ export default function NewTripPage() {
       road_condition: data.road_condition || undefined,
       trip_notes: data.trip_notes || undefined,
       route_notes: data.route_notes || undefined,
-
-      stops:
-        Array.isArray(data.stops) && data.stops.length > 0
-          ? data.stops.map((s) => ({
-              station_name: s.station_name,
-              charger_type: s.charger_type || undefined,
-              charging_duration_minutes:
-                s.charging_duration_minutes || undefined,
-              battery_before_pct: s.battery_before_pct ?? undefined,
-              battery_after_pct: s.battery_after_pct ?? undefined,
-              charging_cost: s.charging_cost || undefined,
-              notes: s.notes || undefined,
-            }))
-          : undefined,
     };
   };
 
+  const persistStops = async (
+    tripId: string,
+    stops: FormData['stops'],
+  ): Promise<void> => {
+    if (!Array.isArray(stops) || stops.length === 0) return;
+    for (let i = 0; i < stops.length; i++) {
+      const s = stops[i];
+      try {
+        await tripsApi.addStop(tripId, {
+          stop_order: i + 1,
+          station_name: s.station_name,
+          charger_type: s.charger_type || undefined,
+          charging_duration_minutes: s.charging_duration_minutes || undefined,
+          battery_before_pct: s.battery_before_pct ?? undefined,
+          battery_after_pct: s.battery_after_pct ?? undefined,
+          charging_cost: s.charging_cost || undefined,
+          notes: s.notes || undefined,
+        });
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error(`[trips/new] failed to persist stop #${i + 1}`, err);
+      }
+    }
+  };
+
   const createDraftMutation = useMutation({
-    mutationFn: (data: FormData) => tripsApi.createTrip(buildPayload(data)),
+    mutationFn: async (data: FormData) => {
+      const created = await tripsApi.createTrip(buildPayload(data));
+      const tripId = created?.data?.data?.id ?? created?.data?.id;
+      if (tripId) {
+        await persistStops(tripId, data.stops);
+      }
+      return created;
+    },
     onSuccess: () => {
       success('تم الحفظ', 'تم حفظ رحلتك كمسودة');
       router.push('/trips');
@@ -404,6 +427,7 @@ export default function NewTripPage() {
         throw new Error('تعذّر إنشاء الرحلة');
       }
 
+      await persistStops(tripId, data.stops);
       await tripsApi.submitTrip(tripId);
       return tripId;
     },
@@ -458,10 +482,41 @@ export default function NewTripPage() {
     setStep(target);
   };
 
-  const onSaveDraft = handleSubmit((data) => createDraftMutation.mutate(data));
+  const focusFirstInvalidStep = (formErrors: typeof errors) => {
+    const invalidKeys = Object.keys(formErrors ?? {});
+    if (invalidKeys.length === 0) return;
 
-  const onSubmitForReview = handleSubmit((data) =>
-    submitForReviewMutation.mutate(data),
+    let earliest = Number.POSITIVE_INFINITY;
+    for (const key of invalidKeys) {
+      for (let i = 0; i < STEPS.length; i++) {
+        const fields = (STEP_FIELDS[i] ?? []) as string[];
+        if (fields.includes(key) && i < earliest) {
+          earliest = i;
+        }
+      }
+    }
+
+    if (earliest === Number.POSITIVE_INFINITY) return;
+    setStep(earliest);
+    setStepError(`أكمل خطوة "${STEP_LABELS[earliest]}" أولاً`);
+  };
+
+  const onSaveDraft = handleSubmit(
+    (data) => createDraftMutation.mutate(data),
+    (formErrors) => focusFirstInvalidStep(formErrors),
+  );
+
+  const onSubmitForReview = handleSubmit(
+    (data) => {
+      if (!data.vehicle_id) {
+        const vehicleStepIndex = STEPS.findIndex((s) => s.id === 'vehicle');
+        if (vehicleStepIndex >= 0) setStep(vehicleStepIndex);
+        setStepError('اختر سيارة قبل الإرسال للمراجعة');
+        return;
+      }
+      submitForReviewMutation.mutate(data);
+    },
+    (formErrors) => focusFirstInvalidStep(formErrors),
   );
 
   const isBusy =
@@ -1061,20 +1116,20 @@ export default function NewTripPage() {
           </div>
         )}
 
-        <div className="flex justify-between items-center mt-6 flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() =>
-              step > 0 ? setStep(step - 1) : router.push('/trips')
-            }
-            className="flex items-center gap-2 btn-secondary px-5"
-            disabled={isBusy}
-          >
-            <ChevronRight className="h-4 w-4" />
-            {step === 0 ? 'إلغاء' : 'السابق'}
-          </button>
+        {step < STEPS.length - 1 ? (
+          <div className="flex justify-between items-center mt-6 flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() =>
+                step > 0 ? setStep(step - 1) : router.push('/trips')
+              }
+              className="flex items-center gap-2 btn-secondary px-5"
+              disabled={isBusy}
+            >
+              <ChevronRight className="h-4 w-4" />
+              {step === 0 ? 'إلغاء' : 'السابق'}
+            </button>
 
-          {step < STEPS.length - 1 ? (
             <button
               type="button"
               onClick={goNext}
@@ -1083,32 +1138,46 @@ export default function NewTripPage() {
               التالي
               <ChevronLeft className="h-4 w-4" />
             </button>
-          ) : (
-            <div className="flex items-center gap-2 flex-wrap">
+          </div>
+        ) : (
+          <div className="mt-6 space-y-3">
+            {/* Primary submit-for-review action — dominates visually */}
+            <button
+              type="button"
+              onClick={onSubmitForReview}
+              disabled={isBusy}
+              className="btn-primary w-full justify-center py-3.5 text-base font-medium disabled:opacity-50"
+            >
+              {submitForReviewMutation.isPending
+                ? 'جارٍ الإرسال…'
+                : 'إرسال الرحلة للمراجعة'}
+            </button>
+
+            {/* Secondary: previous + save-as-draft (ghost/link) */}
+            <div className="flex justify-between items-center flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setStep(step - 1)}
+                className="flex items-center gap-2 text-sm text-[var(--ink-3)] hover:text-[var(--ink)] transition-colors"
+                disabled={isBusy}
+              >
+                <ChevronRight className="h-4 w-4" />
+                السابق
+              </button>
+
               <button
                 type="button"
                 onClick={onSaveDraft}
                 disabled={isBusy}
-                className="btn-secondary px-5 disabled:opacity-50"
+                className="text-sm text-[var(--ink-3)] hover:text-[var(--ink)] underline underline-offset-4 disabled:opacity-50"
               >
                 {createDraftMutation.isPending
                   ? 'جارٍ الحفظ…'
                   : 'حفظ كمسودة'}
               </button>
-
-              <button
-                type="button"
-                onClick={onSubmitForReview}
-                disabled={isBusy}
-                className="btn-primary px-6 disabled:opacity-50"
-              >
-                {submitForReviewMutation.isPending
-                  ? 'جارٍ الإرسال…'
-                  : 'إرسال للمراجعة'}
-              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </form>
     </div>
   );

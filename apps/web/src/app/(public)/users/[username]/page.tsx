@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
 import TripCard from '@/components/trips/TripCard';
 import Avatar from '@/components/ui/Avatar';
-import { formatNumber, formatDate } from '@/lib/utils';
+import { formatNumber, formatDate, getApiBaseUrl } from '@/lib/utils';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_BASE = getApiBaseUrl();
 
 interface PageProps {
   params: { username: string };
