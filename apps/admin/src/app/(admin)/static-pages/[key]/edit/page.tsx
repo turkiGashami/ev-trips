@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { ArrowRight, ExternalLink, Info } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { AdminTopbar } from '@/components/layout/AdminTopbar';
 import { adminApi } from '@/lib/api/admin.api';
 import { formatDateTime, safeText } from '@/lib/format';
@@ -46,6 +47,8 @@ function renderMarkdown(src: string): string {
 }
 
 export default function EditStaticPagePage() {
+  const t = useTranslations('pages');
+  const tCommon = useTranslations('common');
   const { key } = useParams<{ key: string }>();
 
   const [titleAr, setTitleAr] = useState('');
@@ -75,11 +78,11 @@ export default function EditStaticPagePage() {
   const updateMutation = useMutation({
     mutationFn: (payload: any) => adminApi.updateStaticPage(key, payload),
     onSuccess: () => {
-      setBanner({ type: 'success', msg: 'تم الحفظ ✓ ستنعكس التغييرات على الموقع خلال دقائق' });
+      setBanner({ type: 'success', msg: t('saveSuccess') });
       setTimeout(() => setBanner(null), 4000);
     },
     onError: () => {
-      setBanner({ type: 'error', msg: 'تعذّر الحفظ، حاول مرة أخرى' });
+      setBanner({ type: 'error', msg: t('saveError') });
       setTimeout(() => setBanner(null), 4000);
     },
   });
@@ -102,8 +105,8 @@ export default function EditStaticPagePage() {
   const publicUrl = `${PUBLIC_SITE}/pages/${slug}`;
 
   return (
-    <div dir="rtl">
-      <AdminTopbar title="تعديل صفحة" subtitle={slug} />
+    <div>
+      <AdminTopbar title={t('editTitle')} subtitle={slug} />
 
       <div style={{ padding: 24, maxWidth: 1200, marginInline: 'auto' }}>
         {/* Back link */}
@@ -120,7 +123,7 @@ export default function EditStaticPagePage() {
           }}
         >
           <ArrowRight style={{ width: 14, height: 14 }} />
-          العودة إلى الصفحات الثابتة
+          {t('backToList')}
         </Link>
 
         {banner && (
@@ -143,21 +146,21 @@ export default function EditStaticPagePage() {
         <div className="card" style={{ padding: 20, marginBottom: 16 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 16 }}>
             <div>
-              <label className="form-label">عنوان عربي</label>
+              <label className="form-label">{t('fields.titleAr')}</label>
               <input
                 className="form-input"
                 value={titleAr}
                 onChange={(e) => setTitleAr(e.target.value)}
-                placeholder="عنوان بالعربية"
+                placeholder={t('fields.titleArPlaceholder')}
               />
             </div>
             <div dir="ltr">
-              <label className="form-label" dir="rtl">عنوان إنجليزي</label>
+              <label className="form-label">{t('fields.titleEn')}</label>
               <input
                 className="form-input"
                 value={titleEn}
                 onChange={(e) => setTitleEn(e.target.value)}
-                placeholder="English title"
+                placeholder={t('fields.titleEnPlaceholder')}
               />
             </div>
           </div>
@@ -173,7 +176,7 @@ export default function EditStaticPagePage() {
           }}
         >
           <div className="card" style={{ padding: 20 }}>
-            <label className="form-label">المحتوى (عربي) — Markdown</label>
+            <label className="form-label">{t('fields.contentAr')}</label>
             <textarea
               className="form-textarea"
               value={contentAr}
@@ -183,7 +186,7 @@ export default function EditStaticPagePage() {
             />
           </div>
           <div className="card" style={{ padding: 20 }}>
-            <label className="form-label" dir="rtl">المحتوى (إنجليزي) — Markdown</label>
+            <label className="form-label">{t('fields.contentEn')}</label>
             <textarea
               className="form-textarea"
               value={contentEn}
@@ -202,21 +205,21 @@ export default function EditStaticPagePage() {
               checked={isPublished}
               onChange={(e) => setIsPublished(e.target.checked)}
             />
-            منشور
+            {t('fields.published')}
           </label>
           <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-            <span className="eyebrow">المعرف</span>{' '}
+            <span className="eyebrow">{t('fields.slug')}</span>{' '}
             <span dir="ltr" style={{ fontFamily: 'monospace', color: 'var(--ink-2)' }}>{safeText(slug)}</span>
           </div>
           <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-            <span className="eyebrow">آخر تعديل</span>{' '}
+            <span className="eyebrow">{t('fields.lastUpdated')}</span>{' '}
             <span className="nums-latin" style={{ color: 'var(--ink-2)' }}>{formatDateTime(updatedAt)}</span>
           </div>
         </div>
 
         {/* Preview */}
         <div className="card" style={{ padding: 20, marginBottom: 16 }}>
-          <h3 className="heading-3" style={{ marginBottom: 12, color: 'var(--ink)' }}>معاينة</h3>
+          <h3 className="heading-3" style={{ marginBottom: 12, color: 'var(--ink)' }}>{t('preview')}</h3>
           <div
             className="rich-content"
             style={{ color: 'var(--ink-2)', fontSize: 14, lineHeight: 1.8 }}
@@ -238,7 +241,7 @@ export default function EditStaticPagePage() {
         >
           <Info style={{ width: 16, height: 16, color: 'var(--sky)', flexShrink: 0, marginTop: 2 }} />
           <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>
-            <p>لعرض الصفحة على الموقع العام بعد النشر، افتح الرابط أدناه:</p>
+            <p>{t('publicLinkHint')}</p>
             <a
               href={publicUrl}
               target="_blank"
@@ -278,7 +281,7 @@ export default function EditStaticPagePage() {
               opacity: updateMutation.isPending ? 0.6 : 1,
             }}
           >
-            {updateMutation.isPending ? 'جارٍ الحفظ...' : 'نشر التغييرات'}
+            {updateMutation.isPending ? tCommon('saving') : t('publishChanges')}
           </button>
           <button
             onClick={() => save(false)}
@@ -294,7 +297,7 @@ export default function EditStaticPagePage() {
               cursor: 'pointer',
             }}
           >
-            حفظ كمسودة
+            {t('saveDraft')}
           </button>
         </div>
       </div>

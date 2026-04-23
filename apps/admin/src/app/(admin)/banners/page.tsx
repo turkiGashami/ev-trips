@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Pencil, Info, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { AdminTopbar } from '@/components/layout/AdminTopbar';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { adminApi } from '@/lib/api/admin.api';
@@ -10,15 +11,7 @@ import { formatDate, safeText } from '@/lib/format';
 
 type BannerPosition = 'home_top' | 'home_middle' | 'search_top';
 
-const POSITION_LABELS: Record<string, string> = {
-  home_top: 'رأس الصفحة الرئيسية',
-  home_middle: 'منتصف الصفحة الرئيسية',
-  search_top: 'أعلى نتائج البحث',
-  // fall-backs for API-side placement values
-  home_mid: 'منتصف الصفحة الرئيسية',
-  search: 'أعلى نتائج البحث',
-  trips: 'صفحة الرحلات',
-};
+const POSITION_KEYS = ['home_top', 'home_middle', 'search_top', 'home_mid', 'search', 'trips'];
 
 interface BannerForm {
   id?: string;
@@ -52,13 +45,15 @@ function bannerStatus(b: any): 'active' | 'inactive' | 'scheduled' {
   return 'active';
 }
 
-const STATUS_META: Record<'active' | 'inactive' | 'scheduled', { label: string; bg: string; color: string }> = {
-  active: { label: 'فعّال', bg: 'rgba(45,74,62,.1)', color: 'var(--forest)' },
-  inactive: { label: 'غير فعّال', bg: 'var(--sand)', color: 'var(--ink-3)' },
-  scheduled: { label: 'مجدول', bg: 'rgba(107,142,156,.12)', color: 'var(--sky)' },
+const STATUS_TONE: Record<'active' | 'inactive' | 'scheduled', { bg: string; color: string }> = {
+  active: { bg: 'rgba(45,74,62,.1)', color: 'var(--forest)' },
+  inactive: { bg: 'var(--sand)', color: 'var(--ink-3)' },
+  scheduled: { bg: 'rgba(107,142,156,.12)', color: 'var(--sky)' },
 };
 
 export default function AdminBannersPage() {
+  const t = useTranslations('banners');
+  const tCommon = useTranslations('common');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<BannerForm>(emptyForm);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -157,8 +152,8 @@ export default function AdminBannersPage() {
   }, [showForm]);
 
   return (
-    <div dir="rtl">
-      <AdminTopbar title="إدارة البنرات" subtitle={`${count} بنر`} />
+    <div>
+      <AdminTopbar title={t('title')} subtitle={t('count', { count })} />
 
       <div style={{ padding: 24, maxWidth: 1200, marginInline: 'auto' }}>
         {/* Workflow explainer */}
@@ -177,15 +172,12 @@ export default function AdminBannersPage() {
           >
             <Info style={{ width: 16, height: 16, color: 'var(--sky)', flexShrink: 0, marginTop: 2 }} />
             <p className="body-sm" style={{ color: 'var(--ink-2)', lineHeight: 1.6, flex: 1 }}>
-              البنرات تظهر على الصفحة الرئيسية للموقع العام حسب الموقع المحدد، فقط عند{' '}
-              <span dir="ltr" style={{ fontFamily: 'monospace' }}>is_active = نعم</span> وضمن الفترة بين{' '}
-              <span dir="ltr" style={{ fontFamily: 'monospace' }}>starts_at</span> و{' '}
-              <span dir="ltr" style={{ fontFamily: 'monospace' }}>ends_at</span>. إذا تركت التواريخ فارغة فهي تعمل دائماً.
+              {t('workflowHint')}
             </p>
             <button
               onClick={() => setDismissedHint(true)}
               style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ink-4)' }}
-              aria-label="إخفاء"
+              aria-label={tCommon('close')}
             >
               <X style={{ width: 14, height: 14 }} />
             </button>
@@ -193,18 +185,18 @@ export default function AdminBannersPage() {
         )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 className="heading-3" style={{ color: 'var(--ink)' }}>كل البنرات</h2>
+          <h2 className="heading-3" style={{ color: 'var(--ink)' }}>{t('allBanners')}</h2>
           <button onClick={openCreate} style={primaryBtn}>
             <Plus style={{ width: 14, height: 14 }} />
-            إضافة بنر
+            {t('addBanner')}
           </button>
         </div>
 
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-4)' }}>جارٍ التحميل...</div>
+          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-4)' }}>{tCommon('loading')}</div>
         ) : banners.length === 0 ? (
           <div className="card" style={{ padding: '48px 0', textAlign: 'center', color: 'var(--ink-4)' }}>
-            لا توجد بنرات
+            {t('empty')}
           </div>
         ) : (
           <div
@@ -216,7 +208,7 @@ export default function AdminBannersPage() {
           >
             {banners.map((b: any) => {
               const status = bannerStatus(b);
-              const meta = STATUS_META[status];
+              const tone = STATUS_TONE[status];
               const position = b.position ?? b.placement;
               return (
                 <div key={b.id} className="card" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -236,7 +228,7 @@ export default function AdminBannersPage() {
                       fontSize: 12,
                     }}
                   >
-                    {!b.image_url && 'لا توجد صورة'}
+                    {!b.image_url && t('noImage')}
                   </div>
 
                   <div style={{ padding: 16, flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -257,42 +249,42 @@ export default function AdminBannersPage() {
                           padding: '2px 8px',
                           fontSize: 10,
                           fontWeight: 500,
-                          background: meta.bg,
-                          color: meta.color,
+                          background: tone.bg,
+                          color: tone.color,
                           borderRadius: 2,
                           letterSpacing: '0.02em',
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        {meta.label}
+                        {t(`status.${status}` as any)}
                       </span>
                     </div>
 
                     <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                      <span className="eyebrow">الموقع</span>{' '}
+                      <span className="eyebrow">{t('positionLabel')}</span>{' '}
                       <span style={{ color: 'var(--ink-2)' }}>
-                        {POSITION_LABELS[position] ?? safeText(position)}
+                        {position && POSITION_KEYS.includes(position) ? t(`position.${position}` as any) : safeText(position)}
                       </span>
                     </div>
 
                     <div style={{ fontSize: 12, color: 'var(--ink-3)' }} className="nums-latin">
-                      <span className="eyebrow">الفترة</span>{' '}
+                      <span className="eyebrow">{t('periodLabel')}</span>{' '}
                       <span style={{ color: 'var(--ink-2)' }}>
                         {b.starts_at ? formatDate(b.starts_at) : '—'}
                         {' → '}
-                        {b.ends_at ? formatDate(b.ends_at) : 'بلا نهاية'}
+                        {b.ends_at ? formatDate(b.ends_at) : t('noEnd')}
                       </span>
                     </div>
 
                     <div style={{ marginTop: 'auto', paddingTop: 8, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                      <button onClick={() => openEdit(b)} style={iconBtn} aria-label="تعديل" title="تعديل">
+                      <button onClick={() => openEdit(b)} style={iconBtn} aria-label={tCommon('edit')} title={tCommon('edit')}>
                         <Pencil style={{ width: 14, height: 14 }} />
                       </button>
                       <button
                         onClick={() => setConfirmId(b.id)}
                         style={{ ...iconBtn, color: 'var(--terra)' }}
-                        aria-label="حذف"
-                        title="حذف"
+                        aria-label={tCommon('delete')}
+                        title={tCommon('delete')}
                       >
                         <Trash2 style={{ width: 14, height: 14 }} />
                       </button>
@@ -322,7 +314,6 @@ export default function AdminBannersPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            dir="rtl"
             style={{
               background: 'var(--cream)',
               border: '1px solid var(--line)',
@@ -336,12 +327,12 @@ export default function AdminBannersPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h2 className="heading-3" style={{ color: 'var(--ink)' }}>
-                {form.id ? 'تعديل بنر' : 'بنر جديد'}
+                {form.id ? t('editBanner') : t('newBanner')}
               </h2>
               <button
                 onClick={() => setShowForm(false)}
                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}
-                aria-label="إغلاق"
+                aria-label={tCommon('close')}
               >
                 <X style={{ width: 18, height: 18 }} />
               </button>
@@ -349,7 +340,7 @@ export default function AdminBannersPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label className="form-label">العنوان (عربي) *</label>
+                <label className="form-label">{t('form.titleAr')}</label>
                 <input
                   className="form-input"
                   value={form.title_ar}
@@ -358,7 +349,7 @@ export default function AdminBannersPage() {
               </div>
 
               <div>
-                <label className="form-label">العنوان (إنجليزي)</label>
+                <label className="form-label">{t('form.titleEn')}</label>
                 <input
                   dir="ltr"
                   className="form-input"
@@ -368,7 +359,7 @@ export default function AdminBannersPage() {
               </div>
 
               <div>
-                <label className="form-label">رابط الصورة</label>
+                <label className="form-label">{t('form.imageUrl')}</label>
                 <input
                   dir="ltr"
                   className="form-input"
@@ -394,7 +385,7 @@ export default function AdminBannersPage() {
               </div>
 
               <div>
-                <label className="form-label">رابط عند النقر</label>
+                <label className="form-label">{t('form.linkUrl')}</label>
                 <input
                   dir="ltr"
                   className="form-input"
@@ -405,21 +396,21 @@ export default function AdminBannersPage() {
               </div>
 
               <div>
-                <label className="form-label">الموقع</label>
+                <label className="form-label">{t('form.position')}</label>
                 <select
                   className="form-select"
                   value={form.position}
                   onChange={(e) => setForm({ ...form, position: e.target.value as BannerPosition })}
                 >
-                  <option value="home_top">رأس الصفحة الرئيسية</option>
-                  <option value="home_middle">منتصف الصفحة الرئيسية</option>
-                  <option value="search_top">أعلى نتائج البحث</option>
+                  <option value="home_top">{t('position.home_top')}</option>
+                  <option value="home_middle">{t('position.home_middle')}</option>
+                  <option value="search_top">{t('position.search_top')}</option>
                 </select>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                 <div>
-                  <label className="form-label">تبدأ في (اختياري)</label>
+                  <label className="form-label">{t('form.startsAt')}</label>
                   <input
                     type="datetime-local"
                     className="form-input"
@@ -428,7 +419,7 @@ export default function AdminBannersPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label">تنتهي في (اختياري)</label>
+                  <label className="form-label">{t('form.endsAt')}</label>
                   <input
                     type="datetime-local"
                     className="form-input"
@@ -444,7 +435,7 @@ export default function AdminBannersPage() {
                   checked={form.is_active}
                   onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
                 />
-                فعّال
+                {t('form.isActive')}
               </label>
             </div>
 
@@ -462,10 +453,10 @@ export default function AdminBannersPage() {
                     !form.title_ar || createMutation.isPending || updateMutation.isPending ? 0.5 : 1,
                 }}
               >
-                {form.id ? 'حفظ' : 'إضافة'}
+                {form.id ? tCommon('save') : tCommon('add')}
               </button>
               <button onClick={() => setShowForm(false)} style={ghostBtn}>
-                إلغاء
+                {tCommon('cancel')}
               </button>
             </div>
           </div>
@@ -474,12 +465,13 @@ export default function AdminBannersPage() {
 
       {confirmId && (
         <ConfirmModal
-          title="حذف البنر"
-          description="سيتم حذف البنر نهائياً."
-          confirmLabel="حذف"
+          isOpen
+          title={t('confirm.deleteTitle')}
+          message={t('confirm.deleteMessage')}
+          confirmLabel={tCommon('delete')}
           variant="danger"
           onConfirm={() => deleteMutation.mutate(confirmId)}
-          onCancel={() => setConfirmId(null)}
+          onClose={() => setConfirmId(null)}
         />
       )}
     </div>

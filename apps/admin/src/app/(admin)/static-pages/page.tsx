@@ -4,11 +4,14 @@ import React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Pencil, Info } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { AdminTopbar } from '@/components/layout/AdminTopbar';
 import { adminApi } from '@/lib/api/admin.api';
 import { formatDate, safeText } from '@/lib/format';
 
 export default function AdminStaticPagesPage() {
+  const t = useTranslations('pages');
+  const tCommon = useTranslations('common');
   const { data, isLoading } = useQuery({
     queryKey: ['admin-static-pages'],
     queryFn: adminApi.getStaticPages,
@@ -18,8 +21,8 @@ export default function AdminStaticPagesPage() {
   const count = pages.length;
 
   return (
-    <div dir="rtl">
-      <AdminTopbar title="الصفحات الثابتة" subtitle={`${count} صفحة`} />
+    <div>
+      <AdminTopbar title={t('title')} subtitle={t('count', { count })} />
 
       <div style={{ padding: 24, maxWidth: 1120, marginInline: 'auto' }}>
         {/* Info callout */}
@@ -36,25 +39,25 @@ export default function AdminStaticPagesPage() {
         >
           <Info style={{ width: 16, height: 16, color: 'var(--sky)', flexShrink: 0, marginTop: 2 }} />
           <p className="body-sm" style={{ color: 'var(--ink-2)', lineHeight: 1.6 }}>
-            هذه الصفحات تظهر في الموقع العام على <span className="nums-latin" dir="ltr" style={{ fontFamily: 'monospace' }}>/pages/:key</span> — التعديلات تنعكس خلال دقائق بفضل ISR
+            {t('hint')}
           </p>
         </div>
 
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-4)' }}>جارٍ التحميل...</div>
+          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-4)' }}>{tCommon('loading')}</div>
         ) : (
           <div className="card" style={{ overflow: 'hidden' }}>
             {pages.length === 0 ? (
-              <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--ink-4)' }}>لا توجد صفحات</div>
+              <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--ink-4)' }}>{t('empty')}</div>
             ) : (
               <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    <th style={thStyle}>المفتاح</th>
-                    <th style={thStyle}>العنوان (عربي)</th>
-                    <th style={thStyle}>العنوان (إنجليزي)</th>
-                    <th style={thStyle}>آخر تعديل</th>
-                    <th style={{ ...thStyle, width: 100, textAlign: 'end' }}>إجراءات</th>
+                    <th style={thStyle}>{t('columns.key')}</th>
+                    <th style={thStyle}>{t('columns.titleAr')}</th>
+                    <th style={thStyle}>{t('columns.titleEn')}</th>
+                    <th style={thStyle}>{t('columns.updatedAt')}</th>
+                    <th style={{ ...thStyle, width: 100, textAlign: 'end' }}>{t('columns.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -83,11 +86,11 @@ export default function AdminStaticPagesPage() {
                         <Link
                           href={`/static-pages/${page.key}/edit`}
                           style={iconBtnStyle}
-                          title="تعديل"
-                          aria-label="تعديل"
+                          title={t('edit')}
+                          aria-label={t('edit')}
                         >
                           <Pencil style={{ width: 14, height: 14 }} />
-                          <span style={{ fontSize: 12 }}>تعديل</span>
+                          <span style={{ fontSize: 12 }}>{t('edit')}</span>
                         </Link>
                       </td>
                     </tr>

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Eye, EyeOff, Trash2, MessageSquare } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { adminApi } from '@/lib/api/admin.api';
 import { commentsApi } from '@/lib/api/admin.api';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -21,12 +22,7 @@ const STATUS_BG: Record<string, string> = {
   reported: 'rgba(180,94,66,.1)',
   deleted: 'rgba(22,26,31,.08)',
 };
-const STATUS_LABELS: Record<string, string> = {
-  visible: 'ظاهر',
-  hidden: 'مخفي',
-  reported: 'مُبلَّغ عنه',
-  deleted: 'محذوف',
-};
+const STATUS_KEYS = ['visible', 'hidden', 'reported', 'deleted'] as const;
 
 const pickAuthor = (c: any) => c?.user ?? c?.author ?? {};
 const pickAuthorName = (c: any) => {
@@ -77,6 +73,8 @@ const iconBtnStyle: React.CSSProperties = {
 };
 
 export default function AdminCommentsPage() {
+  const t = useTranslations('comments');
+  const tCommon = useTranslations('common');
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('');
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -120,26 +118,26 @@ export default function AdminCommentsPage() {
   return (
     <div style={{ padding: 24, maxWidth: 1152, marginInline: 'auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <h1 className="heading-2" style={{ color: 'var(--ink)' }}>إدارة التعليقات</h1>
+        <h1 className="heading-2" style={{ color: 'var(--ink)' }}>{t('title')}</h1>
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); setPage(1); }}
           className="form-select"
           style={{ width: 'auto' }}
         >
-          <option value="">جميع الحالات</option>
-          <option value="visible">ظاهر</option>
-          <option value="hidden">مخفي</option>
-          <option value="reported">مُبلَّغ عنه</option>
+          <option value="">{tCommon('allStatuses')}</option>
+          <option value="visible">{t('statuses.visible')}</option>
+          <option value="hidden">{t('statuses.hidden')}</option>
+          <option value="reported">{t('statuses.reported')}</option>
         </select>
       </div>
 
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-4)' }}>جارٍ التحميل...</div>
+        <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-4)' }}>{tCommon('loading')}</div>
       ) : comments.length === 0 ? (
         <div className="card" style={{ padding: '64px 16px', textAlign: 'center' }}>
           <MessageSquare style={{ width: 40, height: 40, color: 'var(--ink-4)', margin: '0 auto 12px' }} />
-          <p style={{ fontSize: 14, color: 'var(--ink-3)' }}>لا توجد تعليقات بعد</p>
+          <p style={{ fontSize: 14, color: 'var(--ink-3)' }}>{t('empty')}</p>
         </div>
       ) : (
         <div className="card" style={{ overflow: 'hidden' }}>
@@ -172,7 +170,7 @@ export default function AdminCommentsPage() {
                     {authorUsername && (
                       <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>@{authorUsername}</span>
                     )}
-                    <span style={pillStyle(status)}>{STATUS_LABELS[status] ?? status}</span>
+                    <span style={pillStyle(status)}>{(STATUS_KEYS as readonly string[]).includes(status) ? t(`statuses.${status}` as any) : status}</span>
                     <span className="nums-latin" style={{ fontSize: 11, color: 'var(--ink-4)' }}>
                       {formatDate(comment?.created_at ?? comment?.createdAt)}
                     </span>
@@ -182,7 +180,7 @@ export default function AdminCommentsPage() {
                   </p>
                   {tripTitle && (
                     <p style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 6 }}>
-                      في رحلة:{' '}
+                      {t('inTrip')}{' '}
                       {tripHref ? (
                         <Link href={tripHref} style={{ color: 'var(--forest)', textDecoration: 'none' }}>
                           {safeText(tripTitle)}
@@ -199,8 +197,8 @@ export default function AdminCommentsPage() {
                     <button
                       onClick={() => restoreMutation.mutate(comment.id)}
                       style={{ ...iconBtnStyle, color: 'var(--forest)' }}
-                      title="استعادة"
-                      aria-label="استعادة"
+                      title={t('actions.restore')}
+                      aria-label={t('actions.restore')}
                     >
                       <Eye style={{ width: 14, height: 14 }} />
                     </button>
@@ -208,8 +206,8 @@ export default function AdminCommentsPage() {
                     <button
                       onClick={() => hideMutation.mutate(comment.id)}
                       style={iconBtnStyle}
-                      title="إخفاء"
-                      aria-label="إخفاء"
+                      title={t('actions.hide')}
+                      aria-label={t('actions.hide')}
                     >
                       <EyeOff style={{ width: 14, height: 14 }} />
                     </button>
@@ -217,8 +215,8 @@ export default function AdminCommentsPage() {
                   <button
                     onClick={() => setConfirmId(comment.id)}
                     style={{ ...iconBtnStyle, color: 'var(--terra)' }}
-                    title="حذف"
-                    aria-label="حذف"
+                    title={t('actions.delete')}
+                    aria-label={t('actions.delete')}
                   >
                     <Trash2 style={{ width: 14, height: 14 }} />
                   </button>
@@ -256,12 +254,13 @@ export default function AdminCommentsPage() {
 
       {confirmId && (
         <ConfirmModal
-          title="حذف التعليق"
-          description="هل أنت متأكد من حذف هذا التعليق؟ لا يمكن التراجع."
-          confirmLabel="حذف"
+          isOpen
+          title={t('deleteTitle')}
+          message={t('deleteMessage')}
+          confirmLabel={t('actions.delete')}
           variant="danger"
           onConfirm={() => deleteMutation.mutate(confirmId)}
-          onCancel={() => setConfirmId(null)}
+          onClose={() => setConfirmId(null)}
         />
       )}
     </div>

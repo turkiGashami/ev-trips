@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { adminApi } from '@/lib/api/admin.api';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { safeText } from '@/lib/format';
@@ -33,6 +34,8 @@ const ghostBtnStyle: React.CSSProperties = {
 };
 
 export default function AdminCitiesPage() {
+  const t = useTranslations('cities');
+  const tCommon = useTranslations('common');
   const [showForm, setShowForm] = useState(false);
   const [newCity, setNewCity] = useState({ name_ar: '', name_en: '', slug: '' });
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -65,31 +68,31 @@ export default function AdminCitiesPage() {
   return (
     <div style={{ padding: 24, maxWidth: 960, marginInline: 'auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <h1 className="heading-2" style={{ color: 'var(--ink)' }}>إدارة المدن</h1>
+        <h1 className="heading-2" style={{ color: 'var(--ink)' }}>{t('title')}</h1>
         <button onClick={() => setShowForm(!showForm)} style={primaryBtnStyle}>
           <Plus style={{ width: 14, height: 14 }} />
-          إضافة مدينة
+          {t('addCity')}
         </button>
       </div>
 
       {showForm && (
         <div className="card" style={{ padding: 20, marginBottom: 24 }}>
-          <h2 className="heading-3" style={{ marginBottom: 16 }}>مدينة جديدة</h2>
+          <h2 className="heading-3" style={{ marginBottom: 16 }}>{t('newCity')}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 16 }}>
             <input
-              placeholder="الاسم بالعربية"
+              placeholder={t('form.nameAr')}
               value={newCity.name_ar}
               onChange={(e) => setNewCity({ ...newCity, name_ar: e.target.value })}
               className="form-input"
             />
             <input
-              placeholder="الاسم بالإنجليزية"
+              placeholder={t('form.nameEn')}
               value={newCity.name_en}
               onChange={(e) => setNewCity({ ...newCity, name_en: e.target.value })}
               className="form-input"
             />
             <input
-              placeholder="المعرف (slug)"
+              placeholder={t('form.slug')}
               value={newCity.slug}
               onChange={(e) => setNewCity({ ...newCity, slug: e.target.value })}
               className="form-input"
@@ -101,21 +104,21 @@ export default function AdminCitiesPage() {
               disabled={!newCity.name_ar || createMutation.isPending}
               style={{ ...primaryBtnStyle, opacity: (!newCity.name_ar || createMutation.isPending) ? 0.5 : 1 }}
             >
-              حفظ
+              {tCommon('save')}
             </button>
             <button onClick={() => setShowForm(false)} style={ghostBtnStyle}>
-              إلغاء
+              {tCommon('cancel')}
             </button>
           </div>
         </div>
       )}
 
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-4)' }}>جارٍ التحميل...</div>
+        <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-4)' }}>{tCommon('loading')}</div>
       ) : (
         <div className="card" style={{ overflow: 'hidden' }}>
           {cities.length === 0 && (
-            <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--ink-4)' }}>لا توجد مدن</div>
+            <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--ink-4)' }}>{t('empty')}</div>
           )}
           {cities.map((city: any) => (
             <div
@@ -131,7 +134,7 @@ export default function AdminCitiesPage() {
               <button
                 onClick={() => setConfirmId(city.id)}
                 style={{ padding: 8, borderRadius: 2, background: 'transparent', border: 'none', color: 'var(--ink-4)', cursor: 'pointer' }}
-                aria-label="حذف"
+                aria-label={tCommon('delete')}
               >
                 <Trash2 style={{ width: 16, height: 16 }} />
               </button>
@@ -142,12 +145,13 @@ export default function AdminCitiesPage() {
 
       {confirmId && (
         <ConfirmModal
-          title="حذف المدينة"
-          description="سيتم حذف المدينة. هذا الإجراء لا يمكن التراجع عنه."
-          confirmLabel="حذف"
+          isOpen
+          title={t('confirm.deleteTitle')}
+          message={t('confirm.deleteMessage')}
+          confirmLabel={tCommon('delete')}
           variant="danger"
           onConfirm={() => deleteMutation.mutate(confirmId)}
-          onCancel={() => setConfirmId(null)}
+          onClose={() => setConfirmId(null)}
         />
       )}
     </div>

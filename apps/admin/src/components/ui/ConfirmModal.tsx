@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { AdminButton } from "./AdminButton";
 
 interface ConfirmModalProps {
@@ -18,9 +19,12 @@ interface ConfirmModalProps {
 
 export function ConfirmModal({
   isOpen, onClose, onConfirm, title, message,
-  confirmLabel = "تأكيد", cancelLabel = "إلغاء",
+  confirmLabel, cancelLabel,
   variant = "danger", isLoading = false, children,
 }: ConfirmModalProps) {
+  const tCommon = useTranslations("common");
+  const confirmText = confirmLabel ?? tCommon("confirm");
+  const cancelText = cancelLabel ?? tCommon("cancel");
   if (!isOpen) return null;
 
   const iconColor = variant === "danger" ? 'var(--terra)' : variant === "warning" ? '#d97706' : 'var(--sky)';
@@ -50,8 +54,8 @@ export function ConfirmModal({
 
         {/* Footer */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: '1px solid var(--line)' }}>
-          <AdminButton variant="ghost" onClick={onClose} disabled={isLoading}>{cancelLabel}</AdminButton>
-          <AdminButton variant={variant === "danger" ? "danger" : "primary"} onClick={onConfirm} isLoading={isLoading}>{confirmLabel}</AdminButton>
+          <AdminButton variant="ghost" onClick={onClose} disabled={isLoading}>{cancelText}</AdminButton>
+          <AdminButton variant={variant === "danger" ? "danger" : "primary"} onClick={onConfirm} isLoading={isLoading}>{confirmText}</AdminButton>
         </div>
       </div>
     </div>

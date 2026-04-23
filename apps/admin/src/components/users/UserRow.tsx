@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MoreHorizontal, Eye, ShieldOff, Ban, BadgeCheck, Star } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import type { PlatformUser } from "@/types/admin.types";
 import { formatNumber, formatDate, safeText } from "@/lib/format";
 
@@ -30,20 +31,8 @@ const STATUS_BG: Record<string, string> = {
   banned: 'rgba(22,26,31,.08)',
   pending: 'var(--sand)',
 };
-const STATUS_LABELS: Record<string, string> = {
-  active: 'نشط',
-  suspended: 'موقوف',
-  banned: 'محظور',
-  pending: 'معلق',
-};
-const ROLE_LABELS: Record<string, string> = {
-  super_admin: 'مدير عام',
-  admin: 'مدير',
-  moderator: 'مشرف',
-  user: 'مستخدم',
-  verified: 'موثق',
-  premium: 'مميز',
-};
+const STATUS_KEYS = ['active', 'suspended', 'banned', 'pending'] as const;
+const ROLE_KEYS = ['super_admin', 'admin', 'moderator', 'user', 'verified', 'premium'] as const;
 
 interface UserRowProps {
   user: PlatformUser;
@@ -55,6 +44,9 @@ interface UserRowProps {
 }
 
 export function UserRow({ user, onSuspend, onBan, onVerify, onActivate, onAssignBadge }: UserRowProps) {
+  const t = useTranslations("users");
+  const tStatus = useTranslations("status");
+  const tRoles = useTranslations("roles");
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -102,13 +94,13 @@ export function UserRow({ user, onSuspend, onBan, onVerify, onActivate, onAssign
       {/* Role */}
       <td>
         <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', fontSize: 10, fontWeight: 500, background: 'var(--sand)', color: 'var(--ink-2)', borderRadius: 2, letterSpacing: '0.02em' }}>
-          {ROLE_LABELS[role] ?? role}
+          {(ROLE_KEYS as readonly string[]).includes(role) ? tRoles(role as any) : role}
         </span>
       </td>
       {/* Status */}
       <td>
         <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', fontSize: 10, fontWeight: 500, background: STATUS_BG[status] ?? 'var(--sand)', color: STATUS_COLORS[status] ?? 'var(--ink-3)', borderRadius: 2, letterSpacing: '0.02em' }}>
-          {STATUS_LABELS[status] ?? status}
+          {(STATUS_KEYS as readonly string[]).includes(status) ? tStatus(status as any) : status}
         </span>
       </td>
       {/* Joined */}
@@ -131,29 +123,29 @@ export function UserRow({ user, onSuspend, onBan, onVerify, onActivate, onAssign
           {open && (
             <div style={{ position: 'absolute', insetInlineEnd: 0, top: '100%', marginTop: 4, zIndex: 50, minWidth: 180, background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 3, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: '4px 0' }}>
               <Link href={`/users/${user.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', fontSize: 12, color: 'var(--ink-2)', textDecoration: 'none' }} onClick={() => setOpen(false)}>
-                <Eye style={{ width: 13, height: 13 }} /> الملف الشخصي
+                <Eye style={{ width: 13, height: 13 }} /> {t("actions.profile")}
               </Link>
               {status !== "active" && (
-                <button onClick={() => { onActivate(user); setOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', fontSize: 12, color: 'var(--forest)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'right' }}>
-                  <BadgeCheck style={{ width: 13, height: 13 }} /> تفعيل
+                <button onClick={() => { onActivate(user); setOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', fontSize: 12, color: 'var(--forest)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'start' }}>
+                  <BadgeCheck style={{ width: 13, height: 13 }} /> {t("actions.activate")}
                 </button>
               )}
               {status !== "suspended" && (
-                <button onClick={() => { onSuspend(user); setOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', fontSize: 12, color: 'var(--terra)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'right' }}>
-                  <ShieldOff style={{ width: 13, height: 13 }} /> إيقاف مؤقت
+                <button onClick={() => { onSuspend(user); setOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', fontSize: 12, color: 'var(--terra)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'start' }}>
+                  <ShieldOff style={{ width: 13, height: 13 }} /> {t("actions.suspend")}
                 </button>
               )}
               {status !== "banned" && (
-                <button onClick={() => { onBan(user); setOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', fontSize: 12, color: 'var(--ink)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'right' }}>
-                  <Ban style={{ width: 13, height: 13 }} /> حظر
+                <button onClick={() => { onBan(user); setOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', fontSize: 12, color: 'var(--ink)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'start' }}>
+                  <Ban style={{ width: 13, height: 13 }} /> {t("actions.ban")}
                 </button>
               )}
               <div style={{ height: 1, background: 'var(--line)', margin: '4px 0' }} />
-              <button onClick={() => { onVerify(user); setOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', fontSize: 12, color: 'var(--forest)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'right' }}>
-                <BadgeCheck style={{ width: 13, height: 13 }} /> توثيق
+              <button onClick={() => { onVerify(user); setOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', fontSize: 12, color: 'var(--forest)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'start' }}>
+                <BadgeCheck style={{ width: 13, height: 13 }} /> {t("actions.verify")}
               </button>
-              <button onClick={() => { onAssignBadge(user); setOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', fontSize: 12, color: 'var(--terra)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'right' }}>
-                <Star style={{ width: 13, height: 13 }} /> منح شارة
+              <button onClick={() => { onAssignBadge(user); setOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', fontSize: 12, color: 'var(--terra)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'start' }}>
+                <Star style={{ width: 13, height: 13 }} /> {t("actions.assignBadge")}
               </button>
             </div>
           )}

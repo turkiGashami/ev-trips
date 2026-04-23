@@ -8,6 +8,7 @@ import {
   ArrowRight, Star, ShieldCheck, ShieldOff, Ban, BadgeCheck,
   Calendar, Phone, Clock, MapPin,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { AdminTopbar } from "@/components/layout/AdminTopbar";
 import { usersApi, tripsApi } from "@/lib/api/admin.api";
 import type { Trip } from "@/types/admin.types";
@@ -44,20 +45,20 @@ const pickBadges = (u: any): string[] => {
   return Array.isArray(list) ? list.map((b: any) => (typeof b === 'string' ? b : b?.name ?? b?.title ?? '')) : [];
 };
 
-const ROLE_LABELS: Record<string, string> = {
-  super_admin: 'مدير عام',
-  admin: 'مدير',
-  moderator: 'مشرف',
-  user: 'مستخدم',
-  verified: 'موثّق',
-  premium: 'مميّز',
-  guest: 'ضيف',
+const ROLE_KEYS: Record<string, string> = {
+  super_admin: 'super_admin',
+  admin: 'admin',
+  moderator: 'moderator',
+  user: 'user',
+  verified: 'verified',
+  premium: 'premium',
+  guest: 'guest',
 };
-const STATUS_LABELS: Record<string, string> = {
-  active: 'نشط',
-  suspended: 'موقوف',
-  banned: 'محظور',
-  pending: 'معلّق',
+const STATUS_KEYS: Record<string, string> = {
+  active: 'active',
+  suspended: 'suspended',
+  banned: 'banned',
+  pending: 'pending',
 };
 const STATUS_TOKEN: Record<string, { bg: string; color: string }> = {
   active:    { bg: 'rgba(45,74,62,.1)',  color: 'var(--forest)' },
@@ -86,6 +87,10 @@ function Pill({ text, tone }: { text: string; tone: { bg: string; color: string 
 }
 
 export default function UserDetailPage() {
+  const t = useTranslations("users");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("status");
+  const tRoles = useTranslations("roles");
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [user, setUser] = useState<any | null>(null);
@@ -143,10 +148,10 @@ export default function UserDetailPage() {
   if (isLoading) {
     return (
       <>
-        <AdminTopbar title="تفاصيل المستخدم" />
-        <main className="admin-main" dir="rtl">
+        <AdminTopbar title={t("detailTitle")} />
+        <main className="admin-main">
           <div style={{ textAlign: 'center', padding: '64px 0', color: 'var(--ink-4)', fontSize: 13 }}>
-            جارٍ التحميل...
+            {tCommon("loading")}
           </div>
         </main>
       </>
@@ -156,10 +161,10 @@ export default function UserDetailPage() {
   if (!user) {
     return (
       <>
-        <AdminTopbar title="تفاصيل المستخدم" />
-        <main className="admin-main" dir="rtl">
+        <AdminTopbar title={t("detailTitle")} />
+        <main className="admin-main">
           <div style={{ textAlign: 'center', padding: '48px 16px', background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4 }}>
-            <p style={{ color: 'var(--ink-4)', fontSize: 13 }}>تعذّر تحميل بيانات المستخدم</p>
+            <p style={{ color: 'var(--ink-4)', fontSize: 13 }}>{t("loadDetailError")}</p>
           </div>
         </main>
       </>
@@ -189,15 +194,15 @@ export default function UserDetailPage() {
 
   return (
     <>
-      <AdminTopbar title="تفاصيل المستخدم" subtitle={displayName} />
-      <main className="admin-main" dir="rtl">
+      <AdminTopbar title={t("detailTitle")} subtitle={displayName} />
+      <main className="admin-main">
         {/* Back */}
         <button
           onClick={() => router.back()}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 16 }}
         >
           <ArrowRight style={{ width: 14, height: 14 }} />
-          العودة إلى المستخدمين
+          {t("detail.backToUsers")}
         </button>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 2fr)', gap: 16 }}>
@@ -215,15 +220,15 @@ export default function UserDetailPage() {
                 <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)' }}>{safeText(displayName)}</h2>
                 <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{safeText(email)}</p>
                 <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-                  <Pill text={STATUS_LABELS[status] ?? status} tone={STATUS_TOKEN[status] ?? STATUS_TOKEN.active} />
-                  <Pill text={ROLE_LABELS[role] ?? role} tone={ROLE_TOKEN[role] ?? ROLE_TOKEN.user} />
+                  <Pill text={STATUS_KEYS[status] ? tStatus(STATUS_KEYS[status] as any) : status} tone={STATUS_TOKEN[status] ?? STATUS_TOKEN.active} />
+                  <Pill text={ROLE_KEYS[role] ? tRoles(ROLE_KEYS[role] as any) : role} tone={ROLE_TOKEN[role] ?? ROLE_TOKEN.user} />
                 </div>
               </div>
 
               {/* Badges */}
               {badges.length > 0 && (
                 <div style={{ marginBottom: 14 }}>
-                  <p className="eyebrow" style={{ marginBottom: 8 }}>الشارات</p>
+                  <p className="eyebrow" style={{ marginBottom: 8 }}>{t("detail.badges")}</p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {badges.map((b) => (
                       <span key={b} style={{ padding: '3px 10px', fontSize: 11, fontWeight: 500, background: 'rgba(180,94,66,.08)', color: 'var(--terra)', border: '1px solid rgba(180,94,66,.25)', borderRadius: 2 }}>
@@ -250,19 +255,19 @@ export default function UserDetailPage() {
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)' }}>
                   <Calendar style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--ink-4)' }} />
-                  <span>انضم في <span className="nums-latin">{joined ? formatDate(joined) : '—'}</span></span>
+                  <span>{t("detail.joinedOn")} <span className="nums-latin">{joined ? formatDate(joined) : '—'}</span></span>
                 </div>
                 {lastSeen && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-3)' }}>
                     <Clock style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--ink-4)' }} />
-                    <span>آخر نشاط <span className="nums-latin">{formatDate(lastSeen)}</span></span>
+                    <span>{t("detail.lastActive")} <span className="nums-latin">{formatDate(lastSeen)}</span></span>
                   </div>
                 )}
               </div>
 
               {bio && (
                 <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
-                  <p className="eyebrow" style={{ marginBottom: 6 }}>نبذة</p>
+                  <p className="eyebrow" style={{ marginBottom: 6 }}>{t("detail.bio")}</p>
                   <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>{safeText(bio)}</p>
                 </div>
               )}
@@ -271,15 +276,15 @@ export default function UserDetailPage() {
             {/* Stats */}
             <div style={{ background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>عدد الرحلات</span>
+                <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t("detail.tripsCount")}</span>
                 <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)' }} className="nums-latin">{formatNumber(tripsCount)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>الشارات</span>
+                <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t("detail.badges")}</span>
                 <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)' }} className="nums-latin">{formatNumber(badges.length)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>السيارات</span>
+                <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t("detail.vehicles")}</span>
                 <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)' }} className="nums-latin">{formatNumber(vehicles.length)}</span>
               </div>
             </div>
@@ -287,7 +292,7 @@ export default function UserDetailPage() {
             {/* Vehicles */}
             {vehicles.length > 0 && (
               <div style={{ background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4, padding: 18 }}>
-                <p className="eyebrow" style={{ marginBottom: 10 }}>السيارات</p>
+                <p className="eyebrow" style={{ marginBottom: 10 }}>{t("detail.vehicles")}</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {vehicles.map((v: any) => {
                     const brand = v?.brand?.name ?? v?.brand_name ?? '';
@@ -303,7 +308,7 @@ export default function UserDetailPage() {
                           </p>
                         </div>
                         {isDefault && (
-                          <span style={{ fontSize: 10, color: 'var(--forest)', fontWeight: 500 }}>الافتراضية</span>
+                          <span style={{ fontSize: 10, color: 'var(--forest)', fontWeight: 500 }}>{t("detail.default")}</span>
                         )}
                       </div>
                     );
@@ -317,28 +322,28 @@ export default function UserDetailPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* Actions */}
             <div style={{ background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4, padding: 18 }}>
-              <h3 className="heading-3" style={{ marginBottom: 12 }}>إجراءات الإدارة</h3>
+              <h3 className="heading-3" style={{ marginBottom: 12 }}>{t("detail.adminActions")}</h3>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {status !== "active" && (
                   <button onClick={() => setActionModal("activate")} style={{ ...pillBtn('var(--forest)', 'var(--cream)'), border: '1px solid var(--forest)' }}>
-                    <BadgeCheck style={{ width: 14, height: 14 }} /> تفعيل
+                    <BadgeCheck style={{ width: 14, height: 14 }} /> {t("actions.activate")}
                   </button>
                 )}
                 {status !== "suspended" && (
                   <button onClick={() => setActionModal("suspend")} style={pillBtn('rgba(217,119,6,.08)', '#d97706')}>
-                    <ShieldOff style={{ width: 14, height: 14 }} /> إيقاف مؤقت
+                    <ShieldOff style={{ width: 14, height: 14 }} /> {t("actions.suspend")}
                   </button>
                 )}
                 {status !== "banned" && (
                   <button onClick={() => setActionModal("ban")} style={pillBtn('rgba(180,94,66,.10)', 'var(--terra)')}>
-                    <Ban style={{ width: 14, height: 14 }} /> حظر
+                    <Ban style={{ width: 14, height: 14 }} /> {t("actions.ban")}
                   </button>
                 )}
                 <button onClick={() => setActionModal("verify")} style={pillBtn('rgba(107,142,156,.12)', 'var(--sky)')}>
-                  <ShieldCheck style={{ width: 14, height: 14 }} /> توثيق
+                  <ShieldCheck style={{ width: 14, height: 14 }} /> {t("actions.verify")}
                 </button>
                 <button onClick={() => setActionModal("badge")} style={pillBtn('rgba(180,94,66,.08)', 'var(--terra)')}>
-                  <Star style={{ width: 14, height: 14 }} /> منح شارة
+                  <Star style={{ width: 14, height: 14 }} /> {t("actions.assignBadge")}
                 </button>
               </div>
             </div>
@@ -346,10 +351,10 @@ export default function UserDetailPage() {
             {/* Trips */}
             <div style={{ background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4 }}>
               <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)' }}>
-                <h3 className="heading-3">أحدث الرحلات</h3>
+                <h3 className="heading-3">{t("detail.recentTrips")}</h3>
               </div>
               {trips.length === 0 ? (
-                <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--ink-4)', fontSize: 13 }}>لا توجد رحلات</div>
+                <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--ink-4)', fontSize: 13 }}>{t("detail.noTrips")}</div>
               ) : (
                 <div>
                   {trips.slice(0, 5).map((trip: any, idx) => {
@@ -365,7 +370,7 @@ export default function UserDetailPage() {
                           </Link>
                           <p style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 2 }} className="nums-latin">
                             {created ? formatDate(created) : '—'}
-                            {distance ? ` · ${formatNumber(distance)} كم` : ''}
+                            {distance ? ` · ${formatNumber(distance)} ${t("detail.km")}` : ''}
                           </p>
                         </div>
                       </div>
@@ -382,27 +387,27 @@ export default function UserDetailPage() {
       {actionModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={() => { setActionModal(null); setReason(""); }} />
-          <div style={{ position: 'relative', width: '100%', maxWidth: 440, background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4 }} dir="rtl">
+          <div style={{ position: 'relative', width: '100%', maxWidth: 440, background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4 }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)' }}>
               <h3 className="heading-3">
-                {actionModal === "badge" ? "منح شارة"
-                  : actionModal === "role" ? "تغيير الدور"
-                  : actionModal === "suspend" ? "إيقاف المستخدم"
-                  : actionModal === "ban" ? "حظر المستخدم"
-                  : actionModal === "verify" ? "توثيق المستخدم"
-                  : "تفعيل المستخدم"}
+                {actionModal === "badge" ? t("modal.badge")
+                  : actionModal === "role" ? t("modal.role")
+                  : actionModal === "suspend" ? t("modal.suspend")
+                  : actionModal === "ban" ? t("modal.ban")
+                  : actionModal === "verify" ? t("modal.verify")
+                  : t("modal.activate")}
               </h3>
             </div>
             <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
               {(actionModal === "suspend" || actionModal === "ban") && (
                 <div>
-                  <label className="form-label">السبب *</label>
-                  <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="اذكر السبب..." rows={3} className="form-textarea" />
+                  <label className="form-label">{t("modal.reasonLabel")}</label>
+                  <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("modal.reasonShortPlaceholder")} rows={3} className="form-textarea" />
                 </div>
               )}
               {actionModal === "badge" && (
                 <div>
-                  <label className="form-label">الشارة</label>
+                  <label className="form-label">{t("modal.badgeSelect")}</label>
                   <select value={selectedBadge} onChange={(e) => setSelectedBadge(e.target.value)} className="form-select">
                     {["Early Adopter", "Top Contributor", "Road Master", "EV Pioneer", "Community Star"].map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
@@ -410,28 +415,30 @@ export default function UserDetailPage() {
               )}
               {actionModal === "role" && (
                 <div>
-                  <label className="form-label">الدور الجديد</label>
+                  <label className="form-label">{t("modal.newRoleLabel")}</label>
                   <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className="form-select">
-                    <option value="user">مستخدم</option>
-                    <option value="verified">موثّق</option>
-                    <option value="premium">مميّز</option>
+                    <option value="user">{tRoles("user")}</option>
+                    <option value="verified">{tRoles("verified")}</option>
+                    <option value="premium">{tRoles("premium")}</option>
                   </select>
                 </div>
               )}
               {(actionModal === "verify" || actionModal === "activate") && (
                 <p style={{ fontSize: 13, color: 'var(--ink-2)' }}>
-                  هل تريد {actionModal === "verify" ? "توثيق" : "تفعيل"} المستخدم <strong>{safeText(displayName)}</strong>؟
+                  {actionModal === "verify"
+                    ? t("modal.confirmVerify", { name: safeText(displayName) })
+                    : t("modal.confirmActivate", { name: safeText(displayName) })}
                 </p>
               )}
             </div>
             <div style={{ padding: '12px 20px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button onClick={() => { setActionModal(null); setReason(""); }}
                 style={{ background: 'transparent', color: 'var(--ink-2)', border: '1px solid var(--line)', borderRadius: 2, padding: '7px 16px', fontSize: 13, cursor: 'pointer' }}>
-                إلغاء
+                {tCommon("cancel")}
               </button>
               <button onClick={handleAction} disabled={actionLoading || ((actionModal === "suspend" || actionModal === "ban") && !reason.trim())}
                 style={{ background: actionModal === "ban" ? 'var(--terra)' : 'var(--forest)', color: 'var(--cream)', border: `1px solid ${actionModal === "ban" ? 'var(--terra)' : 'var(--forest)'}`, borderRadius: 2, padding: '7px 16px', fontSize: 13, fontWeight: 500, cursor: actionLoading ? 'not-allowed' : 'pointer' }}>
-                {actionLoading ? "جارٍ التنفيذ..." : "تأكيد"}
+                {actionLoading ? tCommon("confirming") : tCommon("confirm")}
               </button>
             </div>
           </div>

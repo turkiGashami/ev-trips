@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { AdminTopbar } from "@/components/layout/AdminTopbar";
 import { UserRow } from "@/components/users/UserRow";
 import { usersApi } from "@/lib/api/admin.api";
@@ -9,24 +10,6 @@ import type { PlatformUser } from "@/types/admin.types";
 import { AdminButton } from "@/components/ui/AdminButton";
 import { useDebounce } from "@/hooks/useDebounce";
 import { formatNumber } from "@/lib/format";
-
-const STATUS_OPTIONS = [
-  { value: "", label: "جميع الحالات" },
-  { value: "active", label: "نشط" },
-  { value: "suspended", label: "موقوف" },
-  { value: "banned", label: "محظور" },
-  { value: "pending", label: "معلق" },
-];
-
-const ROLE_OPTIONS = [
-  { value: "", label: "جميع الأدوار" },
-  { value: "super_admin", label: "مدير عام" },
-  { value: "admin", label: "مدير" },
-  { value: "moderator", label: "مشرف" },
-  { value: "user", label: "مستخدم" },
-  { value: "verified", label: "موثق" },
-  { value: "premium", label: "مميز" },
-];
 
 const BADGES = ["Early Adopter", "Top Contributor", "Road Master", "EV Pioneer", "Community Star"];
 
@@ -36,6 +19,30 @@ interface ActionModal {
 }
 
 export default function UsersPage() {
+  const t = useTranslations("users");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("status");
+  const tRoles = useTranslations("roles");
+  const tDashboard = useTranslations("dashboard");
+
+  const STATUS_OPTIONS = [
+    { value: "", label: tCommon("allStatuses") },
+    { value: "active", label: tStatus("active") },
+    { value: "suspended", label: tStatus("suspended") },
+    { value: "banned", label: tStatus("banned") },
+    { value: "pending", label: tStatus("pending") },
+  ];
+
+  const ROLE_OPTIONS = [
+    { value: "", label: t("allRoles") },
+    { value: "super_admin", label: tRoles("super_admin") },
+    { value: "admin", label: tRoles("admin") },
+    { value: "moderator", label: tRoles("moderator") },
+    { value: "user", label: tRoles("user") },
+    { value: "verified", label: tRoles("verified") },
+    { value: "premium", label: tRoles("premium") },
+  ];
+
   const [users, setUsers] = useState<PlatformUser[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -70,11 +77,11 @@ export default function UsersPage() {
       setUsers([]);
       setTotal(0);
       setTotalPages(1);
-      setError(err?.response?.data?.message || err?.message || "تعذّر تحميل المستخدمين من الخادم.");
+      setError(err?.response?.data?.message || err?.message || t("loadError"));
     } finally {
       setIsLoading(false);
     }
-  }, [page, debouncedSearch, statusFilter, roleFilter, sortKey, sortDir]);
+  }, [page, debouncedSearch, statusFilter, roleFilter, sortKey, sortDir, t]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { setPage(1); }, [debouncedSearch, statusFilter, roleFilter]);
@@ -101,24 +108,24 @@ export default function UsersPage() {
   };
 
   const COLUMNS = [
-    { key: "name", label: "المستخدم" },
-    { key: "email", label: "البريد" },
-    { key: "role", label: "الدور" },
-    { key: "status", label: "الحالة" },
-    { key: "joinedAt", label: "الانضمام" },
-    { key: "tripsCount", label: "الرحلات" },
+    { key: "name", label: t("columns.user") },
+    { key: "email", label: t("columns.email") },
+    { key: "role", label: t("columns.role") },
+    { key: "status", label: t("columns.status") },
+    { key: "joinedAt", label: t("columns.joined") },
+    { key: "tripsCount", label: t("columns.trips") },
     { key: "actions", label: "" },
   ];
 
   return (
     <>
-      <AdminTopbar title="المستخدمون" subtitle={`${formatNumber(total)} مستخدم`} />
+      <AdminTopbar title={t("title")} subtitle={t("count", { count: formatNumber(total) })} />
       <main className="admin-main">
         {/* Filters */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
           <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 300 }}>
             <Search style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: 'var(--ink-4)' }} />
-            <input type="text" placeholder="البحث بالاسم أو البريد…" value={search} onChange={(e) => setSearch(e.target.value)} dir="rtl" className="form-input" style={{ paddingRight: 32 }} />
+            <input type="text" placeholder={t("searchPlaceholder")} value={search} onChange={(e) => setSearch(e.target.value)} className="form-input" style={{ paddingRight: 32 }} />
             {search && (
               <button onClick={() => setSearch("")} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-4)', display: 'flex' }}>
                 <X style={{ width: 13, height: 13 }} />
@@ -135,8 +142,8 @@ export default function UsersPage() {
 
         {error && !isLoading && (
           <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(180,94,66,.08)', border: '1px solid var(--terra)', borderRadius: 2, color: 'var(--terra)', fontSize: 13 }}>
-            <strong>خطأ:</strong> {error}
-            <button onClick={() => load()} style={{ marginInlineStart: 12, padding: '2px 10px', background: 'var(--terra)', color: 'var(--cream)', border: 'none', borderRadius: 2, cursor: 'pointer', fontSize: 12 }}>إعادة المحاولة</button>
+            <strong>{tDashboard("error")}:</strong> {error}
+            <button onClick={() => load()} style={{ marginInlineStart: 12, padding: '2px 10px', background: 'var(--terra)', color: 'var(--cream)', border: 'none', borderRadius: 2, cursor: 'pointer', fontSize: 12 }}>{tCommon("retry")}</button>
           </div>
         )}
 
@@ -162,7 +169,7 @@ export default function UsersPage() {
                       </tr>
                     ))
                   : users.length === 0
-                  ? <tr><td colSpan={7} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--ink-4)' }}>لا يوجد مستخدمون</td></tr>
+                  ? <tr><td colSpan={7} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--ink-4)' }}>{t("empty")}</td></tr>
                   : users.map((user) => (
                       <UserRow key={user.id} user={user}
                         onSuspend={(u) => setModal({ type: "suspend", user: u })}
@@ -179,10 +186,12 @@ export default function UsersPage() {
 
           {totalPages > 1 && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid var(--line)' }}>
-              <p style={{ fontSize: 11, color: 'var(--ink-4)' }}>صفحة {page} من {totalPages} ({formatNumber(total)} إجمالاً)</p>
+              <p style={{ fontSize: 11, color: 'var(--ink-4)' }}>
+                {t("pagination.pageOf", { page, total: totalPages })} {t("pagination.countTotal", { count: formatNumber(total) })}
+              </p>
               <div style={{ display: 'flex', gap: 4 }}>
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ padding: '4px 10px', fontSize: 12, background: 'none', border: '1px solid var(--line)', borderRadius: 2, cursor: page <= 1 ? 'not-allowed' : 'pointer', opacity: page <= 1 ? 0.4 : 1, color: 'var(--ink-3)' }}>السابق</button>
-                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', fontSize: 12, background: 'none', border: '1px solid var(--line)', borderRadius: 2, cursor: page >= totalPages ? 'not-allowed' : 'pointer', opacity: page >= totalPages ? 0.4 : 1, color: 'var(--ink-3)' }}>التالي</button>
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ padding: '4px 10px', fontSize: 12, background: 'none', border: '1px solid var(--line)', borderRadius: 2, cursor: page <= 1 ? 'not-allowed' : 'pointer', opacity: page <= 1 ? 0.4 : 1, color: 'var(--ink-3)' }}>{tCommon("previous")}</button>
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', fontSize: 12, background: 'none', border: '1px solid var(--line)', borderRadius: 2, cursor: page >= totalPages ? 'not-allowed' : 'pointer', opacity: page >= totalPages ? 0.4 : 1, color: 'var(--ink-3)' }}>{tCommon("next")}</button>
               </div>
             </div>
           )}
@@ -196,36 +205,36 @@ export default function UsersPage() {
           <div style={{ position: 'relative', width: '100%', maxWidth: 440, margin: '0 16px', background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 4, boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)' }}>
               <h3 style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>
-                {modal.type === "badge" ? "منح شارة" : modal.type === "suspend" ? "إيقاف مستخدم" : modal.type === "ban" ? "حظر مستخدم" : modal.type === "verify" ? "توثيق مستخدم" : "تفعيل مستخدم"}
+                {modal.type === "badge" ? t("modal.badge") : modal.type === "suspend" ? t("modal.suspend") : modal.type === "ban" ? t("modal.ban") : modal.type === "verify" ? t("modal.verify") : t("modal.activate")}
               </h3>
               <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>{(modal.user as any).name ?? (modal.user as any).full_name ?? (modal.user as any).username ?? (modal.user as any).email ?? '—'}</p>
             </div>
             <div style={{ padding: '16px 20px' }}>
               {(modal.type === "suspend" || modal.type === "ban") && (
                 <div>
-                  <label className="form-label">السبب *</label>
-                  <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="يرجى ذكر سبب الإجراء…" rows={3} className="form-textarea" />
+                  <label className="form-label">{t("modal.reasonLabel")}</label>
+                  <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("modal.reasonPlaceholder")} rows={3} className="form-textarea" />
                 </div>
               )}
               {modal.type === "badge" && (
                 <div>
-                  <label className="form-label">اختر الشارة</label>
+                  <label className="form-label">{t("modal.badgeLabel")}</label>
                   <select value={selectedBadge} onChange={(e) => setSelectedBadge(e.target.value)} className="form-select">{BADGES.map(b => <option key={b} value={b}>{b}</option>)}</select>
                 </div>
               )}
               {(modal.type === "verify" || modal.type === "activate") && (
-                <p style={{ fontSize: 13, color: 'var(--ink-2)' }}>هل تريد تأكيد هذا الإجراء للمستخدم؟</p>
+                <p style={{ fontSize: 13, color: 'var(--ink-2)' }}>{t("modal.confirmGeneric")}</p>
               )}
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: '1px solid var(--line)' }}>
-              <AdminButton variant="ghost" onClick={closeModal}>إلغاء</AdminButton>
+              <AdminButton variant="ghost" onClick={closeModal}>{tCommon("cancel")}</AdminButton>
               <AdminButton
                 variant={modal.type === "ban" ? "danger" : "primary"}
                 onClick={handleAction}
                 isLoading={actionLoading}
                 disabled={actionLoading || ((modal.type === "suspend" || modal.type === "ban") && !reason.trim())}
               >
-                تأكيد
+                {tCommon("confirm")}
               </AdminButton>
             </div>
           </div>
