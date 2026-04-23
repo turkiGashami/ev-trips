@@ -1,4 +1,5 @@
-import apiClient from "./client";
+import Cookies from "js-cookie";
+import apiClient, { setAdminTokens, clearAdminTokens } from "./client";
 import type {
   AuthResponse,
   LoginPayload,
@@ -36,6 +37,9 @@ export const authApi = {
       body?.tokens?.accessToken ??
       body?.accessToken ??
       body?.token;
+    const refreshToken =
+      body?.tokens?.refreshToken ??
+      body?.refreshToken;
 
     if (!user || !accessToken) {
       throw new Error("Invalid login response");
@@ -47,6 +51,9 @@ export const authApi = {
         response: { status: 403, data: { message: "غير مصرّح لك بدخول لوحة الإدارة" } },
       });
     }
+
+    // Persist both tokens so the axios interceptor can auto-refresh on 401.
+    setAdminTokens(accessToken, refreshToken);
 
     return {
       token: accessToken,
@@ -60,7 +67,17 @@ export const authApi = {
       },
     };
   },
-  logout: () => apiClient.post("/auth/logout").then((r) => r.data).catch(() => null),
+  logout: async () => {
+    try {
+      const refreshToken = Cookies.get("admin_refresh_token");
+      await apiClient.post("/auth/logout", refreshToken ? { refreshToken } : {});
+    } catch {
+      // swallow — still clear local state below
+    } finally {
+      clearAdminTokens();
+    }
+    return null;
+  },
   me: async (): Promise<AuthResponse["admin"]> => {
     const { data: envelope } = await apiClient.get<any>("/auth/me");
     const user = envelope?.data ?? envelope;
