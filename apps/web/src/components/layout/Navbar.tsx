@@ -3,10 +3,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Bell, Menu, X, Globe, ChevronDown, LogOut, Settings, Car, LayoutDashboard, Route } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { Search, Bell, Menu, X, ChevronDown, LogOut, Settings, Car, LayoutDashboard, Route } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
-import { useUIStore } from '../../store/ui.store';
 import { cn } from '../../lib/utils';
+import LanguageSwitcher from './LanguageSwitcher';
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname();
@@ -28,7 +29,8 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 export function Navbar() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
-  const { lang, toggleLang } = useUIStore();
+  const tNav = useTranslations('nav');
+  const tAuth = useTranslations('auth');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,9 +84,9 @@ export function Navbar() {
 
           {/* Desktop Nav Links */}
           <nav className="hidden items-center gap-8 md:flex">
-            <NavLink href="/search">الرحلات</NavLink>
-            <NavLink href="/popular-routes">المسارات</NavLink>
-            <NavLink href="/charging-stations">محطات الشحن</NavLink>
+            <NavLink href="/search">{tNav('trips')}</NavLink>
+            <NavLink href="/popular-routes">{tNav('popularRoutes')}</NavLink>
+            <NavLink href="/charging-stations">{tNav('stations')}</NavLink>
           </nav>
 
           {/* Actions */}
@@ -96,20 +98,14 @@ export function Navbar() {
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="ابحث..."
+                  placeholder={tNav('search') + '...'}
                   className="h-9 w-44 focus:w-64 transition-all bg-transparent border-b border-[var(--line)] focus:border-[var(--ink)] ps-8 pe-3 text-sm outline-none placeholder:text-[var(--ink-4)]"
                 />
               </div>
             </form>
 
             {/* Lang toggle */}
-            <button
-              onClick={toggleLang}
-              className="text-xs font-medium text-[var(--ink-3)] hover:text-[var(--ink)] transition-colors px-2 py-2 flex items-center gap-1.5"
-            >
-              <Globe className="h-3.5 w-3.5" />
-              {lang === 'ar' ? 'EN' : 'ع'}
-            </button>
+            <LanguageSwitcher />
 
             {isAuthenticated && user ? (
               <>
@@ -137,10 +133,10 @@ export function Navbar() {
                         <p className="text-xs text-[var(--ink-3)] mt-0.5">@{user.username}</p>
                       </div>
                       {[
-                        { href: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
-                        { href: '/vehicles', icon: Car, label: 'سياراتي' },
-                        { href: '/trips', icon: Route, label: 'رحلاتي' },
-                        { href: '/settings', icon: Settings, label: 'الإعدادات' },
+                        { href: '/dashboard', icon: LayoutDashboard, label: tNav('dashboard') },
+                        { href: '/vehicles', icon: Car, label: tNav('vehicles') },
+                        { href: '/trips', icon: Route, label: tNav('myTrips') },
+                        { href: '/settings', icon: Settings, label: tNav('settings') },
                       ].map(({ href, icon: Icon, label }) => (
                         <Link
                           key={href}
@@ -158,7 +154,7 @@ export function Navbar() {
                           className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-[var(--terra)] hover:bg-[var(--sand)] transition-colors"
                         >
                           <LogOut className="h-3.5 w-3.5" />
-                          تسجيل الخروج
+                          {tNav('logout')}
                         </button>
                       </div>
                     </div>
@@ -168,10 +164,10 @@ export function Navbar() {
             ) : (
               <div className="flex items-center gap-1 md:gap-2">
                 <Link href="/login" className="hidden sm:inline-flex text-sm font-medium text-[var(--ink-2)] hover:text-[var(--ink)] px-3 py-2 transition-colors">
-                  دخول
+                  {tAuth('login')}
                 </Link>
                 <Link href="/register" className="btn-primary text-sm">
-                  تسجيل
+                  {tAuth('register')}
                 </Link>
               </div>
             )}
@@ -180,7 +176,7 @@ export function Navbar() {
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className="p-2 text-[var(--ink-2)] md:hidden"
-              aria-label="القائمة"
+              aria-label={tNav('home')}
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -198,16 +194,16 @@ export function Navbar() {
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="ابحث عن رحلة أو مسار…"
+                  placeholder={tNav('search') + '...'}
                   className="input-base ps-10 pe-4"
                 />
               </div>
             </form>
             <nav className="flex flex-col">
               {[
-                { href: '/search', label: 'الرحلات' },
-                { href: '/popular-routes', label: 'المسارات' },
-                { href: '/charging-stations', label: 'محطات الشحن' },
+                { href: '/search', label: tNav('trips') },
+                { href: '/popular-routes', label: tNav('popularRoutes') },
+                { href: '/charging-stations', label: tNav('stations') },
               ].map(({ href, label }) => (
                 <Link
                   key={href}
@@ -221,8 +217,8 @@ export function Navbar() {
             </nav>
             {!isAuthenticated && (
               <div className="flex gap-3 pt-2">
-                <Link href="/login" className="btn-secondary flex-1 text-sm" onClick={() => setMobileOpen(false)}>دخول</Link>
-                <Link href="/register" className="btn-primary flex-1 text-sm" onClick={() => setMobileOpen(false)}>تسجيل</Link>
+                <Link href="/login" className="btn-secondary flex-1 text-sm" onClick={() => setMobileOpen(false)}>{tAuth('login')}</Link>
+                <Link href="/register" className="btn-primary flex-1 text-sm" onClick={() => setMobileOpen(false)}>{tAuth('register')}</Link>
               </div>
             )}
           </div>

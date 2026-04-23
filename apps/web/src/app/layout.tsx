@@ -1,4 +1,6 @@
 import { Inter, Noto_Kufi_Arabic } from 'next/font/google';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import Providers from './providers';
 
@@ -15,20 +17,26 @@ const notoKufiArabic = Noto_Kufi_Arabic({
   display: 'swap',
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+  const dir = locale === 'ar' ? 'rtl' : 'ltr';
+
   return (
     <html
-      lang="ar"
-      dir="rtl"
+      lang={locale}
+      dir={dir}
       className={`${inter.variable} ${notoKufiArabic.variable}`}
       suppressHydrationWarning
     >
       <body className="font-[var(--font-noto-kufi)] antialiased">
-        <Providers>{children}</Providers>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Providers>{children}</Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

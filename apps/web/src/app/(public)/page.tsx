@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { getTranslations, getLocale } from 'next-intl/server';
 import ShareTripCTA from '@/components/cta/ShareTripCTA';
 import { getApiBaseUrl } from '@/lib/utils';
 
@@ -45,38 +46,31 @@ async function getFeaturedTrips(): Promise<ApiTrip[]> {
   }
 }
 
-const stats = [
-  { value: '1,240', label: 'رحلة موثّقة' },
-  { value: '38',    label: 'مسار مفهرس' },
-  { value: '24',    label: 'مدينة مغطاة' },
-  { value: '860',   label: 'مشارك نشط' },
-];
-
-const principles = [
-  {
-    number: '٠١',
-    title: 'بيانات حقيقية',
-    body: 'نسبة البطارية عند الانطلاق والوصول، مسجّلة من السائق نفسه لا من تقدير نظري.',
-  },
-  {
-    number: '٠٢',
-    title: 'توقفات موثّقة',
-    body: 'كل محطة شحن استُخدمت فعلاً، مع زمن الانتظار وسرعة الشحن المسجّلة.',
-  },
-  {
-    number: '٠٣',
-    title: 'مجتمع مراجِع',
-    body: 'كل رحلة تمرّ بمراجعة بشرية قبل النشر. لا حشو، لا إعلانات، لا تقديرات.',
-  },
-];
-
 /* ─────────────────────────────────────────────────────────────
    PAGE
    ───────────────────────────────────────────────────────────── */
 export default async function HomePage() {
   const featuredTrips = await getFeaturedTrips();
+  const t = await getTranslations('landing');
+  const tCommon = await getTranslations('common');
+  const locale = await getLocale();
+  const dir = locale === 'ar' ? 'rtl' : 'ltr';
+
+  const stats = [
+    { value: '1,240', label: t('statsTrips') },
+    { value: '38',    label: t('statsRoutes') },
+    { value: '24',    label: t('statsCities') },
+    { value: '860',   label: t('statsMembers') },
+  ];
+
+  const principles = [
+    { number: locale === 'ar' ? '٠١' : '01', title: t('principle1Title'), body: t('principle1Body') },
+    { number: locale === 'ar' ? '٠٢' : '02', title: t('principle2Title'), body: t('principle2Body') },
+    { number: locale === 'ar' ? '٠٣' : '03', title: t('principle3Title'), body: t('principle3Body') },
+  ];
+
   return (
-    <main dir="rtl" className="bg-[var(--cream)]">
+    <main dir={dir} className="bg-[var(--cream)]">
 
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="relative min-h-[85vh] md:min-h-[88vh] flex items-end overflow-hidden"
@@ -90,28 +84,27 @@ export default async function HomePage() {
           <div className="max-w-4xl">
             <div className="flex items-center gap-3 mb-6 md:mb-8 text-[var(--cream)]/70">
               <span className="rule bg-[var(--cream)]/60" />
-              <span className="eyebrow text-[10px] md:text-xs text-[var(--cream)]/70">رحلات السيارات الكهربائية — الخليج</span>
+              <span className="eyebrow text-[10px] md:text-xs text-[var(--cream)]/70">{t('heroEyebrow')}</span>
             </div>
 
             <h1 className="text-[var(--cream)]"
                 style={{ fontSize: 'clamp(2rem, 7vw, 6rem)', lineHeight: 1.05, fontWeight: 400, letterSpacing: '-0.025em' }}>
-              اعرف كم تصمد بطاريتك
+              {t('heroTitleA')}
               <br />
-              <span className="italic font-light text-[var(--cream)]/85">قبل أن تنطلق.</span>
+              <span className="italic font-light text-[var(--cream)]/85">{t('heroTitleB')}</span>
             </h1>
 
             <p className="mt-6 md:mt-10 max-w-xl text-base md:text-lg leading-[1.75] text-[var(--cream)]/75">
-              تجارب سفر حقيقية من أصحاب السيارات الكهربائية في المملكة والخليج.
-              بيانات موثّقة، لا تقديرات.
+              {t('heroSubtitle')}
             </p>
 
             <div className="mt-8 md:mt-12 flex flex-wrap items-center gap-4 md:gap-5">
               <Link href="/search"
                     className="inline-flex items-center gap-3 px-7 md:px-9 py-3.5 md:py-4 bg-[var(--cream)] text-[var(--ink)] text-sm md:text-[0.95rem] font-medium rounded-[2px] hover:bg-white transition-colors">
-                تصفّح الرحلات
+                {t('browseTrips')}
                 <ArrowLeft className="h-4 w-4 flip-rtl" />
               </Link>
-              <ShareTripCTA variant="link" label="شارك رحلتك" />
+              <ShareTripCTA variant="link" label={t('shareTrip')} />
             </div>
           </div>
 
@@ -137,12 +130,11 @@ export default async function HomePage() {
         <div className="container-app">
           <div className="grid lg:grid-cols-12 gap-12 items-start">
             <div className="lg:col-span-4">
-              <span className="eyebrow">— حول المنصة</span>
+              <span className="eyebrow">{t('aboutEyebrow')}</span>
             </div>
             <div className="lg:col-span-8">
               <p className="text-xl md:text-[1.75rem] leading-[1.55] text-[var(--ink)] font-light tracking-tight">
-                كل رحلة هنا مكتوبة من سائق حقيقي. نرى رقم البطارية الذي رآه، نقرأ المحطة التي توقّف عندها،
-                ونعرف كم استغرق الشحن. <span className="text-[var(--ink-3)]">لا تقديرات، لا إعلانات، لا حدس.</span>
+                {t('aboutA')} <span className="text-[var(--ink-3)]">{t('aboutB')}</span>
               </p>
             </div>
           </div>
@@ -154,24 +146,24 @@ export default async function HomePage() {
         <div className="container-app">
           <div className="flex items-end justify-between mb-14">
             <div>
-              <span className="eyebrow">— مختارات</span>
-              <h2 className="mt-4 heading-1">رحلات هذا الأسبوع</h2>
+              <span className="eyebrow">{t('featuredEyebrow')}</span>
+              <h2 className="mt-4 heading-1">{t('featuredTitle')}</h2>
             </div>
             <Link href="/search" className="link-editorial text-sm hidden md:inline-block">
-              عرض كل الرحلات
+              {t('seeAllTrips')}
             </Link>
           </div>
 
           {featuredTrips.length === 0 ? (
             <div className="border border-[var(--line)] bg-[var(--sand)]/40 py-20 px-6 text-center">
-              <span className="eyebrow">— قريبًا</span>
-              <h3 className="heading-2 mt-3">المجتمع ينشر رحلاته الأولى</h3>
+              <span className="eyebrow">{t('comingSoonEyebrow')}</span>
+              <h3 className="heading-2 mt-3">{t('firstTitle')}</h3>
               <p className="body-md mt-3 max-w-md mx-auto text-[var(--ink-3)]">
-                كن أول من يوثّق رحلته ويساعد السائقين القادمين.
+                {t('firstBody')}
               </p>
               <div className="mt-8">
                 <Link href="/register" className="btn-primary text-sm">
-                  أنشئ حسابك وابدأ
+                  {t('createAccountStart')}
                   <ArrowLeft className="h-4 w-4 flip-rtl" />
                 </Link>
               </div>
@@ -183,7 +175,7 @@ export default async function HomePage() {
                 const to = trip.destination_city?.name_ar || trip.destination_city?.name || '';
                 const vehicle = [trip.snap_brand_name, trip.snap_model_name]
                   .filter(Boolean).join(' ');
-                const subtitle = [vehicle, trip.total_distance_km ? `${trip.total_distance_km} كم` : null]
+                const subtitle = [vehicle, trip.total_distance_km ? `${trip.total_distance_km} ${tCommon('kmUnit')}` : null]
                   .filter(Boolean).join(' · ');
                 const author = trip.user?.full_name || trip.user?.username || '';
                 return (
@@ -196,8 +188,8 @@ export default async function HomePage() {
                       </div>
                       <div className="absolute bottom-5 right-5 left-5 flex justify-between items-end text-white">
                         <span className="nums-latin text-xs tracking-[0.1em] opacity-75">
-                          {trip.total_distance_km ? `${trip.total_distance_km} كم` : ''}
-                          {trip.total_stops ? ` · ${trip.total_stops} توقفات` : ''}
+                          {trip.total_distance_km ? `${trip.total_distance_km} ${tCommon('kmUnit')}` : ''}
+                          {trip.total_stops ? ` · ${t('stopsCount', { count: trip.total_stops })}` : ''}
                         </span>
                         <ArrowLeft className="h-5 w-5 flip-rtl opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" />
                       </div>
@@ -205,10 +197,10 @@ export default async function HomePage() {
                     <div>
                       {subtitle && <div className="label-sm mb-2">{subtitle}</div>}
                       <h3 className="text-[1.375rem] leading-[1.3] text-[var(--ink)] font-medium tracking-tight group-hover:text-[var(--forest)] transition-colors">
-                        {from && to ? `من ${from} إلى ${to}` : trip.title}
+                        {from && to ? t('fromTo', { from, to }) : trip.title}
                       </h3>
                       {author && (
-                        <p className="mt-3 text-sm text-[var(--ink-3)]">بقلم {author}</p>
+                        <p className="mt-3 text-sm text-[var(--ink-3)]">{t('byAuthor', { author })}</p>
                       )}
                     </div>
                   </Link>
@@ -218,7 +210,7 @@ export default async function HomePage() {
           )}
 
           <div className="mt-14 text-center md:hidden">
-            <Link href="/search" className="link-editorial text-sm">عرض كل الرحلات</Link>
+            <Link href="/search" className="link-editorial text-sm">{t('seeAllTrips')}</Link>
           </div>
         </div>
       </section>
@@ -227,11 +219,11 @@ export default async function HomePage() {
       <section className="section" style={{ background: 'var(--sand)' }}>
         <div className="container-app">
           <div className="max-w-2xl mb-20">
-            <span className="eyebrow">— ما يميّزنا</span>
+            <span className="eyebrow">{t('principlesEyebrow')}</span>
             <h2 className="mt-4 display-2">
-              ثلاثة مبادئ
+              {t('principlesTitleA')}
               <br />
-              <span className="italic font-light text-[var(--ink-2)]">تحكم كل رحلة ننشرها.</span>
+              <span className="italic font-light text-[var(--ink-2)]">{t('principlesTitleB')}</span>
             </h2>
           </div>
 
@@ -254,12 +246,12 @@ export default async function HomePage() {
         <div className="container-app">
           <div className="grid lg:grid-cols-12 gap-10 items-end mb-14">
             <div className="lg:col-span-7">
-              <span className="eyebrow">— المسارات الأكثر توثيقاً</span>
-              <h2 className="mt-4 heading-1">خطوط يسلكها المجتمع</h2>
+              <span className="eyebrow">{t('routesEyebrow')}</span>
+              <h2 className="mt-4 heading-1">{t('routesTitle')}</h2>
             </div>
             <div className="lg:col-span-5 lg:text-left">
               <p className="body-md max-w-sm lg:ms-auto">
-                متوسط البطارية عند الوصول، محسوباً من بيانات فعلية لأصحاب السيارات.
+                {t('routesBody')}
               </p>
             </div>
           </div>
@@ -290,11 +282,11 @@ export default async function HomePage() {
                 </div>
 
                 <div className="hidden sm:block col-span-3 md:col-span-2 nums-latin text-sm text-[var(--ink-3)]">
-                  {r.km} كم
+                  {r.km} {tCommon('kmUnit')}
                 </div>
 
                 <div className="hidden md:block md:col-span-2 nums-latin text-sm text-[var(--ink-3)]">
-                  {r.count} رحلة
+                  {r.count}
                 </div>
 
                 <div className="col-span-3 sm:col-span-2 text-left nums-latin text-base md:text-lg text-[var(--ink)] font-medium">
@@ -305,7 +297,7 @@ export default async function HomePage() {
           </div>
 
           <div className="mt-10">
-            <Link href="/popular-routes" className="link-editorial text-sm">جميع المسارات</Link>
+            <Link href="/popular-routes" className="link-editorial text-sm">{t('allRoutes')}</Link>
           </div>
         </div>
       </section>
@@ -314,24 +306,24 @@ export default async function HomePage() {
       <section className="hero-dark">
         <div className="container-app py-28 md:py-40">
           <div className="max-w-3xl">
-            <span className="eyebrow text-[var(--cream)]/60">— شارك</span>
+            <span className="eyebrow text-[var(--cream)]/60">{t('ctaEyebrow')}</span>
             <h2 className="mt-6 text-[var(--cream)]"
                 style={{ fontSize: 'clamp(2rem, 4.5vw, 3.5rem)', lineHeight: 1.1, fontWeight: 400, letterSpacing: '-0.02em' }}>
-              رحلتك القادمة قد تكون
+              {t('ctaTitleA')}
               <br />
-              <span className="italic font-light text-[var(--cream)]/80">المرجع الذي ينقذ شخصاً ما.</span>
+              <span className="italic font-light text-[var(--cream)]/80">{t('ctaTitleB')}</span>
             </h2>
             <p className="mt-8 text-lg leading-[1.7] text-[var(--cream)]/65 max-w-xl">
-              أنشئ حساباً، سجّل بيانات رحلتك، ودع الآلاف يخطّطون بثقة.
+              {t('ctaBody')}
             </p>
             <div className="mt-12 flex flex-wrap items-center gap-6">
               <Link href="/register"
                     className="inline-flex items-center gap-3 px-9 py-4 bg-[var(--cream)] text-[var(--ink)] text-[0.95rem] font-medium rounded-[2px] hover:bg-white transition-colors">
-                أنشئ حسابك
+                {t('ctaCreateAccount')}
                 <ArrowLeft className="h-4 w-4 flip-rtl" />
               </Link>
               <Link href="/search" className="text-[var(--cream)]/80 text-[0.95rem] font-medium border-b border-[var(--cream)]/30 pb-1 hover:border-[var(--cream)] hover:text-[var(--cream)] transition-colors">
-                تصفّح أولاً
+                {t('ctaBrowseFirst')}
               </Link>
             </div>
           </div>
