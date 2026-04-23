@@ -2,10 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Plus, Car, Zap, Star, Trash2, CheckCircle } from 'lucide-react';
+import { Plus, Car, Star, Trash2, CheckCircle, Pencil } from 'lucide-react';
 import { useMyVehicles, useDeleteVehicle, useSetDefaultVehicle } from '@/hooks/useVehicles';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -20,113 +19,114 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
   const deleteVehicle = useDeleteVehicle();
   const setDefault = useSetDefaultVehicle();
 
-  // Safe accessors — API returns snake_case with nested brand/model/trim relations,
-  // any of which may be null for older records.
   const brandName = pickName(vehicle?.brand) || 'سيارة';
   const modelName = pickName(vehicle?.model);
   const trimName = pickName(vehicle?.trim);
   const year = vehicle?.year ?? null;
-  const nickname = vehicle?.nickname ?? null;
-  const batteryKwh = vehicle?.battery_capacity_kwh ?? vehicle?.batteryCapacity ?? null;
+  const nickname = vehicle?.nickname ?? vehicle?.custom_name ?? null;
+  const batteryKwh =
+    vehicle?.battery_capacity_kwh ??
+    vehicle?.batteryCapacity ??
+    vehicle?.trim?.battery_capacity_kwh ??
+    vehicle?.trim?.batteryCapacity ??
+    null;
   const isDefault = Boolean(vehicle?.is_default ?? vehicle?.isDefault);
   const tripsCount = Number(vehicle?.trips_count ?? vehicle?.tripsCount ?? 0);
 
   return (
     <div
       className={cn(
-        'bg-white rounded-2xl border shadow-sm transition-all duration-200',
-        isDefault
-          ? 'border-emerald-300 shadow-emerald-50 ring-1 ring-emerald-200'
-          : 'border-gray-100 hover:border-gray-200 hover:shadow-md',
+        'bg-white border rounded-2xl p-6 transition-colors',
+        isDefault ? 'border-[var(--forest)]' : 'border-[var(--line)] hover:border-[var(--ink)]',
       )}
     >
-      <div className="flex items-start justify-between p-5 pb-3">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-            <Car className="w-6 h-6 text-emerald-600" />
+          <div className="w-11 h-11 rounded-full bg-[var(--sand)] flex items-center justify-center shrink-0">
+            <Car className="w-5 h-5 text-[var(--ink)]" />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-bold text-gray-900 text-base leading-tight truncate">
-                {brandName} {modelName}
-              </h3>
-              {isDefault && (
-                <Badge variant="green" size="sm">
-                  <CheckCircle className="w-3 h-3 me-1" />
-                  الافتراضية
-                </Badge>
-              )}
-            </div>
+            <h3 className="heading-3 truncate">
+              {brandName} {modelName}
+            </h3>
             {(trimName || nickname) && (
-              <p className="text-sm text-gray-500 mt-0.5 truncate">
+              <p className="body-sm text-gray-500 mt-0.5 truncate">
                 {[trimName, nickname].filter(Boolean).join(' · ')}
               </p>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0 ms-2">
-          {!isDefault && (
-            <button
-              onClick={() => setDefault.mutate(vehicle.id)}
-              disabled={setDefault.isPending}
-              title="تعيين كافتراضية"
-              className="p-2 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
-            >
-              <Star className="w-4 h-4" />
-            </button>
-          )}
-          <button
-            onClick={() => {
-              if (confirm('هل أنت متأكد من حذف هذه السيارة؟')) {
-                deleteVehicle.mutate(vehicle.id);
-              }
-            }}
-            disabled={deleteVehicle.isPending}
-            title="حذف السيارة"
-            className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+        {isDefault && (
+          <div className="flex items-center gap-1 text-xs text-[var(--forest)] border border-[var(--forest)] rounded-full px-2 py-0.5 shrink-0">
+            <CheckCircle className="w-3 h-3" />
+            <span>الافتراضية</span>
+          </div>
+        )}
       </div>
 
-      <div className="border-t border-gray-100 mx-5" />
-
-      <div className="grid grid-cols-2 divide-x divide-x-reverse divide-gray-100 p-5 pt-4">
-        <div className="text-center pe-4">
-          <p className="text-xs text-gray-400 mb-1">السنة</p>
-          <p className="text-base font-bold text-gray-900 nums-latin">
-            {year ?? <span className="text-gray-300">—</span>}
-          </p>
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-[var(--line)]">
+        <div>
+          <div className="eyebrow mb-1">السنة</div>
+          <div className="text-base font-medium text-[var(--ink)] nums-latin">
+            {year ?? <span className="text-[var(--ink-4)]">—</span>}
+          </div>
         </div>
-        <div className="text-center ps-4">
-          <p className="text-xs text-gray-400 mb-1">البطارية</p>
-          <p className="text-base font-bold text-gray-900 nums-latin">
+        <div>
+          <div className="eyebrow mb-1">البطارية</div>
+          <div className="text-base font-medium text-[var(--ink)] nums-latin">
             {batteryKwh != null ? (
               <>
                 {batteryKwh}
-                <span className="text-xs text-gray-400 font-normal ms-0.5"> كيلوواط</span>
+                <span className="text-xs text-[var(--ink-3)] font-normal ms-1">kWh</span>
               </>
             ) : (
-              <span className="text-gray-300">—</span>
+              <span className="text-[var(--ink-4)]">—</span>
             )}
-          </p>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 px-5 pb-5 flex-wrap">
-        {batteryKwh != null && (
-          <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg px-3 py-1.5 text-xs text-gray-600">
-            <Zap className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="nums-latin">{batteryKwh} kWh</span>
-          </div>
+      {tripsCount > 0 && (
+        <div className="mt-4 text-xs text-[var(--ink-3)] nums-latin">
+          {tripsCount} رحلة
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 mt-5 pt-4 border-t border-[var(--line)]">
+        <Link href={`/vehicles/${vehicle.id}/edit`} className="flex-1">
+          <button className="btn-secondary w-full justify-center gap-1.5 text-sm py-2">
+            <Pencil className="w-3.5 h-3.5" />
+            تعديل
+          </button>
+        </Link>
+
+        {!isDefault && (
+          <button
+            onClick={() => setDefault.mutate(vehicle.id)}
+            disabled={setDefault.isPending}
+            title="تعيين كافتراضية"
+            className="p-2 rounded-lg text-[var(--ink-3)] hover:text-[var(--forest)] hover:bg-[var(--sand)] transition-colors disabled:opacity-50"
+          >
+            <Star className="w-4 h-4" />
+          </button>
         )}
-        {tripsCount > 0 && (
-          <div className="ms-auto text-xs text-gray-400 nums-latin">
-            {tripsCount} رحلة
-          </div>
-        )}
+
+        <button
+          onClick={() => {
+            if (confirm('هل أنت متأكد من حذف هذه السيارة؟')) {
+              deleteVehicle.mutate(vehicle.id);
+            }
+          }}
+          disabled={deleteVehicle.isPending}
+          title="حذف السيارة"
+          className="p-2 rounded-lg text-[var(--ink-3)] hover:text-[var(--terra)] hover:bg-[var(--terra)]/10 transition-colors disabled:opacity-50"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
@@ -135,13 +135,11 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
 export default function VehiclesPage() {
   const { data, isLoading, isError } = useMyVehicles();
 
-  // `useMyVehicles` unwraps `response.data.data`. If the server ever returns
-  // a shape we don't expect we fall back to an empty array instead of crashing.
   const vehicles: any[] = Array.isArray(data) ? data : [];
 
   return (
     <ProtectedRoute>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">سياراتي</h1>
@@ -175,7 +173,7 @@ export default function VehiclesPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[...vehicles]
-              .sort((a, b) => (Number(b?.is_default ?? 0) - Number(a?.is_default ?? 0)))
+              .sort((a, b) => Number(b?.is_default ?? 0) - Number(a?.is_default ?? 0))
               .map((vehicle: any) => (
                 <VehicleCard key={vehicle?.id ?? Math.random()} vehicle={vehicle} />
               ))}

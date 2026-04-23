@@ -254,23 +254,48 @@ const DateTimeInput = React.forwardRef<
     icon?: any;
     error?: string;
   }
->(function DateTimeInput({ type, icon: Icon, error, className, ...props }, ref) {
+>(function DateTimeInput({ type, icon: _icon, error, className, ...props }, ref) {
+  // Opens the native picker on click of the whole field — falls back silently
+  // on browsers that don't support showPicker (focus alone is enough there).
+  const innerRef = React.useRef<HTMLInputElement | null>(null);
+  const setRefs = React.useCallback(
+    (el: HTMLInputElement | null) => {
+      innerRef.current = el;
+      if (typeof ref === 'function') ref(el);
+      else if (ref) (ref as React.MutableRefObject<HTMLInputElement | null>).current = el;
+    },
+    [ref],
+  );
+  const openPicker = () => {
+    const el = innerRef.current;
+    if (!el) return;
+    try {
+      // showPicker is available in modern Chromium/Safari/Firefox.
+      (el as any).showPicker?.();
+    } catch {
+      /* no-op */
+    }
+    el.focus();
+  };
+  const Icon = type === 'date' ? Calendar : Clock;
+
   return (
     <div>
       <div
+        onClick={openPicker}
         className={cn(
-          'flex items-center gap-2 border h-11 px-3 bg-[var(--cream)] rounded-[2px] transition-colors',
-          'focus-within:border-[var(--ink)]',
+          'relative flex items-center gap-2 border h-11 ps-3 pe-3 bg-white rounded-xl transition-colors cursor-pointer',
+          'focus-within:border-[var(--ink)] hover:border-[var(--ink)]',
           error ? 'border-[var(--terra)]' : 'border-[var(--line)]',
         )}
       >
-        {Icon && <Icon className="h-4 w-4 text-[var(--ink-3)] shrink-0" />}
+        <Icon className="h-4 w-4 text-[var(--ink-3)] shrink-0" />
         <input
-          ref={ref}
+          ref={setRefs}
           type={type}
           {...props}
           className={cn(
-            'flex-1 bg-transparent outline-none text-sm text-[var(--ink)] nums-latin placeholder:text-[var(--ink-4)]',
+            'datetime-native flex-1 bg-transparent outline-none text-sm text-[var(--ink)] nums-latin placeholder:text-[var(--ink-4)]',
             className,
           )}
         />

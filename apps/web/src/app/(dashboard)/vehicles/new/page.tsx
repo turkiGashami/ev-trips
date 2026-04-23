@@ -26,6 +26,15 @@ const addVehicleSchema = z.object({
     .min(2010, 'السنة يجب أن تكون 2010 أو أحدث')
     .max(new Date().getFullYear() + 1, 'السنة غير صحيحة'),
   custom_name: z.string().max(60, 'الاسم لا يتجاوز 60 حرفاً').optional().or(z.literal('')),
+  battery_capacity_kwh: z
+    .union([
+      z.literal(''),
+      z.coerce
+        .number()
+        .min(1, 'حجم البطارية يجب أن يكون 1 كيلوواط على الأقل')
+        .max(999, 'حجم البطارية غير صحيح'),
+    ])
+    .optional(),
   is_default: z.boolean().default(false),
 });
 
@@ -50,6 +59,7 @@ export default function NewVehiclePage() {
       model_id: '',
       trim_id: '',
       custom_name: '',
+      battery_capacity_kwh: '',
       is_default: false,
     },
   });
@@ -84,14 +94,20 @@ export default function NewVehiclePage() {
   }, [selectedTrimId, trims, setValue]);
 
   const onSubmit = async (values: AddVehicleFormValues) => {
+    const battery =
+      typeof values.battery_capacity_kwh === 'number' && !Number.isNaN(values.battery_capacity_kwh)
+        ? values.battery_capacity_kwh
+        : undefined;
+
     await createVehicle.mutateAsync({
       brand_id: values.brand_id,
       model_id: values.model_id,
       trim_id: values.trim_id,
       year: values.year,
       custom_name: values.custom_name || undefined,
+      battery_capacity_kwh: battery,
       is_default: values.is_default,
-    });
+    } as any);
     router.push('/vehicles');
   };
 
@@ -186,6 +202,23 @@ export default function NewVehiclePage() {
               error={errors.year?.message}
               required
               {...register('year', { valueAsNumber: true })}
+            />
+
+            {/* Battery capacity (optional) */}
+            <Input
+              label="حجم البطارية (اختياري)"
+              type="number"
+              step="0.1"
+              min={1}
+              max={999}
+              placeholder={
+                selectedTrim?.batteryCapacity
+                  ? `${selectedTrim.batteryCapacity} (من الإصدار)`
+                  : 'مثال: 75'
+              }
+              hint="بالكيلوواط/ساعة — اتركه فارغاً لاستخدام القيمة الافتراضية للإصدار"
+              error={errors.battery_capacity_kwh?.message as string | undefined}
+              {...register('battery_capacity_kwh')}
             />
 
             {/* Custom name (optional) */}

@@ -285,3 +285,15 @@ button, input, select, textarea { font: inherit; }
 
 /* Arabic numerals stay Latin for tabular data */
 .nums-latin { font-feature-settings: "lnum"; font-variant-numeric: tabular-nums lining-nums; }
+
+/* Native date/time picker — hide default chrome, keep the field clickable. */
+.datetime-native::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.datetime-native::-webkit-date-and-time-value { text-align: start; }
+.datetime-native { color-scheme: light; }
