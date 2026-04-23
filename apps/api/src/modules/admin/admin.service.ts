@@ -501,6 +501,14 @@ export class AdminService {
     return model;
   }
 
+  async deleteModel(actorId: string, id: string) {
+    const model = await this.modelRepo.findOne({ where: { id } });
+    if (!model) throw new NotFoundException('Model not found');
+    await this.modelRepo.remove(model);
+    await logAdminAction(this.dataSource, { actorId, action: 'model.deleted', targetType: 'car_model', targetId: id });
+    return { id, deleted: true };
+  }
+
   async getTrims(modelId?: string) {
     const qb = this.trimRepo.createQueryBuilder('t').leftJoinAndSelect('t.model', 'm');
     if (modelId) qb.where('t.model_id = :modelId', { modelId });

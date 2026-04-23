@@ -169,6 +169,11 @@ export class AdminController {
     return this.adminService.createModel(actor.id, dto);
   }
 
+  @Delete('models/:id')
+  deleteModel(@CurrentUser() actor: any, @Param('id') id: string) {
+    return this.adminService.deleteModel(actor.id, id);
+  }
+
   @Get('trims')
   getTrims(@Query('modelId') modelId?: string) { return this.adminService.getTrims(modelId); }
 
