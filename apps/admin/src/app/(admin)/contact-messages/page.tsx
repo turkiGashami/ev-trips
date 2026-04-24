@@ -42,9 +42,12 @@ export default function AdminContactMessagesPage() {
     queryFn: () => adminApi.getContactMessages(statusFilter ? { status: statusFilter, limit: 50 } : { limit: 50 }),
   });
 
-  const payload = data?.data?.data ?? data?.data ?? {};
-  const messages: ContactMessage[] = payload?.items ?? payload?.data ?? [];
-  const total: number = payload?.meta?.total ?? messages.length;
+  const envelope: any = data?.data ?? {};
+  const rawData = envelope?.data ?? envelope;
+  const messages: ContactMessage[] = Array.isArray(rawData)
+    ? rawData
+    : (rawData?.items ?? rawData?.data ?? []);
+  const total: number = envelope?.meta?.total ?? rawData?.meta?.total ?? messages.length;
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin-contact-messages'] });
 
