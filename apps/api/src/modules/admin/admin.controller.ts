@@ -265,6 +265,16 @@ export class AdminController {
   @Get('pages')
   getStaticPages() { return this.adminService.getStaticPages(); }
 
+  @Get('pages/:key')
+  getStaticPage(@Param('key') key: string) {
+    return this.adminService.getStaticPage(key);
+  }
+
+  @Post('pages')
+  createStaticPage(@CurrentUser() actor: any, @Body() dto: any) {
+    return this.adminService.createStaticPage(actor.id, dto);
+  }
+
   @Patch('pages/:key')
   updateStaticPage(
     @CurrentUser() actor: any,
@@ -272,6 +282,12 @@ export class AdminController {
     @Body() dto: any,
   ) {
     return this.adminService.updateStaticPage(actor.id, key, dto);
+  }
+
+  @Delete('pages/:key')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteStaticPage(@CurrentUser() actor: any, @Param('key') key: string) {
+    return this.adminService.deleteStaticPage(actor.id, key);
   }
 
   // ── BANNERS ────────────────────────────────────────────────────────────

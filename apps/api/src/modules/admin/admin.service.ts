@@ -823,6 +823,66 @@ export class AdminService {
     return this.pageRepo.find({ order: { key: 'ASC' } });
   }
 
+  async getStaticPage(key: string) {
+    const page = await this.pageRepo.findOne({ where: { key } });
+    if (!page) throw new NotFoundException('Page not found');
+    return page;
+  }
+
+  async createStaticPage(
+    actorId: string,
+    dto: {
+      key: string;
+      title: string;
+      title_ar?: string;
+      content?: string;
+      content_ar?: string;
+      status?: string;
+    },
+  ) {
+    const key = (dto.key || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if (!key || key.length < 2) {
+      throw new BadRequestException('key must be 2+ chars, lowercase alphanumeric/underscore/dash');
+    }
+    if (!dto.title || dto.title.trim().length < 2) {
+      throw new BadRequestException('title is required');
+    }
+    const existing = await this.pageRepo.findOne({ where: { key } });
+    if (existing) {
+      throw new BadRequestException(`A page with key "${key}" already exists`);
+    }
+    const page = this.pageRepo.create({
+      key,
+      title: dto.title.trim(),
+      title_ar: dto.title_ar?.trim() ?? null,
+      content: dto.content ?? '',
+      content_ar: dto.content_ar ?? null,
+      status: (dto.status as any) ?? 'draft',
+      updated_by_id: actorId,
+    } as Partial<StaticPage>);
+    await this.pageRepo.save(page as StaticPage);
+    await logAdminAction(this.dataSource, {
+      actorId,
+      action: 'page.created',
+      targetType: 'static_page',
+      payload: { key },
+    });
+    return page;
+  }
+
+  async deleteStaticPage(actorId: string, key: string) {
+    const page = await this.pageRepo.findOne({ where: { key } });
+    if (!page) throw new NotFoundException('Page not found');
+    await this.pageRepo.remove(page);
+    await logAdminAction(this.dataSource, {
+      actorId,
+      action: 'page.deleted',
+      targetType: 'static_page',
+      payload: { key },
+    });
+    return { deleted: true };
+  }
+
   async updateStaticPage(
     actorId: string,
     key: string,

@@ -319,8 +319,12 @@ export const pagesApi = {
     apiClient.get<StaticPage[]>("/admin/pages").then((r) => r.data),
   get: (key: string) =>
     apiClient.get<StaticPage>(`/admin/pages/${key}`).then((r) => r.data),
+  create: (data: { key: string; title: string; title_ar?: string; content?: string; content_ar?: string; status?: string }) =>
+    apiClient.post<StaticPage>("/admin/pages", data).then((r) => r.data),
   update: (key: string, data: Partial<StaticPage>) =>
     apiClient.patch<StaticPage>(`/admin/pages/${key}`, data).then((r) => r.data),
+  remove: (key: string) =>
+    apiClient.delete(`/admin/pages/${key}`).then((r) => r.data),
 };
 
 // ─── Banners ──────────────────────────────────────────────────────────────────
