@@ -23,6 +23,8 @@ import { SystemSetting } from '../../entities/system-setting.entity';
 import { Badge } from '../../entities/badge.entity';
 import { UserBadge } from '../../entities/user-badge.entity';
 import { Notification } from '../../entities/notification.entity';
+import { Faq } from '../../entities/faq.entity';
+import { ContactMessage } from '../../entities/contact-message.entity';
 import { paginateQuery } from '../../common/helpers/pagination.helper';
 import { logAdminAction } from '../../common/helpers/admin-log.helper';
 
@@ -47,6 +49,8 @@ export class AdminService {
     @InjectRepository(Badge) private badgeRepo: Repository<Badge>,
     @InjectRepository(UserBadge) private userBadgeRepo: Repository<UserBadge>,
     @InjectRepository(Notification) private notifRepo: Repository<Notification>,
+    @InjectRepository(Faq) private faqRepo: Repository<Faq>,
+    @InjectRepository(ContactMessage) private contactRepo: Repository<ContactMessage>,
     private dataSource: DataSource,
     private readonly mailService: MailService,
   ) {}
@@ -907,6 +911,75 @@ export class AdminService {
     await this.pageRepo.save(page as StaticPage);
     await logAdminAction(this.dataSource, { actorId, action: 'page.updated', targetType: 'static_page', payload: { key, status: allowed.status } });
     return page;
+  }
+
+  // ── FAQ ──────────────────────────────────────────────────────────────────
+
+  async getFaqs() {
+    return this.faqRepo.find({ order: { sort_order: 'ASC', created_at: 'ASC' } });
+  }
+
+  async createFaq(actorId: string, dto: any) {
+    if (!dto?.question_ar || !dto?.answer_ar) {
+      throw new BadRequestException('question_ar and answer_ar are required');
+    }
+    const faq = this.faqRepo.create({
+      question_ar: dto.question_ar,
+      question_en: dto.question_en ?? null,
+      answer_ar: dto.answer_ar,
+      answer_en: dto.answer_en ?? null,
+      sort_order: typeof dto.sort_order === 'number' ? dto.sort_order : 0,
+      is_published: dto.is_published !== false,
+    });
+    await this.faqRepo.save(faq);
+    await logAdminAction(this.dataSource, { actorId, action: 'faq.created', targetType: 'faq', targetId: faq.id });
+    return faq;
+  }
+
+  async updateFaq(actorId: string, id: string, dto: any) {
+    const faq = await this.faqRepo.findOne({ where: { id } });
+    if (!faq) throw new NotFoundException('FAQ not found');
+    const allowed: Record<string, unknown> = {};
+    ['question_ar', 'question_en', 'answer_ar', 'answer_en', 'sort_order', 'is_published'].forEach((k) => {
+      if (dto[k] !== undefined) allowed[k] = dto[k];
+    });
+    Object.assign(faq, allowed);
+    await this.faqRepo.save(faq);
+    await logAdminAction(this.dataSource, { actorId, action: 'faq.updated', targetType: 'faq', targetId: id });
+    return faq;
+  }
+
+  async deleteFaq(actorId: string, id: string) {
+    const faq = await this.faqRepo.findOne({ where: { id } });
+    if (!faq) throw new NotFoundException('FAQ not found');
+    await this.faqRepo.delete({ id });
+    await logAdminAction(this.dataSource, { actorId, action: 'faq.deleted', targetType: 'faq', targetId: id });
+    return { success: true };
+  }
+
+  // ── CONTACT MESSAGES ─────────────────────────────────────────────────────
+
+  async getContactMessages(query: { page?: number; limit?: number; status?: string } = {}) {
+    const qb = this.contactRepo.createQueryBuilder('m').orderBy('m.created_at', 'DESC');
+    if (query.status) qb.andWhere('m.status = :status', { status: query.status });
+    return paginateQuery(qb, Number(query.page) || 1, Number(query.limit) || 20);
+  }
+
+  async updateContactMessage(actorId: string, id: string, dto: { status?: string }) {
+    const msg = await this.contactRepo.findOne({ where: { id } });
+    if (!msg) throw new NotFoundException('Message not found');
+    if (dto.status) msg.status = dto.status as any;
+    await this.contactRepo.save(msg);
+    await logAdminAction(this.dataSource, { actorId, action: 'contact.updated', targetType: 'contact_message', targetId: id, payload: { status: dto.status } });
+    return msg;
+  }
+
+  async deleteContactMessage(actorId: string, id: string) {
+    const msg = await this.contactRepo.findOne({ where: { id } });
+    if (!msg) throw new NotFoundException('Message not found');
+    await this.contactRepo.delete({ id });
+    await logAdminAction(this.dataSource, { actorId, action: 'contact.deleted', targetType: 'contact_message', targetId: id });
+    return { success: true };
   }
 
   // ── BANNERS ───────────────────────────────────────────────────────────────

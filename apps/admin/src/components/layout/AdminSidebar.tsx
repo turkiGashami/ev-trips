@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   LayoutDashboard, Users, Map, MessageSquare, Flag, ShieldCheck,
   Zap, MapPin, FileText, Image as ImageIcon, Settings, ScrollText,
-  LogOut, Bolt,
+  LogOut, Bolt, HelpCircle, Inbox,
 } from "lucide-react";
 import { useAdminAuthStore } from "@/store/admin-auth.store";
 
@@ -47,8 +47,10 @@ const navGroups: NavGroup[] = [
   {
     titleKey: "cms",
     items: [
-      { labelKey: "staticPages", href: "/static-pages", icon: <FileText className="w-4 h-4" /> },
-      { labelKey: "banners",     href: "/banners",      icon: <ImageIcon className="w-4 h-4" /> },
+      { labelKey: "staticPages",     href: "/static-pages",     icon: <FileText className="w-4 h-4" /> },
+      { labelKey: "faqs",            href: "/faqs",             icon: <HelpCircle className="w-4 h-4" /> },
+      { labelKey: "banners",         href: "/banners",          icon: <ImageIcon className="w-4 h-4" /> },
+      { labelKey: "contactMessages", href: "/contact-messages", icon: <Inbox className="w-4 h-4" /> },
     ],
   },
   {

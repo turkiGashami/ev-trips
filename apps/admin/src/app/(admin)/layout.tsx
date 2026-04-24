@@ -61,7 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <PageTitleProvider>
         <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--cream)' }}>
           <AdminSidebar />
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}>
             {children}
           </div>
         </div>
