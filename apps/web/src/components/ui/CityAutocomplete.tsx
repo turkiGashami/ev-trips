@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useId } from 'react';
-import { Search, X, MapPin, Loader2, Plus } from 'lucide-react';
+import { Search, X, MapPin, Loader2 } from 'lucide-react';
 import { useSearchCities } from '../../hooks/useLookup';
 import { lookupApi } from '../../lib/api/lookup.api';
 import { cn } from '../../lib/utils';
@@ -65,8 +65,6 @@ export function CityAutocomplete({
     const q = trimmed.toLowerCase();
     return ar === q || en === q;
   });
-  const canCreate =
-    allowCreate && trimmed.length >= 2 && !hasExactMatch && !isFetching;
 
   const createCity = async () => {
     if (!trimmed || creating) return;
@@ -76,7 +74,6 @@ export function CityAutocomplete({
       const created = (res as any)?.data?.data ?? (res as any)?.data ?? res;
       if (created?.id) select(created);
     } catch (err) {
-      // Silently keep input open — user can retry
       console.error('createCity failed', err);
     } finally {
       setCreating(false);
@@ -106,6 +103,23 @@ export function CityAutocomplete({
     inputRef.current?.focus();
   };
 
+  // On blur: if the user typed a city that doesn't exist, silently create it
+  // and select it — no visible "add" button, no extra click.
+  const handleBlur = async () => {
+    // close the list after a short delay so mousedown on suggestions still fires
+    setTimeout(() => setOpen(false), 150);
+    if (!allowCreate) return;
+    const t = trimmed;
+    if (!t || t.length < 2) return;
+    if (creating) return;
+    // If the visible text already matches the currently-selected city, do nothing.
+    if (t === (selectedName || '').trim()) return;
+    // If there's an exact match in current suggestions, do nothing — user will
+    // pick via mousedown/enter.
+    if (hasExactMatch) return;
+    await createCity();
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!open) return;
 
@@ -119,7 +133,7 @@ export function CityAutocomplete({
       if (highlighted >= 0 && suggestions[highlighted]) {
         e.preventDefault();
         select(suggestions[highlighted]);
-      } else if (canCreate) {
+      } else if (allowCreate && trimmed.length >= 2 && !hasExactMatch) {
         e.preventDefault();
         void createCity();
       }
@@ -140,7 +154,7 @@ export function CityAutocomplete({
           onChange={handleInput}
           onKeyDown={handleKeyDown}
           onFocus={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onBlur={handleBlur}
           placeholder={placeholder}
           autoComplete="off"
           role="combobox"
@@ -173,7 +187,7 @@ export function CityAutocomplete({
         )}
       </div>
 
-      {open && (suggestions.length > 0 || canCreate) && (
+      {open && suggestions.length > 0 && (
         <ul
           id={listId}
           role="listbox"
@@ -205,25 +219,6 @@ export function CityAutocomplete({
               </span>
             </li>
           ))}
-
-          {canCreate && (
-            <li
-              role="option"
-              aria-selected={false}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                void createCity();
-              }}
-              className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer text-sm text-[var(--forest)] border-t border-[var(--line)] hover:bg-[var(--sand)]/60"
-            >
-              {creating ? (
-                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-              ) : (
-                <Plus className="h-3.5 w-3.5 shrink-0" />
-              )}
-              <span>إضافة «{trimmed}» كمدينة جديدة</span>
-            </li>
-          )}
         </ul>
       )}
     </div>
