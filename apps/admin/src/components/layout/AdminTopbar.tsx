@@ -14,7 +14,7 @@ export function AdminTopbar({ title, subtitle }: AdminTopbarProps) {
 
   return (
     <header
-      style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', flexShrink: 0, background: "var(--cream)", borderBottom: "1px solid var(--line)" }}
+      style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', flexShrink: 0, background: "var(--cream)", borderBottom: "1px solid var(--line)", position: 'sticky', top: 0, zIndex: 10 }}
     >
       <div>
         <h1 className="text-[0.95rem] font-medium tracking-tight leading-tight" style={{ color: "var(--ink)" }}>

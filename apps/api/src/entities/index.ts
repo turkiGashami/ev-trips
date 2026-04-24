@@ -23,3 +23,5 @@ export { StaticPage } from './static-page.entity';
 export { AdminLog } from './admin-log.entity';
 export { Banner } from './banner.entity';
 export { SystemSetting } from './system-setting.entity';
+export { Faq } from './faq.entity';
+export { ContactMessage } from './contact-message.entity';

@@ -1,9 +1,15 @@
 import {
   Controller,
   Get,
+  Post,
+  Body,
   Param,
   Query,
+  Req,
+  BadRequestException,
   NotFoundException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,6 +22,8 @@ import { User } from '../../entities/user.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Route } from '../../entities/route.entity';
 import { City } from '../../entities/city.entity';
+import { Faq } from '../../entities/faq.entity';
+import { ContactMessage } from '../../entities/contact-message.entity';
 import {
   BannerStatus,
   PageStatus,
@@ -34,6 +42,8 @@ export class PublicContentController {
     @InjectRepository(Trip) private readonly tripRepo: Repository<Trip>,
     @InjectRepository(Route) private readonly routeRepo: Repository<Route>,
     @InjectRepository(City) private readonly cityRepo: Repository<City>,
+    @InjectRepository(Faq) private readonly faqRepo: Repository<Faq>,
+    @InjectRepository(ContactMessage) private readonly contactRepo: Repository<ContactMessage>,
   ) {}
 
   // ─── Active Banners ──────────────────────────────────────────────────────
@@ -145,5 +155,56 @@ export class PublicContentController {
       avg_arrival_battery: r.avg_arrival_battery != null ? Number(r.avg_arrival_battery) : null,
       avg_distance_km: r.avg_distance_km != null ? Number(r.avg_distance_km) : null,
     }));
+  }
+
+  // ─── FAQ list (public) ───────────────────────────────────────────────────
+  @Get('faqs')
+  @ApiOperation({ summary: 'Get published FAQs (public)' })
+  async getFaqs() {
+    const items = await this.faqRepo.find({
+      where: { is_published: true },
+      order: { sort_order: 'ASC', created_at: 'ASC' },
+    });
+    return items.map((f) => ({
+      id: f.id,
+      question_ar: f.question_ar,
+      question_en: f.question_en,
+      answer_ar: f.answer_ar,
+      answer_en: f.answer_en,
+      sort_order: f.sort_order,
+    }));
+  }
+
+  // ─── Submit contact message (public) ─────────────────────────────────────
+  @Post('contact')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Submit a contact message (public)' })
+  async submitContact(@Body() dto: any, @Req() req: any) {
+    const name = String(dto?.name ?? '').trim();
+    const email = String(dto?.email ?? '').trim();
+    const message = String(dto?.message ?? '').trim();
+    if (!name || name.length < 2) throw new BadRequestException('Name is required');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new BadRequestException('Valid email is required');
+    if (!message || message.length < 5) throw new BadRequestException('Message is too short');
+
+    const allowedTypes = ['general', 'suggestion', 'bug', 'partnership'];
+    const type = allowedTypes.includes(dto?.type) ? dto.type : 'general';
+    const subject = dto?.subject ? String(dto.subject).slice(0, 200) : null;
+    const phone = dto?.phone ? String(dto.phone).slice(0, 50) : null;
+    const ip = (req?.ip || req?.headers?.['x-forwarded-for'] || null) as string | null;
+
+    const msg = this.contactRepo.create({
+      name: name.slice(0, 150),
+      email: email.slice(0, 200),
+      phone,
+      type,
+      subject,
+      message: message.slice(0, 5000),
+      status: 'new',
+      ip: typeof ip === 'string' ? ip.slice(0, 50) : null,
+      user_id: req?.user?.id ?? null,
+    });
+    await this.contactRepo.save(msg);
+    return { success: true, id: msg.id };
   }
 }

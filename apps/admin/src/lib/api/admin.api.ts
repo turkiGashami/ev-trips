@@ -412,7 +412,18 @@ export const adminApi = {
   // Static pages
   getStaticPages: () => apiClient.get('/admin/pages'),
   getStaticPage: (key: string) => apiClient.get(`/admin/pages/${key}`),
+  createStaticPage: (data: any) => apiClient.post('/admin/pages', data),
   updateStaticPage: (key: string, data: any) => apiClient.patch(`/admin/pages/${key}`, data),
+  deleteStaticPage: (key: string) => apiClient.delete(`/admin/pages/${key}`),
+  // FAQs
+  getFaqs: () => apiClient.get('/admin/faqs'),
+  createFaq: (data: any) => apiClient.post('/admin/faqs', data),
+  updateFaq: (id: string, data: any) => apiClient.patch(`/admin/faqs/${id}`, data),
+  deleteFaq: (id: string) => apiClient.delete(`/admin/faqs/${id}`),
+  // Contact messages
+  getContactMessages: (p?: any) => apiClient.get('/admin/contact-messages', { params: p }),
+  updateContactMessage: (id: string, data: any) => apiClient.patch(`/admin/contact-messages/${id}`, data),
+  deleteContactMessage: (id: string) => apiClient.delete(`/admin/contact-messages/${id}`),
   // Banners
   getBanners: () => apiClient.get('/admin/banners'),
   createBanner: (data: any) => apiClient.post('/admin/banners', data),

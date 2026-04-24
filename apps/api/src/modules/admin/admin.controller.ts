@@ -290,6 +290,43 @@ export class AdminController {
     return this.adminService.deleteStaticPage(actor.id, key);
   }
 
+  // ── FAQ ────────────────────────────────────────────────────────────────
+  @Get('faqs')
+  getFaqs() { return this.adminService.getFaqs(); }
+
+  @Post('faqs')
+  createFaq(@CurrentUser() actor: any, @Body() dto: any) {
+    return this.adminService.createFaq(actor.id, dto);
+  }
+
+  @Patch('faqs/:id')
+  updateFaq(@CurrentUser() actor: any, @Param('id') id: string, @Body() dto: any) {
+    return this.adminService.updateFaq(actor.id, id, dto);
+  }
+
+  @Delete('faqs/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteFaq(@CurrentUser() actor: any, @Param('id') id: string) {
+    return this.adminService.deleteFaq(actor.id, id);
+  }
+
+  // ── CONTACT MESSAGES ───────────────────────────────────────────────────
+  @Get('contact-messages')
+  getContactMessages(@Query() query: any) {
+    return this.adminService.getContactMessages(query);
+  }
+
+  @Patch('contact-messages/:id')
+  updateContactMessage(@CurrentUser() actor: any, @Param('id') id: string, @Body() dto: any) {
+    return this.adminService.updateContactMessage(actor.id, id, dto);
+  }
+
+  @Delete('contact-messages/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteContactMessage(@CurrentUser() actor: any, @Param('id') id: string) {
+    return this.adminService.deleteContactMessage(actor.id, id);
+  }
+
   // ── BANNERS ────────────────────────────────────────────────────────────
   @Get('banners')
   getBanners() { return this.adminService.getBanners(); }
