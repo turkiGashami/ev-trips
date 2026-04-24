@@ -7,19 +7,11 @@ import { AdminTopbar } from "@/components/layout/AdminTopbar";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { MetricsChart } from "@/components/dashboard/MetricsChart";
 import { dashboardApi } from "@/lib/api/admin.api";
-import type { DashboardStats, GrowthDataPoint, RecentActivity } from "@/types/admin.types";
+import type { DashboardStats, GrowthDataPoint, RecentActivity, PopularRoute } from "@/types/admin.types";
 import { formatNumber } from "@/lib/format";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
-
-const POPULAR_ROUTES = [
-  { from: "الرياض", to: "جدة",     trips: 342, avgBattery: 78 },
-  { from: "الرياض", to: "الدمام",  trips: 218, avgBattery: 82 },
-  { from: "جدة",   to: "مكة",     trips: 197, avgBattery: 91 },
-  { from: "الرياض", to: "تبوك",   trips: 89,  avgBattery: 65 },
-  { from: "الدمام", to: "الخبر",  trips: 156, avgBattery: 88 },
-];
 
 function batteryColor(pct: number) {
   if (pct >= 70) return 'var(--forest)';
@@ -32,6 +24,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [growth, setGrowth] = useState<GrowthDataPoint[]>([]);
   const [activity, setActivity] = useState<RecentActivity[]>([]);
+  const [routes, setRoutes] = useState<PopularRoute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,18 +32,21 @@ export default function DashboardPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const [statsData, growthData, activityData] = await Promise.all([
+      const [statsData, growthData, activityData, routesData] = await Promise.all([
         dashboardApi.getStats(),
         dashboardApi.getGrowth(30),
         dashboardApi.getRecentActivity(10),
+        dashboardApi.getPopularRoutes(5),
       ]);
       setStats(statsData);
       setGrowth(growthData);
       setActivity(activityData);
+      setRoutes(routesData);
     } catch (err: any) {
       setStats(null);
       setGrowth([]);
       setActivity([]);
+      setRoutes([]);
       setError(err?.response?.data?.message || err?.message || t("genericError"));
     } finally {
       setIsLoading(false);
@@ -140,7 +136,6 @@ export default function DashboardPage() {
               <p className="eyebrow">{t("popularRoutes")}</p>
               <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>
                 {t("popularRoutesSubtitle")}
-                <span style={{ marginInlineStart: 8, padding: '1px 6px', fontSize: 10, background: 'var(--sand)', color: 'var(--ink-4)', borderRadius: 2, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t("demo")}</span>
               </p>
             </div>
           </div>
@@ -155,29 +150,51 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {POPULAR_ROUTES.map((route) => (
-                  <tr key={`${route.from}-${route.to}`}>
-                    <td>
-                      <span style={{ fontWeight: 500, color: 'var(--ink)' }}>{route.from}</span>
-                      <span style={{ color: 'var(--ink-4)', margin: '0 8px' }}>←</span>
-                      <span style={{ fontWeight: 500, color: 'var(--ink)' }}>{route.to}</span>
-                    </td>
-                    <td style={{ fontVariantNumeric: 'tabular-nums' }}>{route.trips}</td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ flex: 1, maxWidth: 100, height: 4, background: 'var(--line)', borderRadius: 2, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', background: batteryColor(route.avgBattery), width: `${route.avgBattery}%`, borderRadius: 2 }} />
-                        </div>
-                        <span style={{ fontSize: 12, color: batteryColor(route.avgBattery), fontVariantNumeric: 'tabular-nums' }}>{route.avgBattery}%</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ width: 120, height: 4, background: 'var(--line)', borderRadius: 2, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', background: 'var(--ink-3)', width: `${(route.trips / POPULAR_ROUTES[0].trips) * 100}%`, borderRadius: 2 }} />
-                      </div>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                      <td colSpan={4}><div className="skeleton" style={{ height: 14, width: '100%' }} /></td>
+                    </tr>
+                  ))
+                ) : routes.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center', color: 'var(--ink-3)', fontSize: 13, padding: 24 }}>
+                      {t("noRoutesYet")}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  routes.map((route, idx) => {
+                    const from = route.from_ar || route.from_en || '—';
+                    const to = route.to_ar || route.to_en || '—';
+                    const avg = route.avg_arrival_battery ?? 0;
+                    const topCount = routes[0]?.trip_count || 1;
+                    return (
+                      <tr key={`${from}-${to}-${idx}`}>
+                        <td>
+                          <span style={{ fontWeight: 500, color: 'var(--ink)' }}>{from}</span>
+                          <span style={{ color: 'var(--ink-4)', margin: '0 8px' }}>←</span>
+                          <span style={{ fontWeight: 500, color: 'var(--ink)' }}>{to}</span>
+                        </td>
+                        <td style={{ fontVariantNumeric: 'tabular-nums' }}>{route.trip_count}</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ flex: 1, maxWidth: 100, height: 4, background: 'var(--line)', borderRadius: 2, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', background: batteryColor(avg), width: `${avg}%`, borderRadius: 2 }} />
+                            </div>
+                            <span style={{ fontSize: 12, color: batteryColor(avg), fontVariantNumeric: 'tabular-nums' }}>
+                              {route.avg_arrival_battery != null ? `${route.avg_arrival_battery}%` : '—'}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ width: 120, height: 4, background: 'var(--line)', borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', background: 'var(--ink-3)', width: `${(route.trip_count / topCount) * 100}%`, borderRadius: 2 }} />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

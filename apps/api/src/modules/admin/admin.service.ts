@@ -57,15 +57,29 @@ export class AdminService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const monthAgo = new Date(today);
+    monthAgo.setDate(monthAgo.getDate() - 30);
+
+    const twoMonthsAgo = new Date(today);
+    twoMonthsAgo.setDate(twoMonthsAgo.getDate() - 60);
+
     const [
       totalUsers,
       activeUsers,
       newUsersToday,
+      usersLastMonth,
+      usersPrevMonth,
       totalTrips,
       publishedTrips,
       pendingTrips,
+      tripsToday,
+      tripsYesterday,
       totalComments,
       openReports,
+      totalStations,
     ] = await Promise.all([
       this.userRepo.count({ where: { deleted_at: null as any } }),
       this.userRepo.count({ where: { status: 'active' as any, deleted_at: null as any } }),
@@ -74,19 +88,148 @@ export class AdminService {
         .where('u.created_at >= :today', { today })
         .andWhere('u.deleted_at IS NULL')
         .getCount(),
+      this.userRepo
+        .createQueryBuilder('u')
+        .where('u.created_at >= :monthAgo', { monthAgo })
+        .andWhere('u.deleted_at IS NULL')
+        .getCount(),
+      this.userRepo
+        .createQueryBuilder('u')
+        .where('u.created_at >= :twoMonthsAgo', { twoMonthsAgo })
+        .andWhere('u.created_at < :monthAgo', { monthAgo })
+        .andWhere('u.deleted_at IS NULL')
+        .getCount(),
       this.tripRepo.count({ where: { deleted_at: null as any } }),
       this.tripRepo.count({ where: { status: 'published' as any, deleted_at: null as any } }),
       this.tripRepo.count({ where: { status: 'pending_review' as any, deleted_at: null as any } }),
+      this.tripRepo
+        .createQueryBuilder('t')
+        .where('t.created_at >= :today', { today })
+        .andWhere('t.deleted_at IS NULL')
+        .getCount(),
+      this.tripRepo
+        .createQueryBuilder('t')
+        .where('t.created_at >= :yesterday', { yesterday })
+        .andWhere('t.created_at < :today', { today })
+        .andWhere('t.deleted_at IS NULL')
+        .getCount(),
       this.commentRepo.count({ where: { deleted_at: null as any } }),
       this.reportRepo.count({ where: { status: 'pending' as any } }),
+      this.stationRepo.count(),
     ]);
 
+    const pct = (curr: number, prev: number): number | null => {
+      if (prev === 0) return curr > 0 ? 100 : null;
+      return Math.round(((curr - prev) / prev) * 100);
+    };
+
     return {
-      users: { total: totalUsers, active: activeUsers, newToday: newUsersToday },
-      trips: { total: totalTrips, published: publishedTrips, pending: pendingTrips },
+      users: {
+        total: totalUsers,
+        active: activeUsers,
+        newToday: newUsersToday,
+        growthPercent: pct(usersLastMonth, usersPrevMonth),
+      },
+      trips: {
+        total: totalTrips,
+        published: publishedTrips,
+        pending: pendingTrips,
+        today: tripsToday,
+        todayGrowthPercent: pct(tripsToday, tripsYesterday),
+      },
       comments: { total: totalComments },
       reports: { open: openReports },
+      stations: { total: totalStations },
     };
+  }
+
+  // ── GROWTH (time series) ─────────────────────────────────────────────────
+
+  async getGrowth(days = 30) {
+    const clamped = Math.min(Math.max(days, 7), 365);
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - (clamped - 1));
+
+    const usersRaw = await this.userRepo
+      .createQueryBuilder('u')
+      .select("DATE(u.created_at)", 'date')
+      .addSelect('COUNT(u.id)', 'count')
+      .where('u.created_at >= :start', { start })
+      .andWhere('u.deleted_at IS NULL')
+      .groupBy("DATE(u.created_at)")
+      .getRawMany();
+
+    const tripsRaw = await this.tripRepo
+      .createQueryBuilder('t')
+      .select("DATE(t.created_at)", 'date')
+      .addSelect('COUNT(t.id)', 'count')
+      .where('t.created_at >= :start', { start })
+      .andWhere('t.deleted_at IS NULL')
+      .groupBy("DATE(t.created_at)")
+      .getRawMany();
+
+    const usersMap = new Map<string, number>();
+    for (const r of usersRaw) {
+      const key = typeof r.date === 'string' ? r.date : new Date(r.date).toISOString().slice(0, 10);
+      usersMap.set(key, Number(r.count) || 0);
+    }
+    const tripsMap = new Map<string, number>();
+    for (const r of tripsRaw) {
+      const key = typeof r.date === 'string' ? r.date : new Date(r.date).toISOString().slice(0, 10);
+      tripsMap.set(key, Number(r.count) || 0);
+    }
+
+    const out: { date: string; users: number; trips: number }[] = [];
+    for (let i = 0; i < clamped; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      out.push({
+        date: key,
+        users: usersMap.get(key) ?? 0,
+        trips: tripsMap.get(key) ?? 0,
+      });
+    }
+    return out;
+  }
+
+  // ── POPULAR ROUTES (for admin dashboard) ────────────────────────────────
+
+  async getPopularRoutes(limit = 5) {
+    const clamped = Math.min(Math.max(limit, 1), 24);
+    const rows = await this.tripRepo
+      .createQueryBuilder('t')
+      .leftJoin('t.departure_city', 'dep')
+      .leftJoin('t.destination_city', 'dst')
+      .select('dep.name_ar', 'from_ar')
+      .addSelect('dep.name', 'from_en')
+      .addSelect('dst.name_ar', 'to_ar')
+      .addSelect('dst.name', 'to_en')
+      .addSelect('COUNT(t.id)', 'trip_count')
+      .addSelect('ROUND(AVG(t.arrival_battery_pct))', 'avg_arrival_battery')
+      .where('t.status = :status', { status: 'published' })
+      .andWhere('t.deleted_at IS NULL')
+      .andWhere('t.departure_city_id IS NOT NULL')
+      .andWhere('t.destination_city_id IS NOT NULL')
+      .groupBy('t.departure_city_id')
+      .addGroupBy('t.destination_city_id')
+      .addGroupBy('dep.name_ar')
+      .addGroupBy('dep.name')
+      .addGroupBy('dst.name_ar')
+      .addGroupBy('dst.name')
+      .orderBy('trip_count', 'DESC')
+      .limit(clamped)
+      .getRawMany();
+
+    return rows.map((r: any) => ({
+      from_ar: r.from_ar,
+      from_en: r.from_en,
+      to_ar: r.to_ar,
+      to_en: r.to_en,
+      trip_count: Number(r.trip_count) || 0,
+      avg_arrival_battery: r.avg_arrival_battery != null ? Number(r.avg_arrival_battery) : null,
+    }));
   }
 
   // ── USERS ─────────────────────────────────────────────────────────────────

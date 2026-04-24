@@ -16,6 +16,7 @@ import type {
   DashboardStats,
   GrowthDataPoint,
   RecentActivity,
+  PopularRoute,
   PaginatedResponse,
 } from "@/types/admin.types";
 
@@ -100,16 +101,33 @@ export const dashboardApi = {
     const raw = data?.data ?? data;
     return {
       totalUsers: raw?.users?.total ?? 0,
-      usersGrowthPercent: undefined,
-      tripsToday: raw?.users?.newToday ?? 0,
-      tripsTodayGrowthPercent: undefined,
+      usersGrowthPercent: raw?.users?.growthPercent ?? undefined,
+      tripsToday: raw?.trips?.today ?? 0,
+      tripsTodayGrowthPercent: raw?.trips?.todayGrowthPercent ?? undefined,
       pendingModeration: raw?.trips?.pending ?? 0,
       openReports: raw?.reports?.open ?? 0,
       totalTrips: raw?.trips?.total ?? 0,
       totalStations: raw?.stations?.total,
     } as DashboardStats;
   },
-  getGrowth: async (_days = 30): Promise<GrowthDataPoint[]> => [],
+  getGrowth: async (days = 30): Promise<GrowthDataPoint[]> => {
+    try {
+      const { data } = await apiClient.get<any>("/admin/dashboard/growth", { params: { days } });
+      const rows = data?.data ?? data ?? [];
+      return Array.isArray(rows) ? rows as GrowthDataPoint[] : [];
+    } catch {
+      return [];
+    }
+  },
+  getPopularRoutes: async (limit = 5): Promise<PopularRoute[]> => {
+    try {
+      const { data } = await apiClient.get<any>("/admin/dashboard/popular-routes", { params: { limit } });
+      const rows = data?.data ?? data ?? [];
+      return Array.isArray(rows) ? rows as PopularRoute[] : [];
+    } catch {
+      return [];
+    }
+  },
   getRecentActivity: async (limit = 10): Promise<RecentActivity[]> => {
     try {
       const { data } = await apiClient.get<any>("/admin/logs", { params: { page: 1, limit } });

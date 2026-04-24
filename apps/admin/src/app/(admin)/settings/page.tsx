@@ -63,7 +63,7 @@ function SettingRow({ entry, onChange, onSave, onReset }: { entry: SettingEntry;
         {entry.savedAt && !entry.isDirty && <CheckCircle style={{ width: 14, height: 14, color: 'var(--forest)', flexShrink: 0 }} />}
         {entry.error && (
           <span title={entry.error} style={{ display: 'inline-flex' }}>
-            <AlertTriangle style={{ width: 14, height: 14, color: 'var(--terra)', flexShrink: 0 }} aria-label={entry.error} />
+            <AlertTriangle style={{ width: 14, height: 14, color: 'var(--terra)', flexShrink: 0 }} />
           </span>
         )}
       </div>

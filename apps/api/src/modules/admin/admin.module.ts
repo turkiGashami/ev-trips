@@ -19,13 +19,14 @@ import { SystemSetting } from '../../entities/system-setting.entity';
 import { Badge } from '../../entities/badge.entity';
 import { UserBadge } from '../../entities/user-badge.entity';
 import { Notification } from '../../entities/notification.entity';
+import { Route } from '../../entities/route.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       User, Trip, Comment, Report, AdminLog, ChargingStation,
       CarBrand, CarModel, CarTrim, City, StaticPage, Banner,
-      SystemSetting, Badge, UserBadge, Notification,
+      SystemSetting, Badge, UserBadge, Notification, Route,
     ]),
   ],
   controllers: [AdminController, PublicContentController],

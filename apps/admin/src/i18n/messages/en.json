@@ -66,6 +66,7 @@
     "recentActivity": "Recent Activity",
     "popularRoutes": "Popular Routes",
     "popularRoutesSubtitle": "Most-traveled EV routes on the platform",
+    "noRoutesYet": "No routes logged yet.",
     "demo": "DEMO",
     "route": "Route",
     "tripCount": "Trip Count",

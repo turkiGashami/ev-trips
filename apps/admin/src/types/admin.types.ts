@@ -285,6 +285,15 @@ export interface GrowthDataPoint {
   trips: number;
 }
 
+export interface PopularRoute {
+  from_ar?: string | null;
+  from_en?: string | null;
+  to_ar?: string | null;
+  to_en?: string | null;
+  trip_count: number;
+  avg_arrival_battery: number | null;
+}
+
 export interface RecentActivity {
   id: string;
   type: "user_joined" | "trip_submitted" | "report_filed" | "trip_approved";

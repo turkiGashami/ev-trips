@@ -47,21 +47,70 @@ async function getFeaturedTrips(): Promise<ApiTrip[]> {
   }
 }
 
+type PublicStats = { trips: number; routes: number; cities: number; members: number };
+async function getPublicStats(): Promise<PublicStats> {
+  const base = getApiBaseUrl();
+  try {
+    const res = await fetch(`${base}/api/v1/stats`, { next: { revalidate: 60 } });
+    if (!res.ok) return { trips: 0, routes: 0, cities: 0, members: 0 };
+    const json = await res.json();
+    const d = json?.data ?? json;
+    return {
+      trips: Number(d?.trips) || 0,
+      routes: Number(d?.routes) || 0,
+      cities: Number(d?.cities) || 0,
+      members: Number(d?.members) || 0,
+    };
+  } catch {
+    return { trips: 0, routes: 0, cities: 0, members: 0 };
+  }
+}
+
+type PopularRoute = {
+  from_ar?: string | null;
+  from_en?: string | null;
+  to_ar?: string | null;
+  to_en?: string | null;
+  trip_count: number;
+  avg_arrival_battery: number | null;
+  avg_distance_km: number | null;
+};
+async function getPopularRoutes(limit = 5): Promise<PopularRoute[]> {
+  const base = getApiBaseUrl();
+  try {
+    const res = await fetch(
+      `${base}/api/v1/popular-routes?limit=${limit}`,
+      { next: { revalidate: 60 } },
+    );
+    if (!res.ok) return [];
+    const json = await res.json();
+    const d = json?.data ?? json;
+    return Array.isArray(d) ? d : [];
+  } catch {
+    return [];
+  }
+}
+
 /* ─────────────────────────────────────────────────────────────
    PAGE
    ───────────────────────────────────────────────────────────── */
 export default async function HomePage() {
-  const featuredTrips = await getFeaturedTrips();
+  const [featuredTrips, publicStats, popularRoutes] = await Promise.all([
+    getFeaturedTrips(),
+    getPublicStats(),
+    getPopularRoutes(5),
+  ]);
   const t = await getTranslations('landing');
   const tCommon = await getTranslations('common');
   const locale = await getLocale();
   const dir = locale === 'ar' ? 'rtl' : 'ltr';
 
+  const nfmt = new Intl.NumberFormat(locale === 'ar' ? 'en' : locale);
   const stats = [
-    { value: '1,240', label: t('statsTrips') },
-    { value: '38',    label: t('statsRoutes') },
-    { value: '24',    label: t('statsCities') },
-    { value: '860',   label: t('statsMembers') },
+    { value: nfmt.format(publicStats.trips),   label: t('statsTrips') },
+    { value: nfmt.format(publicStats.routes),  label: t('statsRoutes') },
+    { value: nfmt.format(publicStats.cities),  label: t('statsCities') },
+    { value: nfmt.format(publicStats.members), label: t('statsMembers') },
   ];
 
   const principles = [
@@ -266,43 +315,47 @@ export default async function HomePage() {
           </div>
 
           <div>
-            {[
-              { from: 'الرياض', to: 'جدة', slug: 'riyadh-jeddah', count: 284, avg: 23, km: 945 },
-              { from: 'الدمام', to: 'الرياض', slug: 'dammam-riyadh', count: 196, avg: 41, km: 410 },
-              { from: 'الرياض', to: 'الدمام', slug: 'riyadh-dammam', count: 178, avg: 38, km: 410 },
-              { from: 'جدة', to: 'مكة المكرمة', slug: 'jeddah-mecca', count: 142, avg: 64, km: 85 },
-              { from: 'الرياض', to: 'أبها', slug: 'riyadh-abha', count: 98, avg: 18, km: 920 },
-            ].map((r, i) => (
-              <Link key={r.slug} href={`/search?q=${encodeURIComponent(r.from + ' ' + r.to)}`}
-                    className="group grid grid-cols-12 gap-4 items-center py-7 border-t border-[var(--line)] hover:bg-[var(--sand)]/50 transition-colors px-2 -mx-2">
+            {popularRoutes.length === 0 ? (
+              <div className="border-t border-[var(--line)] py-16 text-center text-sm text-[var(--ink-3)]">
+                {t('noRoutesYet')}
+              </div>
+            ) : (
+              popularRoutes.map((r, i) => {
+                const from = (locale === 'ar' ? r.from_ar : r.from_en) || r.from_ar || r.from_en || '';
+                const to = (locale === 'ar' ? r.to_ar : r.to_en) || r.to_ar || r.to_en || '';
+                return (
+                  <Link key={`${from}-${to}-${i}`} href={`/search?q=${encodeURIComponent(from + ' ' + to)}`}
+                        className="group grid grid-cols-12 gap-4 items-center py-7 border-t border-[var(--line)] hover:bg-[var(--sand)]/50 transition-colors px-2 -mx-2">
 
-                <div className="col-span-1 nums-latin text-sm text-[var(--ink-4)]">
-                  {String(i + 1).padStart(2, '0')}
-                </div>
+                    <div className="col-span-1 nums-latin text-sm text-[var(--ink-4)]">
+                      {String(i + 1).padStart(2, '0')}
+                    </div>
 
-                <div className="col-span-8 md:col-span-5 flex items-center gap-2 md:gap-3 min-w-0">
-                  <span className="text-lg md:text-xl text-[var(--ink)] font-medium tracking-tight group-hover:text-[var(--forest)] transition-colors">
-                    {r.from}
-                  </span>
-                  <ArrowLeft className="h-4 w-4 text-[var(--ink-4)] flip-rtl" />
-                  <span className="text-lg md:text-xl text-[var(--ink)] font-medium tracking-tight group-hover:text-[var(--forest)] transition-colors">
-                    {r.to}
-                  </span>
-                </div>
+                    <div className="col-span-8 md:col-span-5 flex items-center gap-2 md:gap-3 min-w-0">
+                      <span className="text-lg md:text-xl text-[var(--ink)] font-medium tracking-tight group-hover:text-[var(--forest)] transition-colors">
+                        {from}
+                      </span>
+                      <ArrowLeft className="h-4 w-4 text-[var(--ink-4)] flip-rtl" />
+                      <span className="text-lg md:text-xl text-[var(--ink)] font-medium tracking-tight group-hover:text-[var(--forest)] transition-colors">
+                        {to}
+                      </span>
+                    </div>
 
-                <div className="hidden sm:block col-span-3 md:col-span-2 nums-latin text-sm text-[var(--ink-3)]">
-                  {r.km} {tCommon('kmUnit')}
-                </div>
+                    <div className="hidden sm:block col-span-3 md:col-span-2 nums-latin text-sm text-[var(--ink-3)]">
+                      {r.avg_distance_km != null ? `${r.avg_distance_km} ${tCommon('kmUnit')}` : '—'}
+                    </div>
 
-                <div className="hidden md:block md:col-span-2 nums-latin text-sm text-[var(--ink-3)]">
-                  {r.count}
-                </div>
+                    <div className="hidden md:block md:col-span-2 nums-latin text-sm text-[var(--ink-3)]">
+                      {r.trip_count}
+                    </div>
 
-                <div className="col-span-3 sm:col-span-2 text-left nums-latin text-base md:text-lg text-[var(--ink)] font-medium">
-                  {r.avg}%
-                </div>
-              </Link>
-            ))}
+                    <div className="col-span-3 sm:col-span-2 text-left nums-latin text-base md:text-lg text-[var(--ink)] font-medium">
+                      {r.avg_arrival_battery != null ? `${r.avg_arrival_battery}%` : '—'}
+                    </div>
+                  </Link>
+                );
+              })
+            )}
           </div>
 
           <div className="mt-10">

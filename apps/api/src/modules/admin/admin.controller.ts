@@ -24,6 +24,16 @@ export class AdminController {
     return this.adminService.getDashboardStats();
   }
 
+  @Get('dashboard/growth')
+  getGrowth(@Query('days') days?: string) {
+    return this.adminService.getGrowth(parseInt(days || '30', 10) || 30);
+  }
+
+  @Get('dashboard/popular-routes')
+  getPopularRoutes(@Query('limit') limit?: string) {
+    return this.adminService.getPopularRoutes(parseInt(limit || '5', 10) || 5);
+  }
+
   // ── USERS ──────────────────────────────────────────────────────────────
   @Get('users')
   getUsers(@Query() query: any) {

@@ -766,6 +766,7 @@
     "routesTitle": "Lines the community drives",
     "routesBody": "Average arrival battery, computed from real owner data.",
     "allRoutes": "All routes",
+    "noRoutesYet": "No documented routes yet — be the first to share a trip.",
     "byAuthor": "by {author}",
     "fromTo": "from {from} to {to}",
     "ctaEyebrow": "— Share",
@@ -1016,5 +1017,13 @@
   },
   "shareCTA": {
     "label": "Share your trip"
+  },
+  "popularRoutes": {
+    "eyebrow": "Popular routes",
+    "title": "Most documented routes",
+    "body": "Routes the community has logged again and again. Each brings real battery, charging, and duration data.",
+    "routeLabel": "Route",
+    "tripCount": "{count, plural, one {# trip} other {# trips}}",
+    "browseAll": "Browse all trips"
   }
 }
