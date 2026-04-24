@@ -327,6 +327,16 @@ export class AdminController {
     return this.adminService.deleteContactMessage(actor.id, id);
   }
 
+  @Post('contact-messages/:id/reply')
+  @HttpCode(HttpStatus.OK)
+  replyContactMessage(
+    @CurrentUser() actor: any,
+    @Param('id') id: string,
+    @Body() body: { reply: string },
+  ) {
+    return this.adminService.replyContactMessage(actor.id, id, body?.reply);
+  }
+
   // ── BANNERS ────────────────────────────────────────────────────────────
   @Get('banners')
   getBanners() { return this.adminService.getBanners(); }

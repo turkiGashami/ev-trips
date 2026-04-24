@@ -113,6 +113,37 @@ export class MailService {
     });
   }
 
+  async sendContactReply(
+    to: string,
+    recipientName: string,
+    originalMessage: string,
+    reply: string,
+  ): Promise<void> {
+    const safeReply = reply.replace(/\n/g, '<br/>');
+    const safeOriginal = originalMessage.replace(/\n/g, '<br/>');
+    await this.send({
+      to,
+      subject: 'رد على رسالتك — رحلات EV',
+      html: `
+        <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #2a2a2a;">
+          <h2 style="color: #22c55e; margin: 0 0 12px;">مرحباً ${recipientName}</h2>
+          <p style="line-height:1.7;">شكراً لتواصلك معنا. هذا ردّنا على رسالتك:</p>
+          <div style="background:#f6f6f4; border-inline-start:3px solid #22c55e; padding:14px 16px; margin:16px 0; line-height:1.8;">
+            ${safeReply}
+          </div>
+          <details style="margin-top:24px;">
+            <summary style="cursor:pointer; color:#777; font-size:12px;">رسالتك الأصلية</summary>
+            <div style="color:#888; font-size:13px; margin-top:8px; padding:10px; background:#fafaf9; line-height:1.7;">
+              ${safeOriginal}
+            </div>
+          </details>
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
+          <p style="color:#999;font-size:12px;">رحلات EV — مجتمع السيارات الكهربائية في المملكة</p>
+        </div>
+      `,
+    });
+  }
+
   private async send(options: { to: string; subject: string; html: string }): Promise<void> {
     try {
       const info = await this.transporter.sendMail({

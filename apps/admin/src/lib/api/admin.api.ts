@@ -424,6 +424,7 @@ export const adminApi = {
   getContactMessages: (p?: any) => apiClient.get('/admin/contact-messages', { params: p }),
   updateContactMessage: (id: string, data: any) => apiClient.patch(`/admin/contact-messages/${id}`, data),
   deleteContactMessage: (id: string) => apiClient.delete(`/admin/contact-messages/${id}`),
+  replyContactMessage: (id: string, reply: string) => apiClient.post(`/admin/contact-messages/${id}/reply`, { reply }),
   // Banners
   getBanners: () => apiClient.get('/admin/banners'),
   createBanner: (data: any) => apiClient.post('/admin/banners', data),

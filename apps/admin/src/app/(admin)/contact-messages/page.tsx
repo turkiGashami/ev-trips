@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Mail, Trash2, Check, Phone } from 'lucide-react';
+import { Mail, Trash2, Check, Phone, Send } from 'lucide-react';
 import { AdminTopbar } from '@/components/layout/AdminTopbar';
 import { adminApi } from '@/lib/api/admin.api';
 import { formatDateTime } from '@/lib/format';
@@ -17,6 +17,8 @@ type ContactMessage = {
   message: string;
   status: 'new' | 'read' | 'handled';
   created_at: string;
+  admin_reply: string | null;
+  replied_at: string | null;
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -36,6 +38,8 @@ export default function AdminContactMessagesPage() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [replyError, setReplyError] = useState<Record<string, string | null>>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-contact-messages', statusFilter],
@@ -60,6 +64,28 @@ export default function AdminContactMessagesPage() {
     mutationFn: (id: string) => adminApi.deleteContactMessage(id),
     onSuccess: invalidate,
   });
+
+  const replyMutation = useMutation({
+    mutationFn: ({ id, reply }: { id: string; reply: string }) => adminApi.replyContactMessage(id, reply),
+    onSuccess: (_res, vars) => {
+      invalidate();
+      setReplyDrafts((d) => ({ ...d, [vars.id]: '' }));
+      setReplyError((e) => ({ ...e, [vars.id]: null }));
+    },
+    onError: (err: any, vars) => {
+      const m = err?.response?.data?.message || err?.message || 'فشل إرسال الرد';
+      setReplyError((e) => ({ ...e, [vars.id]: Array.isArray(m) ? m.join(', ') : String(m) }));
+    },
+  });
+
+  const submitReply = (msg: ContactMessage) => {
+    const text = (replyDrafts[msg.id] ?? '').trim();
+    if (text.length < 2) {
+      setReplyError((e) => ({ ...e, [msg.id]: 'الرد قصير جداً' }));
+      return;
+    }
+    replyMutation.mutate({ id: msg.id, reply: text });
+  };
 
   const onToggleExpand = (msg: ContactMessage) => {
     setExpandedId(expandedId === msg.id ? null : msg.id);
@@ -153,17 +179,49 @@ export default function AdminContactMessagesPage() {
                           </span>
                         )}
                       </div>
-                      <div style={{ display: 'flex', gap: 8 }}>
+                      {msg.admin_reply && (
+                        <div style={{ padding: '12px 14px', marginBottom: 12, background: 'rgba(45,74,62,.06)', borderInlineStart: '3px solid var(--forest)', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                          <div style={{ fontSize: 11, color: 'var(--ink-4)', marginBottom: 6 }}>
+                            الرد {msg.replied_at ? `— ${formatDateTime(msg.replied_at)}` : ''}
+                          </div>
+                          {msg.admin_reply}
+                        </div>
+                      )}
+                      <div style={{ marginBottom: 10 }}>
+                        <label style={{ display: 'block', fontSize: 12, color: 'var(--ink-3)', marginBottom: 6 }}>
+                          {msg.admin_reply ? 'إرسال رد إضافي' : 'كتابة رد'}
+                        </label>
+                        <textarea
+                          value={replyDrafts[msg.id] ?? ''}
+                          onChange={(e) => setReplyDrafts((d) => ({ ...d, [msg.id]: e.target.value }))}
+                          placeholder="اكتب ردك هنا..."
+                          rows={4}
+                          className="form-textarea"
+                          style={{ width: '100%', fontSize: 13, lineHeight: 1.7 }}
+                        />
+                        {replyError[msg.id] && (
+                          <div style={{ marginTop: 6, fontSize: 12, color: 'var(--terra)' }}>{replyError[msg.id]}</div>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => submitReply(msg)}
+                          disabled={replyMutation.isPending}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 12, fontWeight: 500, border: '1px solid var(--forest)', borderRadius: 2, cursor: 'pointer', background: 'var(--forest)', color: 'var(--cream)', opacity: replyMutation.isPending ? 0.6 : 1 }}
+                        >
+                          <Send style={{ width: 12, height: 12 }} />
+                          {replyMutation.isPending ? 'جاري الإرسال...' : 'إرسال الرد بالإيميل'}
+                        </button>
                         <button
                           onClick={() => markHandled(msg)}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', fontSize: 12, border: '1px solid var(--line)', borderRadius: 2, cursor: 'pointer', background: 'transparent', color: 'var(--ink-2)' }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 12px', fontSize: 12, border: '1px solid var(--line)', borderRadius: 2, cursor: 'pointer', background: 'transparent', color: 'var(--ink-2)' }}
                         >
                           <Check style={{ width: 12, height: 12 }} />
                           {msg.status === 'handled' ? 'إعادة فتح' : 'تمت المعالجة'}
                         </button>
                         <button
                           onClick={() => onDelete(msg)}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', fontSize: 12, border: '1px solid var(--line)', borderRadius: 2, cursor: 'pointer', background: 'transparent', color: 'var(--terra)' }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 12px', fontSize: 12, border: '1px solid var(--line)', borderRadius: 2, cursor: 'pointer', background: 'transparent', color: 'var(--terra)' }}
                         >
                           <Trash2 style={{ width: 12, height: 12 }} />
                           حذف

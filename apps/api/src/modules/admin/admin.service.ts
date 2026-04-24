@@ -982,6 +982,21 @@ export class AdminService {
     return { success: true };
   }
 
+  async replyContactMessage(actorId: string, id: string, reply: string) {
+    const text = String(reply ?? '').trim();
+    if (text.length < 2) throw new BadRequestException('Reply is too short');
+    const msg = await this.contactRepo.findOne({ where: { id } });
+    if (!msg) throw new NotFoundException('Message not found');
+    msg.admin_reply = text;
+    msg.replied_at = new Date();
+    msg.replied_by_id = actorId;
+    msg.status = 'handled';
+    await this.contactRepo.save(msg);
+    await this.mailService.sendContactReply(msg.email, msg.name, msg.message, text);
+    await logAdminAction(this.dataSource, { actorId, action: 'contact.replied', targetType: 'contact_message', targetId: id });
+    return msg;
+  }
+
   // ── BANNERS ───────────────────────────────────────────────────────────────
 
   async getBanners() {

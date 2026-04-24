@@ -40,6 +40,15 @@ export class ContactMessage {
   @Column({ type: 'uuid', nullable: true })
   user_id: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  admin_reply: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  replied_at: Date | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  replied_by_id: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 }
