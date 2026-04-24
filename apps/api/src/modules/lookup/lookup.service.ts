@@ -50,6 +50,52 @@ export class LookupService {
     return cities;
   }
 
+  /**
+   * Find a city by name (case-insensitive, Arabic or English) or create it.
+   * Used when a user types a city that isn't in the suggestions list.
+   */
+  async findOrCreateCity(nameAr: string, nameEn?: string): Promise<City> {
+    const trimmedAr = nameAr.trim();
+    const trimmedEn = (nameEn || trimmedAr).trim();
+
+    // Try to find existing (case-insensitive match on either name)
+    const existing = await this.cityRepo
+      .createQueryBuilder('city')
+      .where('LOWER(city.name_ar) = LOWER(:nameAr)', { nameAr: trimmedAr })
+      .orWhere('LOWER(city.name) = LOWER(:nameEn)', { nameEn: trimmedEn })
+      .getOne();
+    if (existing) return existing;
+
+    // Generate a slug from the English name (fallback to transliteration-free)
+    const baseSlug = trimmedEn
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .slice(0, 80) || `city-${Date.now()}`;
+
+    let slug = baseSlug;
+    let suffix = 1;
+    while (await this.cityRepo.findOne({ where: { slug } })) {
+      slug = `${baseSlug}-${suffix++}`;
+    }
+
+    const city = this.cityRepo.create({
+      name: trimmedEn,
+      name_ar: trimmedAr,
+      slug,
+      country: 'SA',
+      is_active: true,
+    });
+    const saved = await this.cityRepo.save(city);
+
+    // Bust the cities cache so new city shows up in suggestions
+    await this.cacheManager.del('lookup:cities:all');
+    return saved;
+  }
+
   async getBrands(active?: boolean): Promise<CarBrand[]> {
     const cacheKey = `lookup:brands:${active ?? 'all'}`;
     const cached = await this.cacheManager.get<CarBrand[]>(cacheKey);

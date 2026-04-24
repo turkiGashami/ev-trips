@@ -110,7 +110,10 @@ export default function ProfilePage() {
     ? new Date(joinedAt).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })
     : '';
 
-  const initials = (displayName || username || 'م')
+  const stripDiacritics = (s: string) => s.replace(/[\u064B-\u065F\u0670]/g, '');
+  const cleanDisplayName = stripDiacritics(displayName || '');
+  const cleanUsername = stripDiacritics(username || '');
+  const initials = (cleanDisplayName || cleanUsername || 'م')
     .split(' ')
     .map((p: string) => p[0])
     .slice(0, 2)
@@ -131,7 +134,7 @@ export default function ProfilePage() {
               <div className="min-w-0">
                 <span className="eyebrow">{t('myProfileEyebrow')}</span>
                 <h1 className="heading-2 mt-2 flex items-center gap-2 flex-wrap">
-                  {displayName || username}
+                  {cleanDisplayName || cleanUsername}
                   {isVerified && (
                     <span className="inline-flex items-center gap-1 text-xs text-[var(--forest)] border border-[var(--forest)]/30 bg-[var(--forest)]/5 px-2 py-0.5 rounded-[2px]">
                       <BadgeCheck className="h-3 w-3" />

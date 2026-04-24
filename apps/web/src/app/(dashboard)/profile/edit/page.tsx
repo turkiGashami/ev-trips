@@ -82,24 +82,24 @@ export default function EditProfilePage() {
 
   const bioValue = watch('bio') ?? '';
 
-  // Mutation
+  // Mutation — API DTO uses snake_case; strip Arabic diacritics from name.
+  const stripDiacritics = (s: string) => s.replace(/[\u064B-\u065F\u0670]/g, '').trim();
+
   const updateProfile = useMutation({
     mutationFn: (data: EditProfileFormValues) =>
       usersApi.updateProfile({
-        fullName: data.full_name,
+        full_name: stripDiacritics(data.full_name),
         username: data.username,
-        bio: data.bio || undefined,
-        phone: data.phone || undefined,
+        ...(data.bio ? { bio: data.bio } : {}),
       }).then((r) => r.data.data),
     onSuccess: (updatedUser) => {
-      // Update the auth store so the rest of the UI reflects the change immediately
       updateUser({
-        full_name: updatedUser?.fullName ?? updatedUser?.full_name ?? user?.full_name ?? '',
+        full_name: updatedUser?.full_name ?? user?.full_name ?? '',
         username: updatedUser?.username ?? user?.username ?? '',
       });
       setShowSuccess(true);
       reset({
-        full_name: updatedUser?.fullName ?? updatedUser?.full_name ?? user?.full_name ?? '',
+        full_name: updatedUser?.full_name ?? user?.full_name ?? '',
         username: updatedUser?.username ?? user?.username ?? '',
         bio: updatedUser?.bio ?? '',
         phone: '',

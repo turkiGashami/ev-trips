@@ -3,24 +3,48 @@ import {
   Get,
   Param,
   Query,
+  Body,
+  Post,
   ParseUUIDPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { IsString, MaxLength, MinLength, IsOptional } from 'class-validator';
 
 import { LookupService } from './lookup.service';
-import { Public } from '../auth/guards/jwt-auth.guard';
+import { Public, JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+class CreateCityDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  name_ar!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  name?: string;
+}
 
 @ApiTags('Lookup')
-@Public()
 @Controller({ path: 'lookup', version: '1' })
 export class LookupController {
   constructor(private readonly lookupService: LookupService) {}
 
+  @Public()
   @Get('cities')
   @ApiOperation({ summary: 'Get all active cities (cached)' })
   @ApiQuery({ name: 'q', required: false, description: 'Search by name' })
   async getCities(@Query('q') search?: string) {
     return this.lookupService.getCities(search);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('cities')
+  @ApiOperation({ summary: 'Create a city if it does not exist (user-suggested)' })
+  async createCity(@Body() dto: CreateCityDto) {
+    return this.lookupService.findOrCreateCity(dto.name_ar, dto.name);
   }
 
   @Get('brands')

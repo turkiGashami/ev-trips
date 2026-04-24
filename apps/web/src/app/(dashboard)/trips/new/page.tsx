@@ -23,6 +23,8 @@ import { tripsApi } from '@/lib/api/trips.api';
 import { vehiclesApi } from '@/lib/api/vehicles.api';
 import { useToast } from '@/components/ui/Toast';
 import { CityAutocomplete } from '@/components/ui/CityAutocomplete';
+import { DateField } from '@/components/ui/DateField';
+import { TimeField } from '@/components/ui/TimeField';
 import { cn } from '@/lib/utils';
 
 const normalizeNumberInput = (value: unknown) => {
@@ -711,22 +713,40 @@ export default function NewTripPage() {
 
             <div>
               <FieldLabel icon={Calendar}>تاريخ الرحلة</FieldLabel>
-              <DateTimeInput
-                type="date"
-                {...register('trip_date')}
-                error={errors.trip_date?.message}
+              <Controller
+                name="trip_date"
+                control={control}
+                render={({ field }) => (
+                  <DateField
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    error={errors.trip_date?.message}
+                  />
+                )}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <FieldLabel icon={Clock}>وقت الانطلاق</FieldLabel>
-                <DateTimeInput type="time" {...register('departure_time')} />
+                <Controller
+                  name="departure_time"
+                  control={control}
+                  render={({ field }) => (
+                    <TimeField value={field.value ?? ''} onChange={field.onChange} />
+                  )}
+                />
               </div>
 
               <div>
                 <FieldLabel icon={Clock}>وقت الوصول</FieldLabel>
-                <DateTimeInput type="time" {...register('arrival_time')} />
+                <Controller
+                  name="arrival_time"
+                  control={control}
+                  render={({ field }) => (
+                    <TimeField value={field.value ?? ''} onChange={field.onChange} />
+                  )}
+                />
               </div>
             </div>
 

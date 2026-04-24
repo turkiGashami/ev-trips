@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -10,6 +10,8 @@ import { ChevronLeft, Save, ArrowRight } from 'lucide-react';
 import { tripsApi } from '@/lib/api/trips.api';
 import { useToast } from '@/components/ui/Toast';
 import { CityAutocomplete } from '@/components/ui/CityAutocomplete';
+import { DateField } from '@/components/ui/DateField';
+import { TimeField } from '@/components/ui/TimeField';
 import { cn } from '@/lib/utils';
 
 const schema = z.object({
@@ -133,7 +135,7 @@ export default function EditTripPage() {
     } : undefined,
   });
 
-  const { register, handleSubmit, watch, setValue, formState: { errors, isDirty } } = form;
+  const { register, handleSubmit, watch, setValue, control, formState: { errors, isDirty } } = form;
 
   const updateMutation = useMutation({
     mutationFn: (data: FormData) => {
@@ -232,16 +234,34 @@ export default function EditTripPage() {
           </div>
           <div>
             <FieldLabel>تاريخ الرحلة</FieldLabel>
-            <FormInput type="date" {...register('trip_date')} />
+            <Controller
+              name="trip_date"
+              control={control}
+              render={({ field }) => (
+                <DateField value={field.value ?? ''} onChange={field.onChange} />
+              )}
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <FieldLabel>وقت الانطلاق</FieldLabel>
-              <FormInput type="time" {...register('departure_time')} />
+              <Controller
+                name="departure_time"
+                control={control}
+                render={({ field }) => (
+                  <TimeField value={field.value ?? ''} onChange={field.onChange} />
+                )}
+              />
             </div>
             <div>
               <FieldLabel>وقت الوصول</FieldLabel>
-              <FormInput type="time" {...register('arrival_time')} />
+              <Controller
+                name="arrival_time"
+                control={control}
+                render={({ field }) => (
+                  <TimeField value={field.value ?? ''} onChange={field.onChange} />
+                )}
+              />
             </div>
             <div>
               <FieldLabel>المسافة (كم)</FieldLabel>

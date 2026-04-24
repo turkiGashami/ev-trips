@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect, useId } from 'react';
-import { Search, X, MapPin, Loader2 } from 'lucide-react';
+import { Search, X, MapPin, Loader2, Plus } from 'lucide-react';
 import { useSearchCities } from '../../hooks/useLookup';
+import { lookupApi } from '../../lib/api/lookup.api';
 import { cn } from '../../lib/utils';
 
 interface CityAutocompleteProps {
@@ -12,6 +13,8 @@ interface CityAutocompleteProps {
   onInputChange?: (value: string) => void;
   placeholder?: string;
   id?: string;
+  /** When true, users can add a new city that doesn't match any suggestion. */
+  allowCreate?: boolean;
 }
 
 export function CityAutocomplete({
@@ -21,11 +24,13 @@ export function CityAutocomplete({
   onInputChange,
   placeholder = 'ابحث عن مدينة...',
   id,
+  allowCreate = true,
 }: CityAutocompleteProps) {
   const [inputValue, setInputValue] = useState(selectedName);
   const [open, setOpen] = useState(false);
   const [debouncedQ, setDebouncedQ] = useState('');
   const [highlighted, setHighlighted] = useState(-1);
+  const [creating, setCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const uid = useId();
   const listId = `city-list-${uid}`;
@@ -53,6 +58,31 @@ export function CityAutocomplete({
     setHighlighted(-1);
   };
 
+  const trimmed = inputValue.trim();
+  const hasExactMatch = suggestions.some((c: any) => {
+    const ar = (c.name_ar ?? c.nameAr ?? '').trim().toLowerCase();
+    const en = (c.name ?? c.nameEn ?? '').trim().toLowerCase();
+    const q = trimmed.toLowerCase();
+    return ar === q || en === q;
+  });
+  const canCreate =
+    allowCreate && trimmed.length >= 2 && !hasExactMatch && !isFetching;
+
+  const createCity = async () => {
+    if (!trimmed || creating) return;
+    setCreating(true);
+    try {
+      const res = await lookupApi.createCity(trimmed);
+      const created = (res as any)?.data?.data ?? (res as any)?.data ?? res;
+      if (created?.id) select(created);
+    } catch (err) {
+      // Silently keep input open — user can retry
+      console.error('createCity failed', err);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
 
@@ -77,7 +107,7 @@ export function CityAutocomplete({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!open || suggestions.length === 0) return;
+    if (!open) return;
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -85,9 +115,14 @@ export function CityAutocomplete({
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setHighlighted((h) => Math.max(h - 1, 0));
-    } else if (e.key === 'Enter' && highlighted >= 0) {
-      e.preventDefault();
-      select(suggestions[highlighted]);
+    } else if (e.key === 'Enter') {
+      if (highlighted >= 0 && suggestions[highlighted]) {
+        e.preventDefault();
+        select(suggestions[highlighted]);
+      } else if (canCreate) {
+        e.preventDefault();
+        void createCity();
+      }
     } else if (e.key === 'Escape') {
       setOpen(false);
     }
@@ -138,7 +173,7 @@ export function CityAutocomplete({
         )}
       </div>
 
-      {open && suggestions.length > 0 && (
+      {open && (suggestions.length > 0 || canCreate) && (
         <ul
           id={listId}
           role="listbox"
@@ -170,6 +205,25 @@ export function CityAutocomplete({
               </span>
             </li>
           ))}
+
+          {canCreate && (
+            <li
+              role="option"
+              aria-selected={false}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                void createCity();
+              }}
+              className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer text-sm text-[var(--forest)] border-t border-[var(--line)] hover:bg-[var(--sand)]/60"
+            >
+              {creating ? (
+                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+              ) : (
+                <Plus className="h-3.5 w-3.5 shrink-0" />
+              )}
+              <span>إضافة «{trimmed}» كمدينة جديدة</span>
+            </li>
+          )}
         </ul>
       )}
     </div>

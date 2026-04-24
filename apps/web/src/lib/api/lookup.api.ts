@@ -13,6 +13,9 @@ export const lookupApi = {
   getCities: (q?: string) =>
     apiClient.get('/lookup/cities', { params: q ? { q } : undefined }),
 
+  createCity: (name_ar: string, name?: string) =>
+    apiClient.post('/lookup/cities', { name_ar, ...(name ? { name } : {}) }),
+
   getChargingStations: (params?: any) =>
     apiClient.get('/lookup/charging-stations', { params }),
 
