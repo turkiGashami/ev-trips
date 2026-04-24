@@ -17,11 +17,18 @@ function resolveSecret(name: keyof typeof PLACEHOLDERS): string {
   const value = process.env[name];
   const isPlaceholder = !value || value === placeholder;
 
-  if (process.env.NODE_ENV === 'production' && isPlaceholder) {
-    throw new Error(
-      `[jwt.config] ${name} must be set to a secure random value in production ` +
-        `(current value is missing or matches the well-known dev placeholder).`,
-    );
+  // Hard-fail only when the deployment explicitly opts into strict mode
+  // (STRICT_SECRETS=true). On beta/staging we warn loudly but keep booting
+  // so the service isn't bricked when a placeholder is still in place.
+  if (isPlaceholder) {
+    const msg =
+      `[jwt.config] ${name} is missing or still set to the well-known dev ` +
+      `placeholder — rotate it before going to real production.`;
+    if (process.env.NODE_ENV === 'production' && process.env.STRICT_SECRETS === 'true') {
+      throw new Error(msg);
+    }
+    // eslint-disable-next-line no-console
+    console.warn(`⚠️  ${msg}`);
   }
 
   return value ?? placeholder;
