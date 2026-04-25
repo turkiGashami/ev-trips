@@ -64,7 +64,13 @@ export default function AdminCitiesPage() {
   });
 
   const envelope: any = data?.data ?? {};
-  const cities: any[] = Array.isArray(envelope?.data) ? envelope.data : (envelope?.data?.items ?? envelope?.items ?? envelope ?? []);
+  const rawCities =
+    (Array.isArray(envelope) && envelope) ||
+    (Array.isArray(envelope?.data) && envelope.data) ||
+    (Array.isArray(envelope?.data?.items) && envelope.data.items) ||
+    (Array.isArray(envelope?.items) && envelope.items) ||
+    [];
+  const cities: any[] = Array.isArray(rawCities) ? rawCities : [];
   const filteredCities = filterCountry ? cities.filter((c: any) => c.country === filterCountry) : cities;
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin-cities'] });
