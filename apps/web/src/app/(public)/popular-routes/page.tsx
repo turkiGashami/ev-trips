@@ -7,6 +7,8 @@ export const revalidate = 60;
 export const metadata = { title: 'المسارات الشائعة | رحلات EV' };
 
 type PopularRoute = {
+  departure_city_id?: string | null;
+  destination_city_id?: string | null;
   from_ar?: string | null;
   from_en?: string | null;
   to_ar?: string | null;
@@ -60,7 +62,20 @@ export default async function PopularRoutesPage() {
             {routes.map((r, i) => {
               const from = (locale === 'ar' ? r.from_ar : r.from_en) || r.from_ar || r.from_en || '';
               const to = (locale === 'ar' ? r.to_ar : r.to_en) || r.to_ar || r.to_en || '';
-              const href = `/search?q=${encodeURIComponent(from + ' ' + to)}`;
+              // Prefer city ids — the search page filters precisely by them
+              // and avoids the "two-words full-text" miss when only one
+              // field at a time matches.
+              const params = new URLSearchParams();
+              if (r.departure_city_id) {
+                params.set('from_city_id', r.departure_city_id);
+                if (r.from_ar) params.set('from_city_name', r.from_ar);
+              }
+              if (r.destination_city_id) {
+                params.set('to_city_id', r.destination_city_id);
+                if (r.to_ar) params.set('to_city_name', r.to_ar);
+              }
+              const qs = params.toString();
+              const href = qs ? `/search?${qs}` : `/search?q=${encodeURIComponent(from + ' ' + to)}`;
               return (
                 <Link
                   key={`${from}-${to}-${i}`}

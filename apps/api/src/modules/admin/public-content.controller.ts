@@ -162,6 +162,8 @@ export class PublicContentController {
       .getRawMany();
 
     return rows.map((r: any) => ({
+      departure_city_id: r.departure_city_id,
+      destination_city_id: r.destination_city_id,
       from_ar: r.from_ar,
       from_en: r.from_en,
       to_ar: r.to_ar,
