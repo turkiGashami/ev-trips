@@ -947,56 +947,89 @@ export default function NewTripPage() {
                     </button>
                   </div>
 
-                  <FormInput
-                    {...register(`stops.${idx}.station_name` as const)}
-                    placeholder="اسم المحطة أو الموقع"
-                    error={errors.stops?.[idx]?.station_name?.message}
-                  />
-
-                  <FormInput
-                    type="number"
-                    step="0.1"
-                    {...register(`stops.${idx}.distance_from_previous_km` as const)}
-                    placeholder={
-                      idx === 0
-                        ? 'المسافة من نقطة الانطلاق (كم)'
-                        : 'المسافة من المحطة السابقة (كم)'
-                    }
-                  />
-
-                  <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs text-[var(--ink-3)] mb-1">
+                      اسم المحطة أو الموقع
+                    </label>
                     <FormInput
-                      type="number"
-                      {...register(`stops.${idx}.battery_before_pct` as const)}
-                      placeholder="بطارية قبل %"
-                    />
-
-                    <FormInput
-                      type="number"
-                      {...register(`stops.${idx}.battery_after_pct` as const)}
-                      placeholder="بطارية بعد %"
-                    />
-
-                    <FormInput
-                      type="number"
-                      {...register(
-                        `stops.${idx}.charging_duration_minutes` as const,
-                      )}
-                      placeholder="مدة الشحن (د)"
-                    />
-
-                    <FormInput
-                      type="number"
-                      step="0.01"
-                      {...register(`stops.${idx}.charging_cost` as const)}
-                      placeholder="التكلفة (ر.س)"
+                      {...register(`stops.${idx}.station_name` as const)}
+                      placeholder="مثال: محطة سدير الرئيسية"
+                      error={errors.stops?.[idx]?.station_name?.message}
                     />
                   </div>
 
-                  <FormInput
-                    {...register(`stops.${idx}.notes` as const)}
-                    placeholder="ملاحظات المحطة (اختياري)"
-                  />
+                  <div>
+                    <label className="block text-xs text-[var(--ink-3)] mb-1">
+                      {idx === 0
+                        ? 'المسافة من نقطة الانطلاق (كم)'
+                        : 'المسافة من المحطة السابقة (كم)'}
+                    </label>
+                    <FormInput
+                      type="number"
+                      step="0.1"
+                      {...register(`stops.${idx}.distance_from_previous_km` as const)}
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs text-[var(--ink-3)] mb-1">
+                        نسبة البطارية لحظة الوصول للمحطة (%)
+                      </label>
+                      <FormInput
+                        type="number"
+                        {...register(`stops.${idx}.battery_before_pct` as const)}
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-[var(--ink-3)] mb-1">
+                        نسبة البطارية بعد الشحن (%)
+                      </label>
+                      <FormInput
+                        type="number"
+                        {...register(`stops.${idx}.battery_after_pct` as const)}
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-[var(--ink-3)] mb-1">
+                        مدة الشحن (دقيقة)
+                      </label>
+                      <FormInput
+                        type="number"
+                        {...register(
+                          `stops.${idx}.charging_duration_minutes` as const,
+                        )}
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-[var(--ink-3)] mb-1">
+                        التكلفة (ر.س)
+                      </label>
+                      <FormInput
+                        type="number"
+                        step="0.01"
+                        {...register(`stops.${idx}.charging_cost` as const)}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-[var(--ink-3)] mb-1">
+                      ملاحظات المحطة (اختياري)
+                    </label>
+                    <FormInput
+                      {...register(`stops.${idx}.notes` as const)}
+                      placeholder="جودة الشحن، أعطال، ازدحام..."
+                    />
+                  </div>
                 </div>
               ))}
             </div>
