@@ -146,7 +146,7 @@ export class PublicContentController {
       .addSelect('dst.name', 'to_en')
       .addSelect('COUNT(t.id)', 'trip_count')
       .addSelect('ROUND(AVG(t.arrival_battery_pct))', 'avg_arrival_battery')
-      .addSelect('ROUND(AVG(t.total_distance_km))', 'avg_distance_km')
+      .addSelect('ROUND(AVG(t.distance_km))', 'avg_distance_km')
       .where('t.status = :status', { status: TripStatus.PUBLISHED })
       .andWhere('t.deleted_at IS NULL')
       .andWhere('t.departure_city_id IS NOT NULL')
