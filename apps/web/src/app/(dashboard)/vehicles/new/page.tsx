@@ -13,6 +13,8 @@ import { useBrands, useModels, useTrims } from '../../../../hooks/useLookup';
 import { Button } from '../../../../components/ui/Button';
 import { Input } from '../../../../components/ui/Input';
 import { Select } from '../../../../components/ui/Select';
+import LookupAutocomplete from '../../../../components/ui/LookupAutocomplete';
+import { lookupApi } from '../../../../lib/api/lookup.api';
 import { ProtectedRoute } from '../../../../components/auth/ProtectedRoute';
 
 type AddVehicleFormValues = {
@@ -159,53 +161,84 @@ export default function NewVehiclePage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
 
             {/* Brand */}
-            <Select
-              label={tVehicles('make')}
-              placeholder={brandsLoading ? t('loadingGeneric') : t('chooseBrand')}
-              options={brandOptions}
-              error={errors.brand_id?.message}
-              required
-              disabled={brandsLoading}
-              {...register('brand_id')}
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {tVehicles('make')} <span className="text-red-500">*</span>
+              </label>
+              <LookupAutocomplete
+                value={selectedBrand?.name_ar || selectedBrand?.name || ''}
+                options={brands ?? []}
+                onSelect={(b) => setValue('brand_id', b.id, { shouldValidate: true, shouldDirty: true })}
+                onClear={() => setValue('brand_id', '', { shouldValidate: true })}
+                onCreate={async (name) => {
+                  const res: any = await lookupApi.createBrand(name);
+                  return res?.data?.data ?? res?.data ?? null;
+                }}
+                placeholder={brandsLoading ? t('loadingGeneric') : t('chooseBrand')}
+                disabled={brandsLoading}
+                error={errors.brand_id?.message}
+              />
+            </div>
 
             {/* Model */}
-            <Select
-              label={tVehicles('modelShort')}
-              placeholder={
-                !selectedBrandId
-                  ? t('chooseBrandFirst')
-                  : modelsLoading
-                  ? t('loadingGeneric')
-                  : modelOptions.length === 0
-                  ? t('noModels')
-                  : t('chooseModel')
-              }
-              options={modelOptions}
-              error={errors.model_id?.message}
-              required
-              disabled={!selectedBrandId || modelsLoading}
-              {...register('model_id')}
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {tVehicles('modelShort')} <span className="text-red-500">*</span>
+              </label>
+              <LookupAutocomplete
+                value={selectedModel?.name_ar || selectedModel?.name || ''}
+                options={models ?? []}
+                onSelect={(m) => setValue('model_id', m.id, { shouldValidate: true, shouldDirty: true })}
+                onClear={() => setValue('model_id', '', { shouldValidate: true })}
+                onCreate={
+                  selectedBrandId
+                    ? async (name) => {
+                        const res: any = await lookupApi.createModel(selectedBrandId, name);
+                        return res?.data?.data ?? res?.data ?? null;
+                      }
+                    : undefined
+                }
+                placeholder={
+                  !selectedBrandId
+                    ? t('chooseBrandFirst')
+                    : modelsLoading
+                    ? t('loadingGeneric')
+                    : t('chooseModel')
+                }
+                disabled={!selectedBrandId || modelsLoading}
+                error={errors.model_id?.message}
+              />
+            </div>
 
             {/* Trim */}
-            <Select
-              label={tVehicles('trim')}
-              placeholder={
-                !selectedModelId
-                  ? t('chooseModelFirst')
-                  : trimsLoading
-                  ? t('loadingGeneric')
-                  : trimOptions.length === 0
-                  ? t('noTrims')
-                  : t('chooseTrim')
-              }
-              options={trimOptions}
-              error={errors.trim_id?.message}
-              required
-              disabled={!selectedModelId || trimsLoading}
-              {...register('trim_id')}
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {tVehicles('trim')} <span className="text-red-500">*</span>
+              </label>
+              <LookupAutocomplete
+                value={selectedTrim?.name_ar || selectedTrim?.name || ''}
+                options={trims ?? []}
+                onSelect={(t) => setValue('trim_id', t.id, { shouldValidate: true, shouldDirty: true })}
+                onClear={() => setValue('trim_id', '', { shouldValidate: true })}
+                onCreate={
+                  selectedModelId
+                    ? async (name) => {
+                        const res: any = await lookupApi.createTrim(selectedModelId, name);
+                        return res?.data?.data ?? res?.data ?? null;
+                      }
+                    : undefined
+                }
+                placeholder={
+                  !selectedModelId
+                    ? t('chooseModelFirst')
+                    : trimsLoading
+                    ? t('loadingGeneric')
+                    : t('chooseTrim')
+                }
+                disabled={!selectedModelId || trimsLoading}
+                error={errors.trim_id?.message}
+              />
+            </div>
 
             {/* Year */}
             <Input

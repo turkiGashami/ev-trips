@@ -16,6 +16,13 @@ export const lookupApi = {
   createCity: (name_ar: string, name?: string) =>
     apiClient.post('/lookup/cities', { name_ar, ...(name ? { name } : {}) }),
 
+  createBrand: (name: string) =>
+    apiClient.post('/lookup/brands', { name }),
+  createModel: (brandId: string, name: string) =>
+    apiClient.post(`/lookup/brands/${brandId}/models`, { name }),
+  createTrim: (modelId: string, name: string) =>
+    apiClient.post(`/lookup/models/${modelId}/trims`, { name }),
+
   getChargingStations: (params?: any) =>
     apiClient.get('/lookup/charging-stations', { params }),
 

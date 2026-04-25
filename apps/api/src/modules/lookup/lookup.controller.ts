@@ -53,6 +53,36 @@ export class LookupController {
     return this.lookupService.getBrands(true);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('brands')
+  @ApiOperation({ summary: 'Create a brand if it does not exist (user-suggested)' })
+  async createBrand(@Body() dto: { name: string }) {
+    return this.lookupService.findOrCreateBrand(dto.name);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('brands/:brandId/models')
+  @ApiOperation({ summary: 'Create a model under a brand if it does not exist' })
+  async createModel(
+    @Param('brandId', ParseUUIDPipe) brandId: string,
+    @Body() dto: { name: string },
+  ) {
+    return this.lookupService.findOrCreateModel(brandId, dto.name);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('models/:modelId/trims')
+  @ApiOperation({ summary: 'Create a trim under a model if it does not exist' })
+  async createTrim(
+    @Param('modelId', ParseUUIDPipe) modelId: string,
+    @Body() dto: { name: string },
+  ) {
+    return this.lookupService.findOrCreateTrim(modelId, dto.name);
+  }
+
   @Get('brands/:brandId/models')
   @ApiOperation({ summary: 'Get models for a brand (cached)' })
   @ApiParam({ name: 'brandId', description: 'Brand UUID' })

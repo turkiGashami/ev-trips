@@ -114,6 +114,96 @@ export class LookupService {
     return brands;
   }
 
+  /** Find a brand by name (case-insensitive) or create it. */
+  async findOrCreateBrand(name: string): Promise<CarBrand> {
+    const trimmed = name.trim();
+    const existing = await this.brandRepo
+      .createQueryBuilder('b')
+      .where('LOWER(b.name) = LOWER(:n)', { n: trimmed })
+      .orWhere('LOWER(b.name_ar) = LOWER(:n)', { n: trimmed })
+      .getOne();
+    if (existing) return existing;
+
+    const slug = this.buildSlug(trimmed, 'brand');
+    const finalSlug = await this.uniqueSlug(slug, async (s) =>
+      !!(await this.brandRepo.findOne({ where: { slug: s } })),
+    );
+
+    const brand = this.brandRepo.create({
+      name: trimmed,
+      name_ar: trimmed,
+      slug: finalSlug,
+      is_active: true,
+    } as Partial<CarBrand>);
+    const saved = await this.brandRepo.save(brand);
+    await this.cacheManager.del('lookup:brands:true');
+    await this.cacheManager.del('lookup:brands:all');
+    return saved;
+  }
+
+  /** Find a model in a brand (case-insensitive) or create it. */
+  async findOrCreateModel(brandId: string, name: string): Promise<CarModel> {
+    const trimmed = name.trim();
+    const existing = await this.modelRepo
+      .createQueryBuilder('m')
+      .where('m.brand_id = :brandId', { brandId })
+      .andWhere('LOWER(m.name) = LOWER(:n)', { n: trimmed })
+      .getOne();
+    if (existing) return existing;
+
+    const model = this.modelRepo.create({
+      brand_id: brandId,
+      name: trimmed,
+      name_ar: trimmed,
+      is_active: true,
+    } as Partial<CarModel>);
+    const saved = await this.modelRepo.save(model);
+    await this.cacheManager.del(`lookup:models:${brandId}`);
+    return saved;
+  }
+
+  /** Find a trim in a model (case-insensitive) or create it. */
+  async findOrCreateTrim(modelId: string, name: string): Promise<CarTrim> {
+    const trimmed = name.trim();
+    const existing = await this.trimRepo
+      .createQueryBuilder('t')
+      .where('t.model_id = :modelId', { modelId })
+      .andWhere('LOWER(t.name) = LOWER(:n)', { n: trimmed })
+      .getOne();
+    if (existing) return existing;
+
+    const trim = this.trimRepo.create({
+      model_id: modelId,
+      name: trimmed,
+      name_ar: trimmed,
+      is_active: true,
+    } as Partial<CarTrim>);
+    const saved = await this.trimRepo.save(trim);
+    await this.cacheManager.del(`lookup:trims:${modelId}`);
+    return saved;
+  }
+
+  private buildSlug(input: string, fallback: string): string {
+    const slug = input
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .slice(0, 80);
+    return slug || `${fallback}-${Date.now()}`;
+  }
+
+  private async uniqueSlug(base: string, exists: (s: string) => Promise<boolean>): Promise<string> {
+    let candidate = base;
+    let i = 1;
+    while (await exists(candidate)) {
+      candidate = `${base}-${i++}`;
+    }
+    return candidate;
+  }
+
   async getModelsByBrand(brandId: string): Promise<CarModel[]> {
     const cacheKey = `lookup:models:${brandId}`;
     const cached = await this.cacheManager.get<CarModel[]>(cacheKey);

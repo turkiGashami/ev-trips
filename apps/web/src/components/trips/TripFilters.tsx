@@ -6,6 +6,7 @@ import { RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '../../lib/utils';
 import { CityAutocomplete } from '../ui/CityAutocomplete';
+import LookupAutocomplete from '../ui/LookupAutocomplete';
 import { useBrands, useModels, useTrims } from '../../hooks/useLookup';
 
 export interface FilterValues {
@@ -203,21 +204,59 @@ export function TripFilters({ defaultValues, onFilter }: TripFiltersProps) {
 
         <Section title={t('sectionVehicle')} collapsible defaultOpen>
           <div className="space-y-2">
-            <NativeSelect name="brand_id" register={register}>
-              <option value="">{t('allBrands')}</option>
-              {brands?.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </NativeSelect>
-            {selectedBrandId && models && models.length > 0 && (
-              <NativeSelect name="model_id" register={register}>
-                <option value="">{t('allModels')}</option>
-                {models.map((m: any) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </NativeSelect>
+            <LookupAutocomplete
+              value={
+                (brands ?? []).find((b: any) => b.id === selectedBrandId)?.name_ar ||
+                (brands ?? []).find((b: any) => b.id === selectedBrandId)?.name ||
+                ''
+              }
+              options={(brands ?? []) as any}
+              onSelect={(b) => {
+                setValue('brand_id', b.id);
+                setValue('model_id', '');
+                setValue('trim_id', '');
+              }}
+              onClear={() => {
+                setValue('brand_id', '');
+                setValue('model_id', '');
+                setValue('trim_id', '');
+              }}
+              placeholder={t('allBrands')}
+              size="sm"
+            />
+            {selectedBrandId && (
+              <LookupAutocomplete
+                value={
+                  (models ?? []).find((m: any) => m.id === selectedModelId)?.name_ar ||
+                  (models ?? []).find((m: any) => m.id === selectedModelId)?.name ||
+                  ''
+                }
+                options={(models ?? []) as any}
+                onSelect={(m) => {
+                  setValue('model_id', m.id);
+                  setValue('trim_id', '');
+                }}
+                onClear={() => {
+                  setValue('model_id', '');
+                  setValue('trim_id', '');
+                }}
+                placeholder={t('allModels')}
+                size="sm"
+              />
             )}
             {selectedModelId && trims && trims.length > 0 && (
-              <NativeSelect name="trim_id" register={register}>
-                <option value="">{t('allTrims')}</option>
-                {trims.map((tr: any) => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
-              </NativeSelect>
+              <LookupAutocomplete
+                value={
+                  (trims ?? []).find((tr: any) => tr.id === watch('trim_id'))?.name_ar ||
+                  (trims ?? []).find((tr: any) => tr.id === watch('trim_id'))?.name ||
+                  ''
+                }
+                options={(trims ?? []) as any}
+                onSelect={(tr) => setValue('trim_id', tr.id)}
+                onClear={() => setValue('trim_id', '')}
+                placeholder={t('allTrims')}
+                size="sm"
+              />
             )}
             <input
               {...register('year', { valueAsNumber: true })}
