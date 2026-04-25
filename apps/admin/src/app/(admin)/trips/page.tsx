@@ -30,6 +30,24 @@ const STATUS_TONE: Record<string, { bg: string; color: string }> = {
 type ConfirmAction = "hide" | "delete" | null;
 interface ConfirmState { action: ConfirmAction; trip: Trip | null; }
 
+// Build the public trip URL from env or current host. Admin and web are
+// deployed on different domains, so a relative href would 404 against the
+// admin host.
+function tripPublicUrl(trip: any): string {
+  const slug =
+    trip?.slug ??
+    trip?.tripSlug ??
+    trip?.id ??
+    "";
+  const envBase = process.env.NEXT_PUBLIC_WEB_URL || process.env.NEXT_PUBLIC_PUBLIC_SITE_URL;
+  let base = envBase || "";
+  if (!base && typeof window !== "undefined") {
+    // Heuristic: replace "-admin-" with "-web-" in the cranl.net subdomain
+    base = window.location.origin.replace("-admin-", "-web-");
+  }
+  return `${base.replace(/\/+$/, "")}/trips/${slug}`;
+}
+
 export default function TripsPage() {
   const t = useTranslations("trips");
   const tCommon = useTranslations("common");
@@ -130,7 +148,15 @@ export default function TripsPage() {
       key: "actions", header: "", width: "140px",
       render: (trip) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'flex-end' }}>
-          <a href={`/trips/${trip.id}`} target="_blank" rel="noopener noreferrer" style={iconBtnStyle} title={t("actions.view")}><ExternalLink style={{ width: 15, height: 15 }} /></a>
+          <a
+            href={tripPublicUrl(trip)}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={iconBtnStyle}
+            title={t("actions.view")}
+          >
+            <ExternalLink style={{ width: 15, height: 15 }} />
+          </a>
           {trip.status !== "hidden"
             ? <button onClick={() => setConfirm({ action: "hide", trip })} style={iconBtnStyle} title={t("actions.hide")}><EyeOff style={{ width: 15, height: 15 }} /></button>
             : <button onClick={() => setConfirm({ action: null, trip: null })} style={iconBtnStyle} title={t("actions.show")}><Eye style={{ width: 15, height: 15 }} /></button>

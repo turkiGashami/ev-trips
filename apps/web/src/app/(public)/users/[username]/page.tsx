@@ -33,8 +33,13 @@ async function getUserTrips(username: string): Promise<any[]> {
     );
     if (!res.ok) return [];
     const json = await res.json();
-    const list = json?.data ?? json ?? [];
-    return Array.isArray(list) ? list : [];
+    // The API returns { items, meta } which the transform interceptor
+    // unwraps to { data: items, meta }. Some older endpoints return
+    // the array directly. Handle both shapes.
+    const raw = json?.data ?? json ?? [];
+    if (Array.isArray(raw)) return raw;
+    if (Array.isArray(raw?.items)) return raw.items;
+    return [];
   } catch {
     return [];
   }
@@ -81,8 +86,7 @@ export default async function UserProfilePage({ params }: PageProps) {
     stats.tripsCount ?? stats.total_trips ?? user.total_trips ?? trips.length ?? 0,
   );
   const helpfulCount = Number(stats.helpfulCount ?? user.total_helpful ?? 0);
-  const followersCount = Number(stats.followersCount ?? user.followers_count ?? 0);
-  const followingCount = Number(stats.followingCount ?? user.following_count ?? 0);
+  const viewsCount = Number(stats.viewsCount ?? user.total_views ?? 0);
 
   return (
     <div dir={dir} className="min-h-screen bg-[var(--cream)]">
@@ -119,12 +123,11 @@ export default async function UserProfilePage({ params }: PageProps) {
           )}
 
           {/* STATS */}
-          <dl className="mt-10 border-t border-[var(--line)] pt-8 grid grid-cols-2 md:grid-cols-4 gap-6">
+          <dl className="mt-10 border-t border-[var(--line)] pt-8 grid grid-cols-3 gap-6">
             {[
               { label: t('stat.trips'), value: tripsCount },
               { label: t('stat.helpful'), value: helpfulCount },
-              { label: t('stat.followers'), value: followersCount },
-              { label: t('stat.following'), value: followingCount },
+              { label: isAr ? 'المشاهدات' : 'Views', value: viewsCount },
             ].map((stat) => (
               <div key={stat.label}>
                 <dt className="label-sm text-[10px]">{stat.label}</dt>

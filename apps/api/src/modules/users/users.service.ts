@@ -12,7 +12,8 @@ import { Queue } from 'bull';
 
 import { User } from '../../entities/user.entity';
 import { Follow } from '../../entities/follow.entity';
-import { UserRole, UserStatus } from '../../common/enums';
+import { Trip } from '../../entities/trip.entity';
+import { UserRole, UserStatus, TripStatus } from '../../common/enums';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PaginationDto, paginateQuery } from '../../common/helpers/pagination.helper';
 import { PaginatedResult } from '../../common/interceptors/transform.interceptor';
@@ -26,7 +27,73 @@ export class UsersService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(Follow)
     private readonly followRepo: Repository<Follow>,
+    @InjectRepository(Trip)
+    private readonly tripRepo: Repository<Trip>,
   ) {}
+
+  /** Aggregated public stats for a user. */
+  async getPublicProfileWithStats(username: string) {
+    const user = await this.findByUsername(username);
+
+    const [tripsCount, helpfulSum, viewsSum] = await Promise.all([
+      this.tripRepo.count({
+        where: {
+          user_id: user.id,
+          status: TripStatus.PUBLISHED as any,
+          deleted_at: null as any,
+        },
+      }),
+      this.tripRepo
+        .createQueryBuilder('t')
+        .select('COALESCE(SUM(t.helpful_count), 0)', 'sum')
+        .where('t.user_id = :uid', { uid: user.id })
+        .andWhere('t.status = :s', { s: TripStatus.PUBLISHED })
+        .andWhere('t.deleted_at IS NULL')
+        .getRawOne<{ sum: string }>(),
+      this.tripRepo
+        .createQueryBuilder('t')
+        .select('COALESCE(SUM(t.view_count), 0)', 'sum')
+        .where('t.user_id = :uid', { uid: user.id })
+        .andWhere('t.status = :s', { s: TripStatus.PUBLISHED })
+        .andWhere('t.deleted_at IS NULL')
+        .getRawOne<{ sum: string }>(),
+    ]);
+
+    return {
+      id: user.id,
+      username: user.username,
+      full_name: user.full_name,
+      avatar_url: user.avatar_url,
+      bio: user.bio,
+      city: user.city,
+      created_at: user.created_at,
+      profile_visibility: user.profile_visibility,
+      stats: {
+        tripsCount: Number(tripsCount) || 0,
+        helpfulCount: Number(helpfulSum?.sum) || 0,
+        viewsCount: Number(viewsSum?.sum) || 0,
+      },
+    };
+  }
+
+  /** Public list of a user's published trips. */
+  async getUserPublishedTrips(username: string, limit = 12, page = 1) {
+    const user = await this.findByUsername(username);
+    const safeLimit = Math.min(Math.max(Number(limit) || 12, 1), 50);
+    const safePage = Math.max(Number(page) || 1, 1);
+    const [items, total] = await this.tripRepo.findAndCount({
+      where: {
+        user_id: user.id,
+        status: TripStatus.PUBLISHED as any,
+        deleted_at: null as any,
+      },
+      relations: ['departure_city', 'destination_city'],
+      order: { published_at: 'DESC' },
+      skip: (safePage - 1) * safeLimit,
+      take: safeLimit,
+    });
+    return { items, meta: { page: safePage, limit: safeLimit, total, totalPages: Math.ceil(total / safeLimit) } };
+  }
 
   async findById(id: string): Promise<User> {
     const user = await this.userRepo.findOne({

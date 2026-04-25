@@ -37,15 +37,18 @@ export function CommentSection({ tripId, tripSlug }: CommentSectionProps) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['comments', tripId] }),
   });
 
-  const comments = data || [];
-  const topLevel = comments.filter((c: any) => !c.parent_id);
+  // The API returns only top-level comments (parent_id IS NULL) with
+  // each comment's children eagerly loaded into `replies`.
+  const topLevel: any[] = Array.isArray(data) ? data : [];
+  const totalCount =
+    topLevel.reduce((sum, c) => sum + 1 + (Array.isArray(c.replies) ? c.replies.length : 0), 0);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <MessageSquare className="w-5 h-5 text-gray-500" />
         <h3 className="text-lg font-semibold text-gray-900">
-          {t('titleWithCount', { count: comments.length })}
+          {t('titleWithCount', { count: totalCount })}
         </h3>
       </div>
 
@@ -71,7 +74,7 @@ export function CommentSection({ tripId, tripSlug }: CommentSectionProps) {
             <CommentCard
               key={comment.id}
               comment={comment}
-              replies={comments.filter((c: any) => c.parent_id === comment.id)}
+              replies={Array.isArray(comment.replies) ? comment.replies : []}
               tripId={tripId}
               onDelete={(id) => deleteComment.mutate(id)}
             />

@@ -136,7 +136,18 @@ export class UsersController {
   @Get(':username/profile')
   @ApiOperation({ summary: 'Get a public user profile by username' })
   async getPublicProfile(@Param('username') username: string) {
-    return this.usersService.findByUsername(username);
+    return this.usersService.getPublicProfileWithStats(username);
+  }
+
+  @Public()
+  @Get(':username/trips')
+  @ApiOperation({ summary: 'Get published trips for a user (by username)' })
+  async getUserTrips(
+    @Param('username') username: string,
+    @Query('limit') limit?: number,
+    @Query('page') page?: number,
+  ) {
+    return this.usersService.getUserPublishedTrips(username, limit, page);
   }
 
   @Public()
