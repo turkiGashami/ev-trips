@@ -55,14 +55,17 @@ export default function LookupAutocomplete({
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(-1);
   const [creating, setCreating] = useState(false);
+  const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const uid = useId();
   const listId = `lookup-${uid}`;
 
-  // Keep input synced when parent value changes (e.g., reset)
+  // Keep input synced when parent value changes (e.g., reset programmatically),
+  // but only when the user isn't actively typing — otherwise our own onClear
+  // would wipe what they just keyed in.
   useEffect(() => {
-    setInput(value);
-  }, [value]);
+    if (!focused) setInput(value);
+  }, [value, focused]);
 
   const trimmed = input.trim();
   const filtered = options.filter((o) => {
@@ -151,8 +154,20 @@ export default function LookupAutocomplete({
               onClear?.();
             }
           }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onFocus={() => {
+            setFocused(true);
+            setOpen(true);
+          }}
+          onBlur={() => {
+            setTimeout(() => {
+              setFocused(false);
+              setOpen(false);
+              // On blur, snap the visible text back to the actual selection
+              // so we don't leave dangling typed text that doesn't match
+              // any picked option.
+              setInput((curr) => (curr.trim() === value.trim() ? curr : value));
+            }, 150);
+          }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoComplete="off"
