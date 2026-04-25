@@ -96,17 +96,32 @@ export class PublicContentController {
   @Get('stats')
   @ApiOperation({ summary: 'Get public platform statistics' })
   async getPublicStats() {
-    const [trips, routes, cities, members] = await Promise.all([
+    // Routes is best modelled as the number of unique city pairs that
+    // appear in published trips, not the dormant `routes` lookup table
+    // (which is rarely seeded in practice).
+    const [trips, routesRow, cities, members] = await Promise.all([
       this.tripRepo.count({
         where: { status: TripStatus.PUBLISHED as any, deleted_at: null as any },
       }),
-      this.routeRepo.count({ where: { is_active: true } }),
+      this.tripRepo
+        .createQueryBuilder('t')
+        .select('COUNT(DISTINCT (t.departure_city_id || \'>\' || t.destination_city_id))', 'count')
+        .where('t.status = :s', { s: TripStatus.PUBLISHED })
+        .andWhere('t.deleted_at IS NULL')
+        .andWhere('t.departure_city_id IS NOT NULL')
+        .andWhere('t.destination_city_id IS NOT NULL')
+        .getRawOne<{ count: string }>(),
       this.cityRepo.count({ where: { is_active: true } }),
       this.userRepo.count({
         where: { status: UserStatus.ACTIVE as any, deleted_at: null as any },
       }),
     ]);
-    return { trips, routes, cities, members };
+    return {
+      trips,
+      routes: Number(routesRow?.count) || 0,
+      cities,
+      members,
+    };
   }
 
   // ─── Popular routes ──────────────────────────────────────────────────────

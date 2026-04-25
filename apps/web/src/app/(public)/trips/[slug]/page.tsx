@@ -115,7 +115,30 @@ export default async function TripDetailPage({ params }: PageProps) {
   });
 
   const stopCount = stops.length;
-  const used = trip.departure_battery_pct - trip.arrival_battery_pct;
+
+  // Battery used across the whole journey, summing each charging leg.
+  // Without stops it's just departure - arrival. With stops we add the
+  // drop on every leg so a charger that boosts back up doesn't hide
+  // consumption: (start → stop1.before) + (stop1.after → stop2.before)
+  // + … + (lastStop.after → arrival).
+  const computeUsedBattery = (): number => {
+    if (stops.length === 0) {
+      return Math.max(trip.departure_battery_pct - trip.arrival_battery_pct, 0);
+    }
+    let used = 0;
+    let prevAfter = trip.departure_battery_pct;
+    for (const s of stops) {
+      const before = Number(s.battery_before ?? s.battery_before_pct);
+      const after = Number(s.battery_after ?? s.battery_after_pct);
+      if (Number.isFinite(before)) {
+        used += Math.max(prevAfter - before, 0);
+        prevAfter = Number.isFinite(after) ? after : before;
+      }
+    }
+    used += Math.max(prevAfter - trip.arrival_battery_pct, 0);
+    return Math.round(used);
+  };
+  const used = computeUsedBattery();
   const vehicleLabel = [trip.snap_brand_name, trip.snap_model_name, trip.snap_trim_name].filter(Boolean).join(' ');
   const arrivalTextColor = arrivalTone(trip.arrival_battery_pct);
   const arrivalBarColor = arrivalBar(trip.arrival_battery_pct);

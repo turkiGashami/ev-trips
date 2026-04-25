@@ -57,10 +57,40 @@ export class TripsService {
     return String(row.value).toLowerCase() === 'true';
   }
 
+  /** Look up a city's display name (Arabic-preferred) by id. */
+  private async cityNameById(id: string): Promise<string | null> {
+    if (!id) return null;
+    const row: { name_ar: string | null; name: string | null } | undefined =
+      await this.dataSource
+        .createQueryBuilder()
+        .select('c.name_ar', 'name_ar')
+        .addSelect('c.name', 'name')
+        .from('cities', 'c')
+        .where('c.id = :id', { id })
+        .getRawOne();
+    if (!row) return null;
+    return row.name_ar || row.name || null;
+  }
+
   // ─── CRUD ──────────────────────────────────────────────────────────────────
 
   async createDraft(userId: string, dto: CreateTripDto): Promise<Trip> {
-    const title = dto.title ?? 'Untitled Trip';
+    // Default the title to a route description so the public site doesn't
+    // surface a placeholder like "Untitled Trip" when the user skipped the
+    // title field.
+    let title = dto.title?.trim();
+    if (!title) {
+      const [from, to] = await Promise.all([
+        dto.departure_city_id
+          ? this.cityNameById(dto.departure_city_id)
+          : Promise.resolve<string | null>(dto.departure_city_name ?? null),
+        dto.destination_city_id
+          ? this.cityNameById(dto.destination_city_id)
+          : Promise.resolve<string | null>(dto.destination_city_name ?? null),
+      ]);
+      if (from && to) title = `${from} ← ${to}`;
+      else title = 'رحلة جديدة';
+    }
     const slug = await this.generateUniqueSlug(title, userId);
 
     const trip = this.tripRepo.create({
@@ -383,8 +413,27 @@ export class TripsService {
     }
 
     if (dto.q) {
+      // Match against trip text, the cached vehicle snapshot (so older
+      // trips still match even if the linked vehicle was deleted), the
+      // currently-linked vehicle's brand/model/trim, and the city names
+      // in both Arabic and English.
       qb.andWhere(
-        '(trip.title ILIKE :q OR trip.route_notes ILIKE :q OR trip.trip_notes ILIKE :q)',
+        `(
+          trip.title ILIKE :q OR
+          trip.route_notes ILIKE :q OR
+          trip.trip_notes ILIKE :q OR
+          trip.snap_brand_name ILIKE :q OR
+          trip.snap_model_name ILIKE :q OR
+          trip.snap_trim_name ILIKE :q OR
+          brand.name ILIKE :q OR
+          brand.name_ar ILIKE :q OR
+          model.name ILIKE :q OR
+          trim.name ILIKE :q OR
+          dep_city.name ILIKE :q OR
+          dep_city.name_ar ILIKE :q OR
+          dest_city.name ILIKE :q OR
+          dest_city.name_ar ILIKE :q
+        )`,
         { q: `%${dto.q}%` },
       );
     }
