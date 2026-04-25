@@ -139,10 +139,17 @@ export default function LookupAutocomplete({
           value={input}
           disabled={disabled}
           onChange={(e) => {
-            setInput(e.target.value);
+            const next = e.target.value;
+            setInput(next);
             setOpen(true);
             setHighlight(-1);
-            if (!e.target.value) onClear?.();
+            // If the user is editing the field, the previously-selected
+            // option no longer matches what they typed — drop the
+            // selection so the filter doesn't keep applying the old id
+            // until they pick again.
+            if (!next || next.trim() !== value.trim()) {
+              onClear?.();
+            }
           }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
