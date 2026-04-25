@@ -413,29 +413,37 @@ export class TripsService {
     }
 
     if (dto.q) {
-      // Match against trip text, the cached vehicle snapshot (so older
-      // trips still match even if the linked vehicle was deleted), the
-      // currently-linked vehicle's brand/model/trim, and the city names
-      // in both Arabic and English.
-      qb.andWhere(
-        `(
-          trip.title ILIKE :q OR
-          trip.route_notes ILIKE :q OR
-          trip.trip_notes ILIKE :q OR
-          trip.snap_brand_name ILIKE :q OR
-          trip.snap_model_name ILIKE :q OR
-          trip.snap_trim_name ILIKE :q OR
-          brand.name ILIKE :q OR
-          brand.name_ar ILIKE :q OR
-          model.name ILIKE :q OR
-          trim.name ILIKE :q OR
-          dep_city.name ILIKE :q OR
-          dep_city.name_ar ILIKE :q OR
-          dest_city.name ILIKE :q OR
-          dest_city.name_ar ILIKE :q
-        )`,
-        { q: `%${dto.q}%` },
-      );
+      // Split the query on whitespace and require each term to match
+      // some searchable field. That way "الرياض دبي" matches a trip
+      // whose departure_city is Riyadh and destination_city is Dubai
+      // even though no single column contains both words.
+      const terms = dto.q
+        .split(/\s+/)
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
+
+      terms.forEach((term, i) => {
+        const param = `q${i}`;
+        qb.andWhere(
+          `(
+            trip.title ILIKE :${param} OR
+            trip.route_notes ILIKE :${param} OR
+            trip.trip_notes ILIKE :${param} OR
+            trip.snap_brand_name ILIKE :${param} OR
+            trip.snap_model_name ILIKE :${param} OR
+            trip.snap_trim_name ILIKE :${param} OR
+            brand.name ILIKE :${param} OR
+            brand.name_ar ILIKE :${param} OR
+            model.name ILIKE :${param} OR
+            trim.name ILIKE :${param} OR
+            dep_city.name ILIKE :${param} OR
+            dep_city.name_ar ILIKE :${param} OR
+            dest_city.name ILIKE :${param} OR
+            dest_city.name_ar ILIKE :${param}
+          )`,
+          { [param]: `%${term}%` },
+        );
+      });
     }
 
     qb.orderBy(`trip.${sortField}`, sortOrder);
