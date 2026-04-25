@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { tripsApi } from '@/lib/api/trips.api';
 import { vehiclesApi } from '@/lib/api/vehicles.api';
+import { lookupApi } from '@/lib/api/lookup.api';
 import { useToast } from '@/components/ui/Toast';
 import { CityAutocomplete } from '@/components/ui/CityAutocomplete';
 import { DateField } from '@/components/ui/DateField';
@@ -116,6 +117,11 @@ const schema = z.object({
     .array(
       z.object({
         station_name: z.string().min(1, 'اسم المحطة مطلوب'),
+        // Distance between this stop and the previous stop (or origin
+        // for the first stop). Stored as cumulative on the backend.
+        distance_from_previous_km: optionalNumber().pipe(
+          z.number().min(0).optional(),
+        ),
         charger_type: z.string().optional(),
         charging_duration_minutes: optionalNumber().pipe(
           z.number().min(0).optional(),
@@ -404,12 +410,16 @@ export default function NewTripPage() {
     stops: FormData['stops'],
   ): Promise<void> => {
     if (!Array.isArray(stops) || stops.length === 0) return;
+    let cumulative = 0;
     for (let i = 0; i < stops.length; i++) {
       const s = stops[i];
+      const segment = Number(s.distance_from_previous_km ?? 0) || 0;
+      cumulative = cumulative + segment;
       try {
         await tripsApi.addStop(tripId, {
           stop_order: i + 1,
           station_name: s.station_name,
+          distance_from_start_km: cumulative > 0 ? cumulative : undefined,
           charger_type: s.charger_type || undefined,
           charging_duration_minutes: s.charging_duration_minutes || undefined,
           battery_before_pct: s.battery_before_pct ?? undefined,
@@ -474,8 +484,37 @@ export default function NewTripPage() {
       ),
   });
 
+  /**
+   * Ensure that any city the user typed (but didn't pick from suggestions)
+   * gets persisted before we validate. The autocomplete normally creates
+   * on blur, but a fast-clicker can press Next without ever blurring.
+   */
+  const ensureCityCreated = async (
+    nameField: 'departure_city_name' | 'destination_city_name',
+    idField: 'departure_city_id' | 'destination_city_id',
+  ) => {
+    const name = (watch(nameField) || '').trim();
+    const existingId = watch(idField);
+    if (!name || existingId) return;
+    try {
+      const res = await lookupApi.createCity(name);
+      const created = (res as any)?.data?.data ?? (res as any)?.data ?? res;
+      if (created?.id) {
+        setValue(idField, created.id, { shouldValidate: true, shouldDirty: true });
+      }
+    } catch {
+      // Surface validation error rather than silent failure
+    }
+  };
+
   const goNext = async () => {
     setStepError(null);
+
+    // On the route step, auto-create cities the user typed but didn't pick.
+    if (step === 0) {
+      await ensureCityCreated('departure_city_name', 'departure_city_id');
+      await ensureCityCreated('destination_city_name', 'destination_city_id');
+    }
 
     const fieldsToCheck = STEP_FIELDS[step] ?? [];
     const ok = await trigger(fieldsToCheck as any, { shouldFocus: true });
@@ -912,6 +951,17 @@ export default function NewTripPage() {
                     {...register(`stops.${idx}.station_name` as const)}
                     placeholder="اسم المحطة أو الموقع"
                     error={errors.stops?.[idx]?.station_name?.message}
+                  />
+
+                  <FormInput
+                    type="number"
+                    step="0.1"
+                    {...register(`stops.${idx}.distance_from_previous_km` as const)}
+                    placeholder={
+                      idx === 0
+                        ? 'المسافة من نقطة الانطلاق (كم)'
+                        : 'المسافة من المحطة السابقة (كم)'
+                    }
                   />
 
                   <div className="grid grid-cols-2 gap-2">

@@ -91,13 +91,28 @@ export default async function TripDetailPage({ params }: PageProps) {
 
   const relatedTrips = await getRelatedTrips(trip.departure_city_id, trip.destination_city_id);
 
-  const stops = (trip.stops ?? []).map((s: any) => ({
-    ...s,
-    battery_before: s.battery_before ?? s.battery_before_pct,
-    battery_after:  s.battery_after  ?? s.battery_after_pct,
-    order: s.order ?? s.stop_order,
-    cost_sar: s.cost_sar ?? s.charging_cost,
-  }));
+  // Sort stops by order so we can compute the per-leg distance from the
+  // cumulative `distance_from_start_km` saved on each row.
+  const sortedRawStops = [...(trip.stops ?? [])].sort(
+    (a: any, b: any) => (a.stop_order ?? 0) - (b.stop_order ?? 0),
+  );
+  let prevCumulative = 0;
+  const stops = sortedRawStops.map((s: any) => {
+    const cumulative = Number(s.distance_from_start_km ?? NaN);
+    const segment = Number.isFinite(cumulative)
+      ? Math.max(cumulative - prevCumulative, 0)
+      : (s.distance_from_prev_km ?? undefined);
+    if (Number.isFinite(cumulative)) prevCumulative = cumulative;
+    return {
+      ...s,
+      battery_before: s.battery_before ?? s.battery_before_pct,
+      battery_after:  s.battery_after  ?? s.battery_after_pct,
+      order: s.order ?? s.stop_order,
+      cost_sar: s.cost_sar ?? s.charging_cost,
+      distance_from_prev_km: segment,
+      distance_from_start_km: Number.isFinite(cumulative) ? cumulative : undefined,
+    };
+  });
 
   const stopCount = stops.length;
   const used = trip.departure_battery_pct - trip.arrival_battery_pct;

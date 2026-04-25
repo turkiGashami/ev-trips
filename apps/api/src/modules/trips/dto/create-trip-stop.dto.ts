@@ -64,6 +64,13 @@ export class CreateTripStopDto {
   @Max(180)
   longitude?: number;
 
+  @ApiPropertyOptional({ description: 'Cumulative distance from origin city (km)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  distance_from_start_km?: number;
+
   @ApiPropertyOptional({ description: 'Battery % before charging (0–100)' })
   @IsOptional()
   @Type(() => Number)

@@ -391,10 +391,18 @@ export class TripsService {
 
     qb.orderBy(`trip.${sortField}`, sortOrder);
 
+    // Surface a stops_count alias so trip cards can render the correct
+    // number without loading every stop row.
+    qb.loadRelationCountAndMap('trip.stops_count', 'trip.stops');
+
     const [items, total] = await qb.skip(skip).take(limit).getManyAndCount();
 
+    // Mirror the alias under the legacy `stop_count` name expected by
+    // existing components.
+    const enriched = items.map((t: any) => ({ ...t, stop_count: t.stops_count ?? 0 }));
+
     return {
-      items,
+      items: enriched as any,
       meta: {
         page,
         limit,
@@ -409,16 +417,20 @@ export class TripsService {
     limit = Number(limit) || 20;
     const skip = (page - 1) * limit;
 
-    const [items, total] = await this.tripRepo.findAndCount({
-      where: { user_id: userId, deleted_at: IsNull() },
-      relations: ['departure_city', 'destination_city'],
-      order: { created_at: 'DESC' },
-      skip,
-      take: limit,
-    });
+    const qb = this.tripRepo
+      .createQueryBuilder('trip')
+      .leftJoinAndSelect('trip.departure_city', 'dep_city')
+      .leftJoinAndSelect('trip.destination_city', 'dest_city')
+      .where('trip.user_id = :uid', { uid: userId })
+      .andWhere('trip.deleted_at IS NULL')
+      .orderBy('trip.created_at', 'DESC')
+      .loadRelationCountAndMap('trip.stops_count', 'trip.stops');
+
+    const [items, total] = await qb.skip(skip).take(limit).getManyAndCount();
+    const enriched = items.map((t: any) => ({ ...t, stop_count: t.stops_count ?? 0 }));
 
     return {
-      items,
+      items: enriched as any,
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -498,6 +510,7 @@ export class TripsService {
       city_id: dto.city_id ?? null,
       latitude: dto.latitude ?? null,
       longitude: dto.longitude ?? null,
+      distance_from_start_km: dto.distance_from_start_km ?? null,
       battery_before_pct: dto.battery_before_pct ?? null,
       battery_after_pct: dto.battery_after_pct ?? null,
       charging_duration_minutes: dto.charging_duration_minutes ?? null,

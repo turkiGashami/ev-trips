@@ -81,18 +81,22 @@ export class UsersService {
     const user = await this.findByUsername(username);
     const safeLimit = Math.min(Math.max(Number(limit) || 12, 1), 50);
     const safePage = Math.max(Number(page) || 1, 1);
-    const [items, total] = await this.tripRepo.findAndCount({
-      where: {
-        user_id: user.id,
-        status: TripStatus.PUBLISHED as any,
-        deleted_at: null as any,
-      },
-      relations: ['departure_city', 'destination_city'],
-      order: { published_at: 'DESC' },
-      skip: (safePage - 1) * safeLimit,
-      take: safeLimit,
-    });
-    return { items, meta: { page: safePage, limit: safeLimit, total, totalPages: Math.ceil(total / safeLimit) } };
+    const qb = this.tripRepo
+      .createQueryBuilder('trip')
+      .leftJoinAndSelect('trip.departure_city', 'dep_city')
+      .leftJoinAndSelect('trip.destination_city', 'dest_city')
+      .where('trip.user_id = :uid', { uid: user.id })
+      .andWhere('trip.status = :s', { s: TripStatus.PUBLISHED })
+      .andWhere('trip.deleted_at IS NULL')
+      .orderBy('trip.published_at', 'DESC')
+      .loadRelationCountAndMap('trip.stops_count', 'trip.stops');
+
+    const [items, total] = await qb
+      .skip((safePage - 1) * safeLimit)
+      .take(safeLimit)
+      .getManyAndCount();
+    const enriched = items.map((t: any) => ({ ...t, stop_count: t.stops_count ?? 0 }));
+    return { items: enriched, meta: { page: safePage, limit: safeLimit, total, totalPages: Math.ceil(total / safeLimit) } };
   }
 
   async findById(id: string): Promise<User> {

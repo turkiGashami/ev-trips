@@ -59,6 +59,10 @@ export class TripStop {
   @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
   longitude: number | null;
 
+  /** Cumulative distance from the trip's origin city, in km. */
+  @Column({ type: 'decimal', precision: 7, scale: 2, nullable: true })
+  distance_from_start_km: number | null;
+
   @Column({ type: 'smallint', nullable: true })
   battery_before_pct: number | null;
 
