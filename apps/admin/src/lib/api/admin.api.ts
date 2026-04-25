@@ -398,6 +398,8 @@ export const logsApi = {
 // (e.g. `/admin/dashboard/stats`, `/admin/charging-stations`, `/admin/settings/:key`)
 // have been removed. Prefer the typed `*Api` objects in new code.
 export const adminApi = {
+  // Alerts (admin notifications)
+  getAdminAlerts: () => apiClient.get('/admin/alerts'),
   // Comments (list + delete used by comments page)
   getComments: (p?: any) => apiClient.get('/admin/comments', { params: p }),
   deleteComment: (id: string) => apiClient.delete(`/admin/comments/${id}`),

@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Search, Bell, Menu, X, ChevronDown, LogOut, Settings, Car, LayoutDashboard, Route } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
+import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
 import { cn } from '../../lib/utils';
 import LanguageSwitcher from './LanguageSwitcher';
 
@@ -109,10 +110,7 @@ export function Navbar() {
 
             {isAuthenticated && user ? (
               <>
-                <Link href="/notifications" className="relative p-2 text-[var(--ink-3)] hover:text-[var(--ink)] transition-colors">
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute top-1.5 end-1.5 h-1.5 w-1.5 rounded-full bg-[var(--terra)]" />
-                </Link>
+                <NotificationsBell />
 
                 <div ref={menuRef} className="relative">
                   <button
@@ -225,6 +223,27 @@ export function Navbar() {
         </div>
       )}
     </header>
+  );
+}
+
+function NotificationsBell() {
+  const { data: count = 0 } = useUnreadNotificationsCount();
+  const hasUnread = count > 0;
+  return (
+    <Link
+      href="/notifications"
+      className="relative p-2 text-[var(--ink-3)] hover:text-[var(--ink)] transition-colors"
+      aria-label={hasUnread ? `${count} إشعار غير مقروء` : 'الإشعارات'}
+    >
+      <Bell className="h-4 w-4" />
+      {hasUnread && (
+        <span
+          className="nums-latin absolute -top-0.5 -end-0.5 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-[var(--terra)] text-[10px] font-medium text-white leading-none"
+        >
+          {count > 99 ? '99+' : count}
+        </span>
+      )}
+    </Link>
   );
 }
 

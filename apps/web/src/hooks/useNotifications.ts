@@ -14,11 +14,28 @@ export function useNotifications(params?: any) {
   });
 }
 
+export function useUnreadNotificationsCount() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: () => notificationsApi.getUnreadCount().then((r) => {
+      const body = r.data?.data ?? r.data;
+      return Number(body?.count ?? body ?? 0) || 0;
+    }),
+    enabled: isAuthenticated,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+}
+
 export function useMarkRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => notificationsApi.markRead(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['notifications'] });
+      qc.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+    },
   });
 }
 
@@ -26,7 +43,10 @@ export function useMarkAllRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => notificationsApi.markAllRead(),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['notifications'] });
+      qc.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+    },
   });
 }
 

@@ -24,6 +24,11 @@ export class AdminController {
     return this.adminService.getDashboardStats();
   }
 
+  @Get('alerts')
+  getAdminAlerts() {
+    return this.adminService.getAdminAlerts();
+  }
+
   @Get('dashboard/growth')
   getGrowth(@Query('days') days?: string) {
     return this.adminService.getGrowth(parseInt(days || '30', 10) || 30);

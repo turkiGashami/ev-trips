@@ -997,6 +997,27 @@ export class AdminService {
     return { success: true };
   }
 
+  /**
+   * Aggregated counts for the admin notifications panel — surfaces what
+   * the moderator needs to act on right now.
+   */
+  async getAdminAlerts() {
+    const [pendingTrips, openReports, newMessages] = await Promise.all([
+      this.tripRepo.count({ where: { status: 'pending_review' as any, deleted_at: null as any } }),
+      this.reportRepo.count({ where: { status: 'pending' as any } }),
+      this.contactRepo.count({ where: { status: 'new' as any } }),
+    ]);
+    const total = pendingTrips + openReports + newMessages;
+    return {
+      total,
+      items: [
+        { key: 'pending_trips', count: pendingTrips, href: '/moderation' },
+        { key: 'open_reports', count: openReports, href: '/reports' },
+        { key: 'new_contact_messages', count: newMessages, href: '/contact-messages' },
+      ],
+    };
+  }
+
   async replyContactMessage(actorId: string, id: string, reply: string) {
     const text = String(reply ?? '').trim();
     if (text.length < 2) throw new BadRequestException('Reply is too short');

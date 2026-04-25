@@ -4,11 +4,13 @@ export const notificationsApi = {
   getAll: (params?: { page?: number; limit?: number }) =>
     apiClient.get('/notifications', { params }),
 
+  getUnreadCount: () => apiClient.get('/notifications/unread-count'),
+
   markRead: (id: string) =>
-    apiClient.patch(`/notifications/${id}/read`),
+    apiClient.post(`/notifications/${id}/read`),
 
   markAllRead: () =>
-    apiClient.patch('/notifications/read-all'),
+    apiClient.post('/notifications/read-all'),
 
   getSettings: () =>
     apiClient.get('/notifications/settings'),
