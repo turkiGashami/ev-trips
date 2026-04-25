@@ -594,7 +594,7 @@ export class TripsService {
 
   // ─── Reactions ─────────────────────────────────────────────────────────────
 
-  async reactToTrip(userId: string, tripId: string, reactionType: ReactionType): Promise<{ message: string }> {
+  async reactToTrip(userId: string, tripId: string, reactionType: ReactionType): Promise<{ message: string; reaction_type: ReactionType; helpful_count: number }> {
     const trip = await this.findPublicTrip(tripId);
 
     const existing = await this.reactionRepo.findOne({
@@ -602,10 +602,13 @@ export class TripsService {
     });
 
     if (existing) {
+      // Idempotent: re-reacting with the same type is a no-op so the
+      // client can safely retry without seeing a 409 every time.
       if (existing.reaction_type === reactionType) {
-        throw new ConflictException('You have already reacted with this type');
+        const fresh = await this.tripRepo.findOne({ where: { id: tripId } });
+        return { message: 'Reaction unchanged', reaction_type: reactionType, helpful_count: fresh?.helpful_count ?? trip.helpful_count };
       }
-      // Update reaction type
+      // Type changed: adjust counters then update the row
       if (existing.reaction_type === ReactionType.HELPFUL) {
         await this.tripRepo.decrement({ id: tripId }, 'helpful_count', 1);
       }
@@ -621,16 +624,31 @@ export class TripsService {
       await this.tripRepo.increment({ id: tripId }, 'helpful_count', 1);
     }
 
-    return { message: 'Reaction recorded' };
+    const fresh = await this.tripRepo.findOne({ where: { id: tripId } });
+    return { message: 'Reaction recorded', reaction_type: reactionType, helpful_count: fresh?.helpful_count ?? trip.helpful_count };
   }
 
-  async removeReaction(userId: string, tripId: string): Promise<{ message: string }> {
+  /** Return the current user's reaction + favorite state for a trip. */
+  async getMyTripState(userId: string, tripId: string) {
+    const [reaction, favorite] = await Promise.all([
+      this.reactionRepo.findOne({ where: { trip_id: tripId, user_id: userId } }),
+      this.favoriteRepo.findOne({ where: { trip_id: tripId, user_id: userId } }),
+    ]);
+    return {
+      reaction_type: reaction?.reaction_type ?? null,
+      is_favorited: !!favorite,
+    };
+  }
+
+  async removeReaction(userId: string, tripId: string): Promise<{ message: string; helpful_count: number }> {
     const reaction = await this.reactionRepo.findOne({
       where: { trip_id: tripId, user_id: userId },
     });
 
     if (!reaction) {
-      throw new NotFoundException('Reaction not found');
+      // Idempotent: nothing to remove is fine.
+      const trip = await this.tripRepo.findOne({ where: { id: tripId } });
+      return { message: 'No reaction to remove', helpful_count: trip?.helpful_count ?? 0 };
     }
 
     if (reaction.reaction_type === ReactionType.HELPFUL) {
@@ -638,7 +656,8 @@ export class TripsService {
     }
 
     await this.reactionRepo.remove(reaction);
-    return { message: 'Reaction removed' };
+    const fresh = await this.tripRepo.findOne({ where: { id: tripId } });
+    return { message: 'Reaction removed', helpful_count: fresh?.helpful_count ?? 0 };
   }
 
   // ─── Favorites ─────────────────────────────────────────────────────────────

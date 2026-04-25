@@ -321,6 +321,18 @@ export class TripsController {
     return this.tripsService.removeReaction(user.sub, tripId);
   }
 
+  @Get(':id/me')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get my reaction + favorite state for a trip' })
+  @ApiParam({ name: 'id', description: 'Trip UUID' })
+  async getMyState(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) tripId: string,
+  ) {
+    return this.tripsService.getMyTripState(user.sub, tripId);
+  }
+
   // ─── Favorites ─────────────────────────────────────────────────────────────
 
   @Post(':id/favorite')

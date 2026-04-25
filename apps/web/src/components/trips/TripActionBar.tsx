@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ThumbsUp, Bookmark, Share2, Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -30,6 +30,28 @@ export default function TripActionBar({
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // Load the user's existing reaction + favorite state so the buttons
+  // reflect what's actually in the database (otherwise they appear
+  // un-pressed even if the user already reacted from a previous visit).
+  useEffect(() => {
+    if (!isAuthenticated || !tripId) return;
+    let cancelled = false;
+    tripsApi
+      .getMyState(tripId)
+      .then((res: any) => {
+        if (cancelled) return;
+        const body = res?.data?.data ?? res?.data ?? {};
+        setHelpful(body.reaction_type === 'helpful');
+        setSaved(!!body.is_favorited);
+      })
+      .catch(() => {
+        // Ignore — fall back to default un-pressed state
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, tripId]);
+
   const requireAuth = () => {
     router.push(`/login?redirect=/trips/${tripSlug}`);
   };
@@ -43,11 +65,13 @@ export default function TripActionBar({
     setHelpful(next);
     setHelpfulCount((c) => c + (next ? 1 : -1));
     try {
-      if (next) {
-        await tripsApi.react(tripId, 'helpful');
-      } else {
-        await tripsApi.removeReaction(tripId);
-      }
+      const res: any = next
+        ? await tripsApi.react(tripId, 'helpful')
+        : await tripsApi.removeReaction(tripId);
+      // Trust the server's authoritative count over the optimistic guess
+      const body = res?.data?.data ?? res?.data;
+      const serverCount = body?.helpful_count;
+      if (typeof serverCount === 'number') setHelpfulCount(serverCount);
     } catch {
       // rollback
       setHelpful(!next);

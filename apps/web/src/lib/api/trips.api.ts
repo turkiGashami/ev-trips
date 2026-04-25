@@ -79,6 +79,9 @@ export const tripsApi = {
     apiClient.delete(`/trips/${tripId}/media/${mediaId}`),
 
   // Reactions & favorites
+  getMyState: (tripId: string) =>
+    apiClient.get(`/trips/${tripId}/me`),
+
   react: (tripId: string, reactionType: 'helpful' | 'not_helpful') =>
     apiClient.post(`/trips/${tripId}/react`, { reaction_type: reactionType }),
 
