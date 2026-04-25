@@ -6,6 +6,7 @@ import TripTimeline from '@/components/trips/TripTimeline';
 import CommentSection from '@/components/comments/CommentSection';
 import TripCard from '@/components/trips/TripCard';
 import TripActionBar from '@/components/trips/TripActionBar';
+import TripViewTracker from '@/components/trips/TripViewTracker';
 import { formatDate, formatNumber, getApiBaseUrl } from '@/lib/utils';
 
 const API_BASE = getApiBaseUrl();
@@ -326,6 +327,7 @@ export default async function TripDetailPage({ params }: PageProps) {
           {/* Sidebar */}
           <aside className="lg:col-span-4 space-y-6">
 
+            <TripViewTracker tripId={trip.id} />
             <TripActionBar
               tripId={trip.id}
               tripSlug={trip.slug}
