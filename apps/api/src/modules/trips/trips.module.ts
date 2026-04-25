@@ -10,11 +10,12 @@ import { TripReaction } from '../../entities/trip-reaction.entity';
 import { Favorite } from '../../entities/favorite.entity';
 import { UserVehicle } from '../../entities/user-vehicle.entity';
 import { Report } from '../../entities/report.entity';
+import { SystemSetting } from '../../entities/system-setting.entity';
 import { MediaModule } from '../media/media.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Trip, TripStop, TripMedia, TripReaction, Favorite, UserVehicle, Report]),
+    TypeOrmModule.forFeature([Trip, TripStop, TripMedia, TripReaction, Favorite, UserVehicle, Report, SystemSetting]),
     MediaModule,
   ],
   controllers: [TripsController],

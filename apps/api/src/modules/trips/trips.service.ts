@@ -16,6 +16,7 @@ import { TripReaction } from '../../entities/trip-reaction.entity';
 import { Favorite } from '../../entities/favorite.entity';
 import { UserVehicle } from '../../entities/user-vehicle.entity';
 import { Report } from '../../entities/report.entity';
+import { SystemSetting } from '../../entities/system-setting.entity';
 
 import { TripStatus, ReactionType, ReportStatus } from '../../common/enums';
 import { CreateTripDto } from './dto/create-trip.dto';
@@ -44,8 +45,17 @@ export class TripsService {
     private readonly vehicleRepo: Repository<UserVehicle>,
     @InjectRepository(Report)
     private readonly reportRepo: Repository<Report>,
+    @InjectRepository(SystemSetting)
+    private readonly settingRepo: Repository<SystemSetting>,
     private readonly dataSource: DataSource,
   ) {}
+
+  /** Read a boolean system setting (true if value === 'true'). */
+  private async getBoolSetting(key: string, defaultValue = false): Promise<boolean> {
+    const row = await this.settingRepo.findOne({ where: { key } });
+    if (!row) return defaultValue;
+    return String(row.value).toLowerCase() === 'true';
+  }
 
   // ─── CRUD ──────────────────────────────────────────────────────────────────
 
@@ -161,12 +171,26 @@ export class TripsService {
       }
     }
 
-    trip.status = TripStatus.PENDING_REVIEW;
     trip.submitted_at = new Date();
     trip.rejection_reason = null;
 
+    // Auto-approve if either of the related system settings is enabled.
+    const autoApprove =
+      (await this.getBoolSetting('auto_approve_trips', false)) ||
+      (await this.getBoolSetting('moderation_auto_approve', false));
+
+    if (autoApprove) {
+      trip.status = TripStatus.PUBLISHED;
+      trip.published_at = new Date();
+      trip.is_admin_reviewed = true;
+    } else {
+      trip.status = TripStatus.PENDING_REVIEW;
+    }
+
     const saved = await this.tripRepo.save(trip);
-    this.logger.log(`Trip ${tripId} submitted for review by user ${userId}`);
+    this.logger.log(
+      `Trip ${tripId} ${autoApprove ? 'auto-published' : 'submitted for review'} by user ${userId}`,
+    );
     return this.findFullById(saved.id);
   }
 
