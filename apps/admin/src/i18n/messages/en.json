@@ -548,27 +548,41 @@
       "moderation": "Moderation",
       "trips": "Trips",
       "email": "Email",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "gamification": "Points & Badges"
     },
     "keys": {
       "app_name": "App name (English)",
       "app_name_ar": "App name (Arabic)",
       "app_version": "App version",
       "maintenance_mode": "Maintenance mode",
+      "default_country": "Default country",
+      "default_currency": "Default currency",
       "registration_enabled": "Registration enabled",
+      "allow_new_registrations": "Allow new registrations",
       "max_trips_per_user": "Max trips per user",
       "require_email_verification": "Require email verification",
       "moderation_auto_approve": "Auto-approve trips",
+      "auto_approve_trips": "Auto-approve trips",
       "moderation_min_score": "Minimum moderation score",
       "reports_threshold": "Reports threshold before hiding",
+      "min_completeness_to_publish": "Min trip completeness to publish (%)",
       "max_images_per_trip": "Max images per trip",
       "max_trip_distance_km": "Max trip distance (km)",
       "featured_trips_limit": "Featured trips limit",
+      "featured_trips_count": "Featured trips count",
+      "max_trip_media_count": "Max trip media count",
+      "max_trip_stops_count": "Max trip stops count",
       "smtp_host": "SMTP host",
       "smtp_port": "SMTP port",
       "smtp_from": "Sender email",
+      "email_from_address": "From email address",
+      "email_from_name": "From name",
+      "support_email": "Support email",
       "notification_welcome_enabled": "Send welcome notification",
-      "notification_moderation_enabled": "Moderation notifications"
+      "notification_moderation_enabled": "Moderation notifications",
+      "points_per_trip": "Points per trip",
+      "points_per_helpful_vote": "Points per helpful vote"
     }
   },
   "logs": {

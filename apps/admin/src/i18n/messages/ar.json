@@ -548,27 +548,41 @@
       "moderation": "الإشراف",
       "trips": "الرحلات",
       "email": "البريد الإلكتروني",
-      "notifications": "الإشعارات"
+      "notifications": "الإشعارات",
+      "gamification": "النقاط والشارات"
     },
     "keys": {
       "app_name": "اسم التطبيق (إنجليزي)",
       "app_name_ar": "اسم التطبيق (عربي)",
       "app_version": "إصدار التطبيق",
       "maintenance_mode": "وضع الصيانة",
+      "default_country": "الدولة الافتراضية",
+      "default_currency": "العملة الافتراضية",
       "registration_enabled": "تفعيل التسجيل",
+      "allow_new_registrations": "السماح بالتسجيلات الجديدة",
       "max_trips_per_user": "الحد الأقصى للرحلات لكل مستخدم",
       "require_email_verification": "التحقق من البريد",
       "moderation_auto_approve": "الموافقة التلقائية على الرحلات",
+      "auto_approve_trips": "الموافقة التلقائية على الرحلات",
       "moderation_min_score": "الحد الأدنى لنتيجة الإشراف",
       "reports_threshold": "حد عدد البلاغات قبل الإخفاء",
+      "min_completeness_to_publish": "الحد الأدنى لاكتمال الرحلة قبل النشر (%)",
       "max_images_per_trip": "الحد الأقصى للصور في الرحلة",
       "max_trip_distance_km": "الحد الأقصى لمسافة الرحلة (كم)",
       "featured_trips_limit": "عدد الرحلات المميزة",
+      "featured_trips_count": "عدد الرحلات المميزة",
+      "max_trip_media_count": "الحد الأقصى لمرفقات الرحلة",
+      "max_trip_stops_count": "الحد الأقصى لمحطات الرحلة",
       "smtp_host": "خادم البريد (SMTP Host)",
       "smtp_port": "منفذ البريد (SMTP Port)",
       "smtp_from": "بريد الإرسال",
+      "email_from_address": "عنوان البريد المُرسِل",
+      "email_from_name": "اسم المُرسِل",
+      "support_email": "بريد الدعم الفني",
       "notification_welcome_enabled": "إرسال رسالة ترحيب",
-      "notification_moderation_enabled": "إشعارات الإشراف"
+      "notification_moderation_enabled": "إشعارات الإشراف",
+      "points_per_trip": "نقاط لكل رحلة",
+      "points_per_helpful_vote": "نقاط لكل تصويت مفيد"
     }
   },
   "logs": {

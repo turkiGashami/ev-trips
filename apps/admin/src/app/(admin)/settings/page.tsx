@@ -20,20 +20,33 @@ interface SettingEntry {
 
 const CATEGORY_MAP: Record<string, string> = {
   app_name: "general", app_name_ar: "general", app_version: "general", maintenance_mode: "general",
-  registration_enabled: "users", max_trips_per_user: "users", require_email_verification: "users",
-  moderation_auto_approve: "moderation", moderation_min_score: "moderation", reports_threshold: "moderation",
+  default_country: "general", default_currency: "general",
+  registration_enabled: "users", allow_new_registrations: "users",
+  max_trips_per_user: "users", require_email_verification: "users",
+  moderation_auto_approve: "moderation", auto_approve_trips: "moderation",
+  moderation_min_score: "moderation", reports_threshold: "moderation",
+  min_completeness_to_publish: "moderation",
   max_images_per_trip: "trips", max_trip_distance_km: "trips", featured_trips_limit: "trips",
+  featured_trips_count: "trips", max_trip_media_count: "trips", max_trip_stops_count: "trips",
   smtp_host: "email", smtp_port: "email", smtp_from: "email",
+  email_from_address: "email", email_from_name: "email", support_email: "email",
   notification_welcome_enabled: "notifications", notification_moderation_enabled: "notifications",
+  points_per_trip: "gamification", points_per_helpful_vote: "gamification",
 };
 
 const KEY_KEYS = [
   'app_name', 'app_name_ar', 'app_version', 'maintenance_mode',
-  'registration_enabled', 'max_trips_per_user', 'require_email_verification',
-  'moderation_auto_approve', 'moderation_min_score', 'reports_threshold',
+  'default_country', 'default_currency',
+  'registration_enabled', 'allow_new_registrations',
+  'max_trips_per_user', 'require_email_verification',
+  'moderation_auto_approve', 'auto_approve_trips',
+  'moderation_min_score', 'reports_threshold', 'min_completeness_to_publish',
   'max_images_per_trip', 'max_trip_distance_km', 'featured_trips_limit',
+  'featured_trips_count', 'max_trip_media_count', 'max_trip_stops_count',
   'smtp_host', 'smtp_port', 'smtp_from',
+  'email_from_address', 'email_from_name', 'support_email',
   'notification_welcome_enabled', 'notification_moderation_enabled',
+  'points_per_trip', 'points_per_helpful_vote',
 ];
 
 function getCategoryKey(key: string): string { return CATEGORY_MAP[key] ?? ""; }
