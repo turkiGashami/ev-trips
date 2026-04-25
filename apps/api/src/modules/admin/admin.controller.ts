@@ -228,6 +228,12 @@ export class AdminController {
     return this.adminService.updateCity(actor.id, id, dto);
   }
 
+  @Delete('cities/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteCity(@CurrentUser() actor: any, @Param('id') id: string) {
+    return this.adminService.deleteCity(actor.id, id);
+  }
+
   // ── CHARGING STATIONS ──────────────────────────────────────────────────
   @Get('stations')
   listStations(@Query() query: any) {

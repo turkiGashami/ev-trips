@@ -746,6 +746,21 @@ export class AdminService {
     return city;
   }
 
+  async deleteCity(actorId: string, id: string) {
+    const city = await this.cityRepo.findOne({ where: { id } });
+    if (!city) throw new NotFoundException('City not found');
+    try {
+      await this.cityRepo.delete({ id });
+    } catch (e: any) {
+      // FK violation — city is referenced by trips/stations/routes
+      throw new BadRequestException(
+        'لا يمكن حذف هذه المدينة لأنها مرتبطة برحلات أو محطات أو مسارات. عطّلها بدلاً من الحذف.',
+      );
+    }
+    await logAdminAction(this.dataSource, { actorId, action: 'city.deleted', targetType: 'city', targetId: id, payload: { name: city.name } });
+    return { success: true };
+  }
+
   // ── CHARGING STATIONS ────────────────────────────────────────────────────
 
   async listStations(query: { search?: string; cityId?: string; page?: number; limit?: number }) {

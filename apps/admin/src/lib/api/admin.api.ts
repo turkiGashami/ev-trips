@@ -408,6 +408,7 @@ export const adminApi = {
   // Cities
   getCities: () => apiClient.get('/admin/cities'),
   createCity: (data: any) => apiClient.post('/admin/cities', data),
+  updateCity: (id: string, data: any) => apiClient.patch(`/admin/cities/${id}`, data),
   deleteCity: (id: string) => apiClient.delete(`/admin/cities/${id}`),
   // Static pages
   getStaticPages: () => apiClient.get('/admin/pages'),
