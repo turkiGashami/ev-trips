@@ -150,6 +150,17 @@ export default async function TripDetailPage({ params }: PageProps) {
   const departureCity = trip.departure_city?.name_ar ?? trip.departure_city?.name ?? dash;
   const destinationCity = trip.destination_city?.name_ar ?? trip.destination_city?.name ?? dash;
 
+  // Hide the placeholder "Untitled Trip" inherited from older drafts —
+  // fall back to the route description.
+  const rawTitle = (trip.title ?? '').trim();
+  const isPlaceholderTitle =
+    !rawTitle ||
+    rawTitle.toLowerCase() === 'untitled trip' ||
+    rawTitle === 'رحلة جديدة';
+  const displayTitle = isPlaceholderTitle && departureCity && destinationCity
+    ? `${departureCity} ← ${destinationCity}`
+    : rawTitle || `${departureCity} ← ${destinationCity}`;
+
   const formatDuration = (min: number) => {
     const h = Math.floor(min / 60);
     const m = min % 60;
@@ -180,7 +191,7 @@ export default async function TripDetailPage({ params }: PageProps) {
             <ChevronLeft className="h-3 w-3 flip-rtl" />
             <Link href="/search" className="hover:text-[var(--ink)] transition-colors">{t('breadcrumbTrips')}</Link>
             <ChevronLeft className="h-3 w-3 flip-rtl" />
-            <span className="text-[var(--ink-2)] truncate max-w-[220px]">{trip.title}</span>
+            <span className="text-[var(--ink-2)] truncate max-w-[220px]">{displayTitle}</span>
           </nav>
         </div>
       </div>
@@ -191,7 +202,7 @@ export default async function TripDetailPage({ params }: PageProps) {
           <span className="eyebrow">— {vehicleLabel}{trip.snap_year ? ` · ${trip.snap_year}` : ''}</span>
           <h1 className="mt-4 max-w-4xl"
               style={{ fontSize: 'clamp(1.75rem, 4.5vw, 3.25rem)', lineHeight: 1.1, fontWeight: 500, letterSpacing: '-0.02em' }}>
-            {trip.title}
+            {displayTitle}
           </h1>
 
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[var(--ink-3)]">
