@@ -150,8 +150,8 @@ function DataCell({ label, value, unit }: { label: string; value: string; unit?:
   return (
     <div>
       <div className="text-[10px] text-[var(--ink-3)] tracking-[0.1em] uppercase mb-1.5">{label}</div>
-      <div className="flex items-baseline gap-1 nums-latin">
-        <span className="text-lg md:text-xl font-medium text-[var(--ink)] tracking-tight">{value}</span>
+      <div className="flex items-baseline gap-1 nums-latin whitespace-nowrap">
+        <span className="text-base md:text-lg font-medium text-[var(--ink)] tracking-tight">{value}</span>
         {unit && <span className="text-xs text-[var(--ink-3)]">{unit}</span>}
       </div>
     </div>
