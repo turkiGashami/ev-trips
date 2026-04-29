@@ -109,7 +109,7 @@ export function TripCard({ trip, className, compact = false }: TripCardProps) {
         <div className="grid grid-cols-3 gap-4 py-4 border-y border-[var(--line-soft)]">
           <DataCell
             label={t('distance')}
-            value={trip.distance_km ? `${trip.distance_km}` : dash}
+            value={trip.distance_km ? formatNumber(trip.distance_km) : dash}
             unit={trip.distance_km ? tCommon('kmUnit') : undefined}
           />
           <DataCell
