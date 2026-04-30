@@ -2,12 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Users, Map, ShieldCheck, Flag, Zap, Clock } from "lucide-react";
+import { Users, Map, ShieldCheck, Flag, Zap, Clock, Battery, Navigation, Car, MessageSquare } from "lucide-react";
 import { AdminTopbar } from "@/components/layout/AdminTopbar";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { MetricsChart } from "@/components/dashboard/MetricsChart";
 import { dashboardApi } from "@/lib/api/admin.api";
-import type { DashboardStats, GrowthDataPoint, RecentActivity, PopularRoute } from "@/types/admin.types";
+import type {
+  DashboardStats,
+  GrowthDataPoint,
+  RecentActivity,
+  PopularRoute,
+  TopContributor,
+  TopVehicle,
+} from "@/types/admin.types";
 import { formatNumber } from "@/lib/format";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -25,6 +32,8 @@ export default function DashboardPage() {
   const [growth, setGrowth] = useState<GrowthDataPoint[]>([]);
   const [activity, setActivity] = useState<RecentActivity[]>([]);
   const [routes, setRoutes] = useState<PopularRoute[]>([]);
+  const [contributors, setContributors] = useState<TopContributor[]>([]);
+  const [vehicles, setVehicles] = useState<TopVehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,21 +41,28 @@ export default function DashboardPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const [statsData, growthData, activityData, routesData] = await Promise.all([
-        dashboardApi.getStats(),
-        dashboardApi.getGrowth(30),
-        dashboardApi.getRecentActivity(10),
-        dashboardApi.getPopularRoutes(5),
-      ]);
+      const [statsData, growthData, activityData, routesData, contribData, vehiclesData] =
+        await Promise.all([
+          dashboardApi.getStats(),
+          dashboardApi.getGrowth(30),
+          dashboardApi.getRecentActivity(10),
+          dashboardApi.getPopularRoutes(5),
+          dashboardApi.getTopContributors(5),
+          dashboardApi.getTopVehicles(5),
+        ]);
       setStats(statsData);
       setGrowth(growthData);
       setActivity(activityData);
       setRoutes(routesData);
+      setContributors(contribData);
+      setVehicles(vehiclesData);
     } catch (err: any) {
       setStats(null);
       setGrowth([]);
       setActivity([]);
       setRoutes([]);
+      setContributors([]);
+      setVehicles([]);
       setError(err?.response?.data?.message || err?.message || t("genericError"));
     } finally {
       setIsLoading(false);
@@ -67,12 +83,48 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Stats grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        {/* Stats grid — primary */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 16 }}>
           <StatsCard title={t("totalUsers")}       value={stats?.totalUsers ?? 0}       growthPercent={stats?.usersGrowthPercent}      subtitle={t("vsLastMonth")}   icon={<Users style={{ width: 18, height: 18 }} />}                                isLoading={isLoading} />
           <StatsCard title={t("tripsToday")}       value={stats?.tripsToday ?? 0}       growthPercent={stats?.tripsTodayGrowthPercent} subtitle={t("vsYesterday")}   icon={<Map style={{ width: 18, height: 18 }} />}        accentColor="var(--sky)"  isLoading={isLoading} />
           <StatsCard title={t("pendingModeration")} value={stats?.pendingModeration ?? 0}                                                subtitle={t("needsAction")}    icon={<ShieldCheck style={{ width: 18, height: 18 }} />} accentColor="var(--terra)" isLoading={isLoading} />
           <StatsCard title={t("openReports")}      value={stats?.openReports ?? 0}                                                       subtitle={t("needsAttention")} icon={<Flag style={{ width: 18, height: 18 }} />}       accentColor="var(--terra)" isLoading={isLoading} />
+        </div>
+
+        {/* Stats grid — secondary (Tier-1 widgets) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+          <StatsCard
+            title={t("avgBatteryConsumed")}
+            value={stats?.avgBatteryConsumed != null ? `${stats.avgBatteryConsumed}%` : '—'}
+            subtitle={t("avgBatteryConsumedSubtitle")}
+            icon={<Battery style={{ width: 18, height: 18 }} />}
+            accentColor="var(--forest)"
+            isLoading={isLoading}
+          />
+          <StatsCard
+            title={t("avgDistance")}
+            value={stats?.avgDistanceKm != null ? `${formatNumber(stats.avgDistanceKm)} ${t("kmShort")}` : '—'}
+            subtitle={t("avgDistanceSubtitle")}
+            icon={<Navigation style={{ width: 18, height: 18 }} />}
+            accentColor="var(--sky)"
+            isLoading={isLoading}
+          />
+          <StatsCard
+            title={t("totalVehicles")}
+            value={stats?.totalVehicles ?? 0}
+            subtitle={t("totalVehiclesSubtitle")}
+            icon={<Car style={{ width: 18, height: 18 }} />}
+            accentColor="var(--ink-2)"
+            isLoading={isLoading}
+          />
+          <StatsCard
+            title={t("commentsToday")}
+            value={stats?.commentsToday ?? 0}
+            subtitle={t("commentsTodaySubtitle")}
+            icon={<MessageSquare style={{ width: 18, height: 18 }} />}
+            accentColor="var(--ink-2)"
+            isLoading={isLoading}
+          />
         </div>
 
         {/* Charts + Activity */}
@@ -197,6 +249,133 @@ export default function DashboardPage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Top Contributors + Top Vehicles */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+          {/* Top Contributors */}
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <div className="card-header">
+              <p className="eyebrow">{t("topContributors")}</p>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>
+                {t("topContributorsSubtitle")}
+              </p>
+            </div>
+            <div>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: '1px solid var(--line-soft)' }}>
+                    <div className="skeleton" style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div className="skeleton" style={{ height: 12, width: '60%', marginBottom: 6 }} />
+                      <div className="skeleton" style={{ height: 10, width: '40%' }} />
+                    </div>
+                  </div>
+                ))
+              ) : contributors.length === 0 ? (
+                <div style={{ padding: 24, textAlign: 'center', fontSize: 13, color: 'var(--ink-3)' }}>
+                  {t("noContributorsYet")}
+                </div>
+              ) : (
+                contributors.map((c, idx) => {
+                  const initial = (c.full_name?.[0] ?? c.username?.[0] ?? '?').toUpperCase();
+                  const display = c.full_name || c.username || '—';
+                  const handle = c.username ? `@${c.username}` : '';
+                  return (
+                    <div
+                      key={c.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '12px 20px',
+                        borderBottom: idx < contributors.length - 1 ? '1px solid var(--line-soft)' : 'none',
+                      }}
+                    >
+                      <div style={{ width: 24, fontSize: 12, color: 'var(--ink-4)', textAlign: 'center', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                        {idx + 1}
+                      </div>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--ink)', color: 'var(--cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 12, fontWeight: 500 }}>
+                        {initial}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {display}
+                        </p>
+                        {handle && (
+                          <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{handle}</p>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--ink-2)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                        {t("publishedTripsLabel", { count: c.published_count })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Top Vehicles */}
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <div className="card-header">
+              <p className="eyebrow">{t("topVehicles")}</p>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>
+                {t("topVehiclesSubtitle")}
+              </p>
+            </div>
+            <div>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: '1px solid var(--line-soft)' }}>
+                    <div className="skeleton" style={{ width: 32, height: 32, flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div className="skeleton" style={{ height: 12, width: '70%', marginBottom: 6 }} />
+                    </div>
+                  </div>
+                ))
+              ) : vehicles.length === 0 ? (
+                <div style={{ padding: 24, textAlign: 'center', fontSize: 13, color: 'var(--ink-3)' }}>
+                  {t("noVehiclesYet")}
+                </div>
+              ) : (
+                vehicles.map((v, idx) => {
+                  const topCount = vehicles[0]?.trip_count || 1;
+                  const widthPct = (v.trip_count / topCount) * 100;
+                  return (
+                    <div
+                      key={`${v.brand}-${v.model}-${idx}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '12px 20px',
+                        borderBottom: idx < vehicles.length - 1 ? '1px solid var(--line-soft)' : 'none',
+                      }}
+                    >
+                      <div style={{ width: 24, fontSize: 12, color: 'var(--ink-4)', textAlign: 'center', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                        {idx + 1}
+                      </div>
+                      <div style={{ width: 32, height: 32, background: 'var(--sand)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Car style={{ width: 14, height: 14, color: 'var(--ink-2)' }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {v.brand} {v.model}
+                        </p>
+                        <div style={{ height: 3, background: 'var(--line)', marginTop: 4, borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', background: 'var(--ink-3)', width: `${widthPct}%`, borderRadius: 2 }} />
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--ink-2)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                        {t("tripsLabel", { count: v.trip_count })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
 
