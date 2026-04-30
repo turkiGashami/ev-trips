@@ -1,7 +1,13 @@
 import { getLocale } from 'next-intl/server';
 import ContactForm from './ContactForm';
+import { buildPageMetadata } from '@/lib/seo';
 
-export const metadata = { title: 'تواصل معنا | رحلات EV' };
+export const metadata = buildPageMetadata({
+  path: '/contact',
+  title: 'تواصل معنا',
+  description: 'تواصل مع فريق رحلات EV — اقتراحات، شراكات، إعلانات، أو استفسارات حول السيارات الكهربائية.',
+  keywords: ['تواصل', 'اتصل بنا', 'EV contact'],
+});
 
 export default async function ContactPage() {
   const locale = await getLocale();

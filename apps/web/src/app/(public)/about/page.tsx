@@ -1,9 +1,16 @@
 import { getLocale } from 'next-intl/server';
 import { getApiBaseUrl } from '@/lib/utils';
 import StaticPageView from '@/components/static/StaticPageView';
+import { buildPageMetadata } from '@/lib/seo';
 
 export const revalidate = 60;
-export const metadata = { title: 'عن المنصة | رحلات EV' };
+export const metadata = buildPageMetadata({
+  path: '/about',
+  title: 'عن المنصة',
+  description:
+    'تعرّف على منصة رحلات EV: مجتمع عربي لمشاركة تجارب السيارات الكهربائية، استكشاف الرحلات، ومراجعة محطات الشحن.',
+  keywords: ['عن رحلات EV', 'مجتمع السيارات الكهربائية', 'EV community Arabic'],
+});
 
 async function fetchPage(key: string) {
   try {

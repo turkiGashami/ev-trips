@@ -7,7 +7,9 @@ import CommentSection from '@/components/comments/CommentSection';
 import TripCard from '@/components/trips/TripCard';
 import TripActionBar from '@/components/trips/TripActionBar';
 import TripViewTracker from '@/components/trips/TripViewTracker';
+import JsonLd from '@/components/seo/JsonLd';
 import { formatDate, formatNumber, getApiBaseUrl } from '@/lib/utils';
+import { breadcrumbJsonLd, SITE_URL } from '@/lib/seo';
 
 const API_BASE = getApiBaseUrl();
 
@@ -53,9 +55,25 @@ export async function generateMetadata({ params }: PageProps) {
   const t = await getTranslations('tripDetail');
   const trip = await getTripBySlug(params.slug);
   if (!trip) return { title: t('notFoundTitle') };
+  const title = t('metaTitle', { title: trip.title });
+  const description =
+    (trip.trip_notes ?? trip.route_notes ?? trip.title ?? '').toString().slice(0, 160);
+  const url = `${SITE_URL}/trips/${params.slug}`;
   return {
-    title: t('metaTitle', { title: trip.title }),
-    description: (trip.trip_notes ?? trip.route_notes ?? '').slice(0, 160),
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: 'article',
+      title,
+      description,
+      url,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
   };
 }
 
@@ -180,8 +198,48 @@ export default async function TripDetailPage({ params }: PageProps) {
 
   const notes = trip.trip_notes ?? trip.route_notes;
 
+  const tripUrl = `${SITE_URL}/trips/${params.slug}`;
+  const fromName = trip.departure_city?.name_ar ?? trip.departure_city?.name;
+  const toName = trip.destination_city?.name_ar ?? trip.destination_city?.name;
+
   return (
     <div className="min-h-screen bg-[var(--cream)]">
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: 'الرئيسية', url: '/' },
+          { name: 'الرحلات', url: '/search' },
+          { name: trip.title, url: `/trips/${params.slug}` },
+        ])}
+      />
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: trip.title,
+          description: notes?.toString().slice(0, 200) ?? trip.title,
+          author: trip.user?.full_name || trip.user?.username
+            ? {
+                '@type': 'Person',
+                name: trip.user?.full_name || trip.user?.username,
+              }
+            : undefined,
+          datePublished: trip.created_at,
+          dateModified: trip.updated_at ?? trip.created_at,
+          mainEntityOfPage: tripUrl,
+          inLanguage: 'ar',
+          about:
+            fromName && toName
+              ? {
+                  '@type': 'TouristTrip',
+                  name: `${fromName} → ${toName}`,
+                  itinerary: [
+                    { '@type': 'Place', name: fromName },
+                    { '@type': 'Place', name: toName },
+                  ],
+                }
+              : undefined,
+        }}
+      />
 
       {/* Breadcrumb */}
       <div className="border-b border-[var(--line)]">
