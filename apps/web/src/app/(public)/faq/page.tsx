@@ -1,8 +1,16 @@
 import { getLocale } from 'next-intl/server';
 import { getApiBaseUrl } from '@/lib/utils';
+import JsonLd from '@/components/seo/JsonLd';
+import { buildPageMetadata } from '@/lib/seo';
 
 export const revalidate = 60;
-export const metadata = { title: 'الأسئلة الشائعة | رحلات EV' };
+export const metadata = buildPageMetadata({
+  path: '/faq',
+  title: 'الأسئلة الشائعة',
+  description:
+    'إجابات على أكثر الأسئلة شيوعاً عن السيارات الكهربائية، شحن البطارية، الرحلات الطويلة، واستخدام منصة رحلات EV.',
+  keywords: ['أسئلة شائعة', 'FAQ', 'سيارات كهربائية أسئلة'],
+});
 
 type FaqItem = {
   id: string;
@@ -31,8 +39,24 @@ export default async function FAQPage() {
   const dir = isAr ? 'rtl' : 'ltr';
   const faqs = await fetchFaqs();
 
+  const faqJsonLd = faqs.length
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqs.map((faq) => ({
+          '@type': 'Question',
+          name: isAr ? faq.question_ar : faq.question_en || faq.question_ar,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: isAr ? faq.answer_ar : faq.answer_en || faq.answer_ar,
+          },
+        })),
+      }
+    : null;
+
   return (
     <div dir={dir} className="bg-[var(--cream)]">
+      {faqJsonLd && <JsonLd data={faqJsonLd} />}
       <div className="container-app py-16 md:py-24 max-w-3xl">
         <span className="eyebrow">{isAr ? '— الأسئلة الشائعة' : '— FAQ'}</span>
         <h1 className="heading-1 mt-4">
