@@ -20,6 +20,7 @@ import type {
   PaginatedResponse,
   TopContributor,
   TopVehicle,
+  AnalyticsTimeSeries,
 } from "@/types/admin.types";
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -151,6 +152,16 @@ export const dashboardApi = {
       return Array.isArray(rows) ? rows as TopVehicle[] : [];
     } catch {
       return [];
+    }
+  },
+  getAnalyticsTimeSeries: async (days = 30): Promise<AnalyticsTimeSeries | null> => {
+    try {
+      const { data } = await apiClient.get<any>("/admin/analytics/time-series", { params: { days } });
+      const body = data?.data ?? data;
+      if (!body || !Array.isArray(body.series) || !body.summary) return null;
+      return body as AnalyticsTimeSeries;
+    } catch {
+      return null;
     }
   },
   getRecentActivity: async (limit = 10): Promise<RecentActivity[]> => {

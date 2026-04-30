@@ -299,6 +299,28 @@ export interface TopVehicle {
   trip_count: number;
 }
 
+export type AnalyticsMetricKey = "users" | "trips" | "comments" | "vehicles";
+
+export interface AnalyticsSeriesPoint {
+  date: string;
+  users: number;
+  trips: number;
+  comments: number;
+  vehicles: number;
+}
+
+export interface AnalyticsSummaryItem {
+  current: number;
+  previous: number;
+  deltaPercent: number | null;
+}
+
+export interface AnalyticsTimeSeries {
+  days: number;
+  series: AnalyticsSeriesPoint[];
+  summary: Record<AnalyticsMetricKey, AnalyticsSummaryItem>;
+}
+
 export interface GrowthDataPoint {
   date: string;
   users: number;
