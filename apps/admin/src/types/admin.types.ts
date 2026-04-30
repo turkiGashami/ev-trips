@@ -294,6 +294,26 @@ export interface PopularRoute {
   avg_arrival_battery: number | null;
 }
 
+export interface AdminRoute {
+  departure_city_id: string;
+  destination_city_id: string;
+  from_ar?: string | null;
+  from_en?: string | null;
+  to_ar?: string | null;
+  to_en?: string | null;
+  trip_count: number;
+  published_count: number;
+  pending_count: number;
+  avg_arrival_battery: number | null;
+  avg_distance_km: number | null;
+  last_trip_date: string | null;
+}
+
+export interface AdminRoutesResponse {
+  data: AdminRoute[];
+  meta: { count: number; limit: number };
+}
+
 export interface RecentActivity {
   id: string;
   type: "user_joined" | "trip_submitted" | "report_filed" | "trip_approved";

@@ -1092,4 +1092,98 @@ export class AdminService {
 
     return paginateQuery(qb, query.page || 1, query.limit || 50);
   }
+
+  // ── ROUTES (admin overview) ─────────────────────────────────────────────
+  /**
+   * List of city-pair routes aggregated live from trips. We do NOT read the
+   * denormalized `routes` table — its `trip_count` drifts when trips are
+   * soft-deleted. Aggregating from trips keeps the admin view honest.
+   */
+  async getAdminRoutes(query: {
+    search?: string;
+    from_city_id?: string;
+    to_city_id?: string;
+    sort?: 'trip_count' | 'last_trip_date' | 'avg_distance_km';
+    limit?: string | number;
+  }) {
+    const limit = Math.min(
+      200,
+      Math.max(1, parseInt(String(query.limit ?? 100), 10) || 100),
+    );
+    const sortKey =
+      query.sort === 'last_trip_date' || query.sort === 'avg_distance_km'
+        ? query.sort
+        : 'trip_count';
+
+    const qb = this.tripRepo
+      .createQueryBuilder('t')
+      .leftJoin('t.departure_city', 'dep')
+      .leftJoin('t.destination_city', 'dst')
+      .select('t.departure_city_id', 'departure_city_id')
+      .addSelect('t.destination_city_id', 'destination_city_id')
+      .addSelect('dep.name_ar', 'from_ar')
+      .addSelect('dep.name', 'from_en')
+      .addSelect('dst.name_ar', 'to_ar')
+      .addSelect('dst.name', 'to_en')
+      .addSelect('COUNT(t.id)', 'trip_count')
+      .addSelect(
+        "SUM(CASE WHEN t.status = 'published' THEN 1 ELSE 0 END)",
+        'published_count',
+      )
+      .addSelect(
+        "SUM(CASE WHEN t.status = 'pending_review' THEN 1 ELSE 0 END)",
+        'pending_count',
+      )
+      .addSelect('ROUND(AVG(t.arrival_battery_pct))', 'avg_arrival_battery')
+      .addSelect('ROUND(AVG(t.distance_km))', 'avg_distance_km')
+      .addSelect('MAX(t.trip_date)', 'last_trip_date')
+      .where('t.deleted_at IS NULL')
+      .andWhere('t.departure_city_id IS NOT NULL')
+      .andWhere('t.destination_city_id IS NOT NULL');
+
+    if (query.from_city_id) {
+      qb.andWhere('t.departure_city_id = :fromId', { fromId: query.from_city_id });
+    }
+    if (query.to_city_id) {
+      qb.andWhere('t.destination_city_id = :toId', { toId: query.to_city_id });
+    }
+    if (query.search && query.search.trim()) {
+      qb.andWhere(
+        '(dep.name_ar ILIKE :q OR dep.name ILIKE :q OR dst.name_ar ILIKE :q OR dst.name ILIKE :q)',
+        { q: `%${query.search.trim()}%` },
+      );
+    }
+
+    qb.groupBy('t.departure_city_id')
+      .addGroupBy('t.destination_city_id')
+      .addGroupBy('dep.name_ar')
+      .addGroupBy('dep.name')
+      .addGroupBy('dst.name_ar')
+      .addGroupBy('dst.name')
+      .orderBy(sortKey, 'DESC')
+      .addOrderBy('trip_count', 'DESC')
+      .limit(limit);
+
+    const rows = await qb.getRawMany();
+
+    return {
+      data: rows.map((r: any) => ({
+        departure_city_id: r.departure_city_id,
+        destination_city_id: r.destination_city_id,
+        from_ar: r.from_ar,
+        from_en: r.from_en,
+        to_ar: r.to_ar,
+        to_en: r.to_en,
+        trip_count: Number(r.trip_count) || 0,
+        published_count: Number(r.published_count) || 0,
+        pending_count: Number(r.pending_count) || 0,
+        avg_arrival_battery:
+          r.avg_arrival_battery != null ? Number(r.avg_arrival_battery) : null,
+        avg_distance_km:
+          r.avg_distance_km != null ? Number(r.avg_distance_km) : null,
+        last_trip_date: r.last_trip_date,
+      })),
+      meta: { count: rows.length, limit },
+    };
+  }
 }

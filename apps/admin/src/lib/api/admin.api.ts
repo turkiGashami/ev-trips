@@ -433,4 +433,12 @@ export const adminApi = {
   createBanner: (data: any) => apiClient.post('/admin/banners', data),
   updateBanner: (id: string, data: any) => apiClient.patch(`/admin/banners/${id}`, data),
   deleteBanner: (id: string) => apiClient.delete(`/admin/banners/${id}`),
+  // Routes (read-only overview)
+  getRoutes: (params?: {
+    search?: string;
+    from_city_id?: string;
+    to_city_id?: string;
+    sort?: 'trip_count' | 'last_trip_date' | 'avg_distance_km';
+    limit?: number;
+  }) => apiClient.get('/admin/routes', { params }),
 };
