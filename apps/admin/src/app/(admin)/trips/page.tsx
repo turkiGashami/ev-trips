@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, Star, Trash2, Search, X, MapPin, ExternalLink } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -66,11 +67,23 @@ export default function TripsPage() {
     return s;
   };
 
+  const searchParams = useSearchParams();
+  // Seed the search box from `?search=` so deep links from the Routes page
+  // (and anywhere else) land with the filter already applied. Mount-only.
+  const initialSearch = searchParams?.get("search") ?? "";
+
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [confirm, setConfirm] = useState<ConfirmState>({ action: null, trip: null });
   const [sort, setSort] = useState({ key: "createdAt", dir: "desc" as "asc" | "desc" });
+
+  // If user navigates between drill-down links without remount, sync state.
+  useEffect(() => {
+    const next = searchParams?.get("search") ?? "";
+    if (next && next !== search) setSearch(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const debouncedSearch = useDebounce(search, 400);
   const queryClient = useQueryClient();

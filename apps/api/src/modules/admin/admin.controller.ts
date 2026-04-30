@@ -39,6 +39,12 @@ export class AdminController {
     return this.adminService.getPopularRoutes(parseInt(limit || '5', 10) || 5);
   }
 
+  // ── ROUTES (overview) ──────────────────────────────────────────────────
+  @Get('routes')
+  getAdminRoutes(@Query() query: any) {
+    return this.adminService.getAdminRoutes(query);
+  }
+
   // ── USERS ──────────────────────────────────────────────────────────────
   @Get('users')
   getUsers(@Query() query: any) {

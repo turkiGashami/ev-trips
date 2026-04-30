@@ -7,6 +7,7 @@
     "reports": "Reports",
     "content": "Content",
     "trips": "Trips",
+    "routes": "Routes",
     "comments": "Comments",
     "users": "Users",
     "allUsers": "All Users",
@@ -240,6 +241,33 @@
       "deleteMessage": "Delete this trip permanently? This action cannot be undone.",
       "deleteConfirm": "Delete"
     }
+  },
+  "routes": {
+    "title": "Routes",
+    "subtitle": "Overview of every city pair that has at least one logged trip",
+    "count": "{count} routes",
+    "searchPlaceholder": "Search by city name…",
+    "loading": "Loading routes…",
+    "empty": "No routes yet. Log a trip to populate this list.",
+    "emptyFiltered": "No routes match the current filters.",
+    "sort": {
+      "label": "Sort",
+      "trip_count": "Most trips",
+      "last_trip_date": "Most recent",
+      "avg_distance_km": "Longest distance"
+    },
+    "columns": {
+      "route": "Route",
+      "trips": "Trips",
+      "published": "Published",
+      "pending": "Pending",
+      "avgBattery": "Avg arrival battery",
+      "avgDistance": "Avg distance",
+      "lastTrip": "Last trip",
+      "actions": ""
+    },
+    "viewTrips": "View trips on this route",
+    "km": "km"
   },
   "moderation": {
     "title": "Trip Moderation",
