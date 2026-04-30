@@ -49,6 +49,14 @@ export class AdminController {
     return this.adminService.getTopVehicles(parseInt(limit || '5', 10) || 5);
   }
 
+  // ── ANALYTICS ──────────────────────────────────────────────────────────
+  @Get('analytics/time-series')
+  getAnalyticsTimeSeries(@Query('days') days?: string) {
+    return this.adminService.getAnalyticsTimeSeries(
+      parseInt(days || '30', 10) || 30,
+    );
+  }
+
   // ── ROUTES (overview) ──────────────────────────────────────────────────
   @Get('routes')
   getAdminRoutes(@Query() query: any) {

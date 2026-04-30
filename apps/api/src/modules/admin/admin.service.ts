@@ -251,6 +251,144 @@ export class AdminService {
     }));
   }
 
+  // ── ANALYTICS (Tier-2: dedicated /admin/analytics page) ──────────────────
+  /**
+   * Time-series + period-over-period summary across the four headline
+   * platform metrics (signups, published trips, comments, vehicles added).
+   * One method, one round-trip from the frontend, no chart-side maths.
+   *
+   * Buckets are daily for any range; the chart can downsample if it wants
+   * a coarser look. Period-over-period compares the requested window
+   * against the equally-sized window immediately before it.
+   */
+  async getAnalyticsTimeSeries(days = 30) {
+    const clamped = Math.min(Math.max(days | 0 || 30, 7), 365);
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - (clamped - 1));
+
+    const prevStart = new Date(start);
+    prevStart.setDate(prevStart.getDate() - clamped);
+
+    // Daily series for the requested window. Each metric is a separate
+    // GROUP BY query so we can keep WHEREs sharp and the planner happy.
+    const dayQuery = (
+      table: string,
+      column: string,
+      where?: { sql: string; params?: Record<string, unknown> },
+    ) => {
+      let q = this.dataSource
+        .createQueryBuilder()
+        .select(`DATE(${column})`, 'date')
+        .addSelect('COUNT(*)', 'count')
+        .from(table, 'x')
+        .where(`${column} >= :start`, { start });
+      if (where) q = q.andWhere(where.sql, where.params ?? {});
+      return q
+        .groupBy(`DATE(${column})`)
+        .getRawMany()
+        .then((rows: any[]) => {
+          const map = new Map<string, number>();
+          for (const r of rows) {
+            const key =
+              typeof r.date === 'string'
+                ? r.date
+                : new Date(r.date).toISOString().slice(0, 10);
+            map.set(key, Number(r.count) || 0);
+          }
+          return map;
+        });
+    };
+
+    const [usersMap, tripsMap, commentsMap, vehiclesMap] = await Promise.all([
+      dayQuery('users', 'x.created_at', {
+        sql: 'x.deleted_at IS NULL',
+      }),
+      dayQuery('trips', 'x.created_at', {
+        sql: "x.deleted_at IS NULL AND x.status = 'published'",
+      }),
+      dayQuery('comments', 'x.created_at', {
+        sql: 'x.deleted_at IS NULL',
+      }),
+      dayQuery('user_vehicles', 'x.created_at'),
+    ]);
+
+    const series: Array<{
+      date: string;
+      users: number;
+      trips: number;
+      comments: number;
+      vehicles: number;
+    }> = [];
+    for (let i = 0; i < clamped; i++) {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      series.push({
+        date: key,
+        users: usersMap.get(key) ?? 0,
+        trips: tripsMap.get(key) ?? 0,
+        comments: commentsMap.get(key) ?? 0,
+        vehicles: vehiclesMap.get(key) ?? 0,
+      });
+    }
+
+    // Period-over-period totals.
+    const periodCount = (
+      table: string,
+      column: string,
+      from: Date,
+      to: Date,
+      where?: { sql: string; params?: Record<string, unknown> },
+    ) => {
+      let q = this.dataSource
+        .createQueryBuilder()
+        .select('COUNT(*)', 'count')
+        .from(table, 'x')
+        .where(`${column} >= :from AND ${column} < :to`, { from, to });
+      if (where) q = q.andWhere(where.sql, where.params ?? {});
+      return q
+        .getRawOne()
+        .then((r: any) => Number(r?.count) || 0);
+    };
+
+    const end = new Date(start);
+    end.setDate(end.getDate() + clamped);
+
+    const [
+      usersCurr, usersPrev,
+      tripsCurr, tripsPrev,
+      commentsCurr, commentsPrev,
+      vehiclesCurr, vehiclesPrev,
+    ] = await Promise.all([
+      periodCount('users', 'x.created_at', start, end, { sql: 'x.deleted_at IS NULL' }),
+      periodCount('users', 'x.created_at', prevStart, start, { sql: 'x.deleted_at IS NULL' }),
+      periodCount('trips', 'x.created_at', start, end, { sql: "x.deleted_at IS NULL AND x.status = 'published'" }),
+      periodCount('trips', 'x.created_at', prevStart, start, { sql: "x.deleted_at IS NULL AND x.status = 'published'" }),
+      periodCount('comments', 'x.created_at', start, end, { sql: 'x.deleted_at IS NULL' }),
+      periodCount('comments', 'x.created_at', prevStart, start, { sql: 'x.deleted_at IS NULL' }),
+      periodCount('user_vehicles', 'x.created_at', start, end),
+      periodCount('user_vehicles', 'x.created_at', prevStart, start),
+    ]);
+
+    const delta = (curr: number, prev: number): number | null => {
+      if (prev === 0) return curr > 0 ? 100 : null;
+      return Math.round(((curr - prev) / prev) * 100);
+    };
+
+    return {
+      days: clamped,
+      series,
+      summary: {
+        users:    { current: usersCurr,    previous: usersPrev,    deltaPercent: delta(usersCurr, usersPrev) },
+        trips:    { current: tripsCurr,    previous: tripsPrev,    deltaPercent: delta(tripsCurr, tripsPrev) },
+        comments: { current: commentsCurr, previous: commentsPrev, deltaPercent: delta(commentsCurr, commentsPrev) },
+        vehicles: { current: vehiclesCurr, previous: vehiclesPrev, deltaPercent: delta(vehiclesCurr, vehiclesPrev) },
+      },
+    };
+  }
+
   // ── GROWTH (time series) ─────────────────────────────────────────────────
 
   async getGrowth(days = 30) {

@@ -2,6 +2,7 @@
   "nav": {
     "overview": "Overview",
     "dashboard": "Dashboard",
+    "analytics": "Analytics",
     "moderation": "Moderation",
     "pendingQueue": "Pending Queue",
     "reports": "Reports",
@@ -257,6 +258,33 @@
       "deleteTitle": "Delete Trip",
       "deleteMessage": "Delete this trip permanently? This action cannot be undone.",
       "deleteConfirm": "Delete"
+    }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Platform numbers over time with period-over-period comparison",
+    "loading": "Loading data…",
+    "loadError": "Could not load analytics data.",
+    "noData": "No data in this period.",
+    "noPrevious": "No prior period",
+    "vsPrevious": "(vs {value})",
+    "comparingWindow": "compared with the previous {days} days",
+    "chartEyebrow": "Time series",
+    "chartTitle": "Four metrics — last {days} days",
+    "chartHelp": "Click any card to toggle its line",
+    "toggleHide": "Hide from chart",
+    "toggleShow": "Show on chart",
+    "ranges": {
+      "7d": "7 days",
+      "30d": "30 days",
+      "90d": "90 days",
+      "365d": "1 year"
+    },
+    "metrics": {
+      "users": "Signups",
+      "trips": "Published trips",
+      "comments": "Comments",
+      "vehicles": "Vehicles added"
     }
   },
   "routes": {

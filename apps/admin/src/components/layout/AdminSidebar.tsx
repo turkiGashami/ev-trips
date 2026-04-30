@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   LayoutDashboard, Users, Map, MessageSquare, Flag, ShieldCheck,
   Zap, MapPin, FileText, Image as ImageIcon, Settings, ScrollText,
-  LogOut, Bolt, HelpCircle, Inbox, Route as RouteIcon,
+  LogOut, Bolt, HelpCircle, Inbox, Route as RouteIcon, BarChart3,
 } from "lucide-react";
 import { useAdminAuthStore } from "@/store/admin-auth.store";
 
@@ -16,7 +16,10 @@ interface NavGroup { titleKey: string; items: NavItem[]; }
 const navGroups: NavGroup[] = [
   {
     titleKey: "overview",
-    items: [{ labelKey: "dashboard", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> }],
+    items: [
+      { labelKey: "dashboard", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
+      { labelKey: "analytics", href: "/analytics", icon: <BarChart3 className="w-4 h-4" /> },
+    ],
   },
   {
     titleKey: "moderation",
