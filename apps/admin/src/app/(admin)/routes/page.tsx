@@ -29,8 +29,19 @@ export default function RoutesPage() {
         sort,
         limit: 200,
       });
-      // axios wraps the response → res.data is the API payload `{ data, meta }`
-      return res.data as { data: AdminRoute[]; meta: { count: number; limit: number } };
+      // The API wraps every response via TransformInterceptor:
+      //   { success: true, data: <handlerReturn>, message? }
+      // Our handler returns { data: AdminRoute[], meta: {...} }, so the actual
+      // payload lives at res.data.data. Fall back to res.data for the unwrapped
+      // case (e.g. unit tests or future interceptor changes).
+      const body = res.data as
+        | { success?: boolean; data?: { data: AdminRoute[]; meta: { count: number; limit: number } } }
+        | { data: AdminRoute[]; meta: { count: number; limit: number } };
+      const payload =
+        body && typeof body === "object" && "success" in body && body.data
+          ? body.data
+          : (body as { data: AdminRoute[]; meta: { count: number; limit: number } });
+      return payload as { data: AdminRoute[]; meta: { count: number; limit: number } };
     },
     placeholderData: (prev) => prev,
   });
