@@ -39,6 +39,16 @@ export class AdminController {
     return this.adminService.getPopularRoutes(parseInt(limit || '5', 10) || 5);
   }
 
+  @Get('dashboard/top-contributors')
+  getTopContributors(@Query('limit') limit?: string) {
+    return this.adminService.getTopContributors(parseInt(limit || '5', 10) || 5);
+  }
+
+  @Get('dashboard/top-vehicles')
+  getTopVehicles(@Query('limit') limit?: string) {
+    return this.adminService.getTopVehicles(parseInt(limit || '5', 10) || 5);
+  }
+
   // ── ROUTES (overview) ──────────────────────────────────────────────────
   @Get('routes')
   getAdminRoutes(@Query() query: any) {

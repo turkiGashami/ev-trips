@@ -277,6 +277,26 @@ export interface DashboardStats {
   openReports: number;
   totalTrips: number;
   totalStations?: number;
+  // Tier-1 secondary metrics
+  avgBatteryConsumed?: number | null;
+  avgDistanceKm?: number | null;
+  avgDurationMinutes?: number | null;
+  totalVehicles?: number;
+  commentsToday?: number;
+}
+
+export interface TopContributor {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  published_count: number;
+}
+
+export interface TopVehicle {
+  brand: string;
+  model: string;
+  trip_count: number;
 }
 
 export interface GrowthDataPoint {

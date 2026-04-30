@@ -122,10 +122,43 @@ export class AdminService {
       this.stationRepo.count(),
     ]);
 
+    // ── Secondary metrics (Tier-1 dashboard widgets) ───────────────────────
+    // Averages computed over published, non-deleted trips so deleted/draft
+    // junk doesn't skew the numbers shown to admins.
+    const [
+      totalVehicles,
+      commentsToday,
+      avgRow,
+    ] = await Promise.all([
+      this.dataSource
+        .query("SELECT COUNT(*)::int AS count FROM user_vehicles")
+        .then((r: any[]) => Number(r?.[0]?.count) || 0)
+        .catch(() => 0),
+      this.commentRepo
+        .createQueryBuilder('c')
+        .where('c.created_at >= :today', { today })
+        .andWhere('c.deleted_at IS NULL')
+        .getCount(),
+      this.tripRepo
+        .createQueryBuilder('t')
+        .select(
+          'ROUND(AVG(t.departure_battery_pct - t.arrival_battery_pct))',
+          'avg_battery_consumed',
+        )
+        .addSelect('ROUND(AVG(t.distance_km))', 'avg_distance_km')
+        .addSelect('ROUND(AVG(t.duration_minutes))', 'avg_duration_minutes')
+        .where("t.status = 'published'")
+        .andWhere('t.deleted_at IS NULL')
+        .getRawOne(),
+    ]);
+
     const pct = (curr: number, prev: number): number | null => {
       if (prev === 0) return curr > 0 ? 100 : null;
       return Math.round(((curr - prev) / prev) * 100);
     };
+
+    const num = (v: any): number | null =>
+      v == null || isNaN(Number(v)) ? null : Number(v);
 
     return {
       users: {
@@ -140,11 +173,82 @@ export class AdminService {
         pending: pendingTrips,
         today: tripsToday,
         todayGrowthPercent: pct(tripsToday, tripsYesterday),
+        avgBatteryConsumed: num(avgRow?.avg_battery_consumed),
+        avgDistanceKm: num(avgRow?.avg_distance_km),
+        avgDurationMinutes: num(avgRow?.avg_duration_minutes),
       },
-      comments: { total: totalComments },
+      comments: { total: totalComments, today: commentsToday },
       reports: { open: openReports },
       stations: { total: totalStations },
+      vehicles: { total: totalVehicles },
     };
+  }
+
+  // ── TOP CONTRIBUTORS / TOP VEHICLES (dashboard widgets) ───────────────────
+  /**
+   * Users ranked by published-trip count. Excludes soft-deleted trips so the
+   * leaderboard reflects what's actually visible on the public site.
+   */
+  async getTopContributors(limit = 5) {
+    const cap = Math.min(20, Math.max(1, limit | 0 || 5));
+    const rows = await this.userRepo
+      .createQueryBuilder('u')
+      .leftJoin(
+        'trips',
+        't',
+        "t.user_id = u.id AND t.status = 'published' AND t.deleted_at IS NULL",
+      )
+      .select('u.id', 'id')
+      .addSelect('u.full_name', 'full_name')
+      .addSelect('u.username', 'username')
+      .addSelect('u.avatar_url', 'avatar_url')
+      .addSelect('COUNT(t.id)', 'published_count')
+      .where('u.deleted_at IS NULL')
+      .groupBy('u.id')
+      .having('COUNT(t.id) > 0')
+      .orderBy('published_count', 'DESC')
+      .addOrderBy('u.full_name', 'ASC')
+      .limit(cap)
+      .getRawMany();
+
+    return rows.map((r: any) => ({
+      id: r.id,
+      full_name: r.full_name,
+      username: r.username,
+      avatar_url: r.avatar_url,
+      published_count: Number(r.published_count) || 0,
+    }));
+  }
+
+  /**
+   * Most-driven vehicles aggregated from trip snapshots (snap_brand_name +
+   * snap_model_name). Snapshots stay accurate even if the user later edits
+   * their car, so this leaderboard is a faithful "what people actually drove".
+   */
+  async getTopVehicles(limit = 5) {
+    const cap = Math.min(20, Math.max(1, limit | 0 || 5));
+    const rows = await this.tripRepo
+      .createQueryBuilder('t')
+      .select('t.snap_brand_name', 'brand')
+      .addSelect('t.snap_model_name', 'model')
+      .addSelect('COUNT(*)', 'trip_count')
+      .where('t.deleted_at IS NULL')
+      .andWhere('t.snap_brand_name IS NOT NULL')
+      .andWhere("t.snap_brand_name <> ''")
+      .andWhere('t.snap_model_name IS NOT NULL')
+      .andWhere("t.snap_model_name <> ''")
+      .groupBy('t.snap_brand_name')
+      .addGroupBy('t.snap_model_name')
+      .orderBy('trip_count', 'DESC')
+      .addOrderBy('t.snap_brand_name', 'ASC')
+      .limit(cap)
+      .getRawMany();
+
+    return rows.map((r: any) => ({
+      brand: r.brand,
+      model: r.model,
+      trip_count: Number(r.trip_count) || 0,
+    }));
   }
 
   // ── GROWTH (time series) ─────────────────────────────────────────────────

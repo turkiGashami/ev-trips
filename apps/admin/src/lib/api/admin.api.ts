@@ -18,6 +18,8 @@ import type {
   RecentActivity,
   PopularRoute,
   PaginatedResponse,
+  TopContributor,
+  TopVehicle,
 } from "@/types/admin.types";
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -108,6 +110,11 @@ export const dashboardApi = {
       openReports: raw?.reports?.open ?? 0,
       totalTrips: raw?.trips?.total ?? 0,
       totalStations: raw?.stations?.total,
+      avgBatteryConsumed: raw?.trips?.avgBatteryConsumed ?? null,
+      avgDistanceKm: raw?.trips?.avgDistanceKm ?? null,
+      avgDurationMinutes: raw?.trips?.avgDurationMinutes ?? null,
+      totalVehicles: raw?.vehicles?.total ?? 0,
+      commentsToday: raw?.comments?.today ?? 0,
     } as DashboardStats;
   },
   getGrowth: async (days = 30): Promise<GrowthDataPoint[]> => {
@@ -124,6 +131,24 @@ export const dashboardApi = {
       const { data } = await apiClient.get<any>("/admin/dashboard/popular-routes", { params: { limit } });
       const rows = data?.data ?? data ?? [];
       return Array.isArray(rows) ? rows as PopularRoute[] : [];
+    } catch {
+      return [];
+    }
+  },
+  getTopContributors: async (limit = 5): Promise<TopContributor[]> => {
+    try {
+      const { data } = await apiClient.get<any>("/admin/dashboard/top-contributors", { params: { limit } });
+      const rows = data?.data ?? data ?? [];
+      return Array.isArray(rows) ? rows as TopContributor[] : [];
+    } catch {
+      return [];
+    }
+  },
+  getTopVehicles: async (limit = 5): Promise<TopVehicle[]> => {
+    try {
+      const { data } = await apiClient.get<any>("/admin/dashboard/top-vehicles", { params: { limit } });
+      const rows = data?.data ?? data ?? [];
+      return Array.isArray(rows) ? rows as TopVehicle[] : [];
     } catch {
       return [];
     }
