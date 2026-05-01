@@ -132,8 +132,13 @@ async function bootstrap(): Promise<void> {
   // Graceful shutdown
   app.enableShutdownHooks();
 
-  await app.listen(port);
-  logger.log(`EV Trips Community API running on port ${port} [${nodeEnv}]`);
+  // Bind to 0.0.0.0 explicitly. Some container runtimes (CranL among them)
+  // can't reach the upstream when Node defaults to the IPv6 wildcard, which
+  // surfaces as a 502 from the edge proxy even though the process logs
+  // "running on port X" perfectly happily.
+  const host = process.env.HOST || '0.0.0.0';
+  await app.listen(port, host);
+  logger.log(`EV Trips Community API running on ${host}:${port} [${nodeEnv}]`);
   logger.log(`API prefix: /${apiPrefix}/v1`);
 }
 
