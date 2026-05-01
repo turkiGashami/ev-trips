@@ -2,21 +2,9 @@ import Link from 'next/link';
 import { ArrowLeft, Route } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { getApiBaseUrl } from '@/lib/utils';
-import { buildPageMetadata } from '@/lib/seo';
 
 export const revalidate = 60;
-export const metadata = buildPageMetadata({
-  path: '/popular-routes',
-  title: 'المسارات الشائعة للسيارات الكهربائية',
-  description:
-    'استكشف أكثر مسارات السيارات الكهربائية شيوعاً بين المدن العربية: متوسط استهلاك البطارية، المسافات، وعدد الرحلات الموثقة من المجتمع.',
-  keywords: [
-    'مسارات السيارات الكهربائية',
-    'رحلات EV بين المدن',
-    'الرياض جدة كهربائية',
-    'EV routes Saudi Arabia',
-  ],
-});
+export const metadata = { title: 'المسارات الشائعة | رحلات EV' };
 
 type PopularRoute = {
   departure_city_id?: string | null;

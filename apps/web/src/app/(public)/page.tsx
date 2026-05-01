@@ -3,10 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { getTranslations, getLocale } from 'next-intl/server';
 import ShareTripCTA from '@/components/cta/ShareTripCTA';
 import BannerSlot from '@/components/banners/BannerSlot';
-import JsonLd from '@/components/seo/JsonLd';
 import { getApiBaseUrl } from '@/lib/utils';
-
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 export const revalidate = 60;
 
@@ -124,29 +121,6 @@ export default async function HomePage() {
 
   return (
     <main dir={dir} className="bg-[var(--cream)]">
-      <JsonLd
-        data={[
-          {
-            '@context': 'https://schema.org',
-            '@type': 'Organization',
-            name: 'رحلات EV',
-            url: SITE_URL,
-            logo: `${SITE_URL}/icon.png`,
-          },
-          {
-            '@context': 'https://schema.org',
-            '@type': 'WebSite',
-            name: 'رحلات EV',
-            url: SITE_URL,
-            inLanguage: ['ar', 'en'],
-            potentialAction: {
-              '@type': 'SearchAction',
-              target: `${SITE_URL}/search?q={search_term_string}`,
-              'query-input': 'required name=search_term_string',
-            },
-          },
-        ]}
-      />
 
       {/* ── BANNER (top) ─────────────────────────────────────── */}
       <BannerSlot position="home_top" />
