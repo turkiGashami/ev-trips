@@ -1,7 +1,20 @@
 import Link from 'next/link';
 import { Zap, MapPin } from 'lucide-react';
+import { buildPageMetadata } from '@/lib/seo';
 
-export const metadata = { title: 'محطات الشحن | رحلات EV' };
+export const metadata = buildPageMetadata({
+  path: '/charging-stations',
+  title: 'محطات الشحن',
+  description:
+    'دليل محطات الشحن السريع للسيارات الكهربائية في السعودية والوطن العربي — مواقع، أسعار، وتقييمات حقيقية من مالكي EV.',
+  keywords: [
+    'محطات شحن',
+    'شحن سيارات كهربائية',
+    'EV charging Saudi Arabia',
+    'محطات شحن سريع',
+    'شاحن تيسلا',
+  ],
+});
 
 export default function ChargingStationsPage() {
   return (

@@ -1,9 +1,14 @@
 import { getLocale } from 'next-intl/server';
 import { getApiBaseUrl } from '@/lib/utils';
 import StaticPageView from '@/components/static/StaticPageView';
+import { buildPageMetadata } from '@/lib/seo';
 
 export const revalidate = 60;
-export const metadata = { title: 'سياسة الخصوصية | رحلات EV' };
+export const metadata = buildPageMetadata({
+  path: '/privacy',
+  title: 'سياسة الخصوصية',
+  description: 'سياسة الخصوصية وحماية بيانات المستخدمين على منصة رحلات EV.',
+});
 
 async function fetchPage(key: string) {
   try {
