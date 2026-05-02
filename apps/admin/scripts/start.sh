@@ -21,6 +21,18 @@ apps/admin/.next/standalone/server.js
 apps/admin/.next/standalone/apps/admin/server.js
 "
 
+# Sync .next/static and public into the standalone tree before launching.
+# Next.js standalone deliberately omits these — Vercel/Dockerfile copy them
+# in manually. CranL skips npm lifecycle hooks (postbuild, prestart never
+# fired), so we have to do it here. Wrapped in `set +e` so a partial failure
+# never blocks the server from starting.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "${SCRIPT_DIR}/copy-standalone-assets.sh" ]; then
+  set +e
+  sh "${SCRIPT_DIR}/copy-standalone-assets.sh"
+  set -e
+fi
+
 for path in $CANDIDATES; do
   if [ -f "$path" ]; then
     echo "[admin/start] launching $path on ${HOSTNAME}:${PORT}"
