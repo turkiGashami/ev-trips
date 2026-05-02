@@ -11,10 +11,10 @@ export HOSTNAME="${HOSTNAME:-0.0.0.0}"
 export PORT="${PORT:-3002}"
 
 CANDIDATES="
-apps/admin/.next/standalone/apps/admin/server.js
-apps/admin/.next/standalone/server.js
-.next/standalone/apps/admin/server.js
 .next/standalone/server.js
+.next/standalone/apps/admin/server.js
+apps/admin/.next/standalone/server.js
+apps/admin/.next/standalone/apps/admin/server.js
 "
 
 for path in $CANDIDATES; do
