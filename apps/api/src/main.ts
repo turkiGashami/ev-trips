@@ -37,6 +37,10 @@ async function bootstrap(): Promise<void> {
   const isDev = nodeEnv !== 'production';
   // In dev, allow any localhost/127.0.0.1 origin (including dynamic preview ports like :50988)
   const localhostRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+  // CranL platform internal hostnames carry a per-deploy hash suffix that
+  // changes on each redeploy (e.g. ev-trips-web-z9ralb.cranl.net), so we
+  // can't pin them via env. Accept any https *.cranl.net origin.
+  const cranlInternalRegex = /^https:\/\/[a-z0-9-]+\.cranl\.net$/i;
 
   app.enableCors({
     origin: (origin, callback) => {
@@ -44,6 +48,7 @@ async function bootstrap(): Promise<void> {
         !origin ||
         allowedOrigins.includes(origin) ||
         allowedOrigins.includes('*') ||
+        cranlInternalRegex.test(origin) ||
         (isDev && localhostRegex.test(origin))
       ) {
         callback(null, true);
