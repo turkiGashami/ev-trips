@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { ArrowLeft, Route as RouteIcon } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { getApiBaseUrl } from '@/lib/utils';
+import JsonLd from '@/components/seo/JsonLd';
+import { SITE_URL, breadcrumbJsonLd } from '@/lib/seo';
 
 export const revalidate = 60;
 
@@ -92,9 +94,27 @@ export async function generateMetadata({ params }: PageProps) {
   if (!route) return { title: t('metaTitleNotFound') };
   const from = route.fromCity.name_ar ?? route.fromCity.name;
   const to = route.toCity.name_ar ?? route.toCity.name;
+  const title = t('metaTitle', { from, to });
+  const description = t('metaDescription', { count: route.count, from, to });
+  const path = `/routes/${params.slug}`;
   return {
-    title: t('metaTitle', { from, to }),
-    description: t('metaDescription', { count: route.count, from, to }),
+    title,
+    description,
+    keywords: [
+      `رحلة ${from} ${to}`,
+      `مسار ${from} ${to}`,
+      'سيارة كهربائية',
+      `EV ${from} ${to}`,
+    ],
+    alternates: { canonical: path },
+    openGraph: {
+      type: 'article',
+      title,
+      description,
+      url: `${SITE_URL}${path}`,
+      siteName: 'رحلات EV',
+    },
+    twitter: { card: 'summary_large_image', title, description },
   };
 }
 
@@ -132,6 +152,28 @@ export default async function RouteInsightsPage({ params }: PageProps) {
 
   return (
     <div dir="rtl" className="bg-[var(--cream)]">
+      <JsonLd
+        data={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'TouristTrip',
+            name: `${from} → ${to}`,
+            description: `رحلة سيارة كهربائية من ${from} إلى ${to} — ${route.count} رحلة موثقة من المجتمع.`,
+            itinerary: [
+              { '@type': 'Place', name: from },
+              { '@type': 'Place', name: to },
+            ],
+            ...(route.avgDistance != null && {
+              subjectOf: { '@type': 'CreativeWork', text: `متوسط المسافة ${route.avgDistance} كم` },
+            }),
+          },
+          breadcrumbJsonLd([
+            { name: 'الرئيسية', url: '/' },
+            { name: 'المسارات الشائعة', url: '/popular-routes' },
+            { name: `${from} → ${to}`, url: `/routes/${params.slug}` },
+          ]),
+        ]}
+      />
       <div className="container-app py-16 md:py-24">
         <div className="max-w-3xl">
           <div className="flex items-center gap-2 text-[var(--ink-3)] text-xs mb-4">

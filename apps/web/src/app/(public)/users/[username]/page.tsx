@@ -2,7 +2,9 @@ import { notFound } from 'next/navigation';
 import { getTranslations, getLocale } from 'next-intl/server';
 import TripCard from '@/components/trips/TripCard';
 import Avatar from '@/components/ui/Avatar';
+import JsonLd from '@/components/seo/JsonLd';
 import { formatNumber, formatDate, getApiBaseUrl } from '@/lib/utils';
+import { SITE_URL, breadcrumbJsonLd } from '@/lib/seo';
 
 const API_BASE = getApiBaseUrl();
 
@@ -50,9 +52,22 @@ export async function generateMetadata({ params }: PageProps) {
   const user = await getUserProfile(params.username);
   if (!user) return { title: t('notFoundTitle') };
   const name = user.full_name ?? user.fullName ?? user.displayName ?? user.username;
+  const title = t('metaTitle', { name });
+  const description = (user.bio ?? `ملف ${name} على رحلات EV — رحلاته، سيارته الكهربائية، وتجاربه.`).slice(0, 160);
+  const path = `/users/${params.username}`;
+  const url = `${SITE_URL}${path}`;
   return {
-    title: t('metaTitle', { name }),
-    description: user.bio ?? undefined,
+    title,
+    description,
+    alternates: { canonical: path },
+    openGraph: {
+      type: 'profile',
+      title,
+      description,
+      url,
+      images: user.avatar_url ? [{ url: user.avatar_url }] : undefined,
+    },
+    twitter: { card: 'summary', title, description },
   };
 }
 
@@ -90,6 +105,27 @@ export default async function UserProfilePage({ params }: PageProps) {
 
   return (
     <div dir={dir} className="min-h-screen bg-[var(--cream)]">
+      <JsonLd
+        data={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'ProfilePage',
+            mainEntity: {
+              '@type': 'Person',
+              name: displayName,
+              alternateName: username,
+              description: bio || undefined,
+              image: avatar || undefined,
+              url: `${SITE_URL}/users/${username}`,
+            },
+          },
+          breadcrumbJsonLd([
+            { name: 'الرئيسية', url: '/' },
+            { name: 'المستخدمون', url: '/users' },
+            { name: displayName, url: `/users/${username}` },
+          ]),
+        ]}
+      />
       {/* ── HEADER ─────────────────────────────────────────── */}
       <section className="border-b border-[var(--line)]">
         <div className="container-app py-12 md:py-16">

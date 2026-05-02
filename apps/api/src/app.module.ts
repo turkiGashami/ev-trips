@@ -95,7 +95,16 @@ import { MailModule } from './modules/mail/mail.module';
       isGlobal: true,
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const redisUrl = `redis://${configService.get('redis.host')}:${configService.get('redis.port')}`;
+        // Build the Redis URL with auth when a password is configured.
+        // Managed Redis providers (CranL, Upstash, Redis Cloud) require AUTH;
+        // omitting the password silently broke the Redis store and kept the
+        // cache running on the in-memory tier only — masking the real problem
+        // until traffic patterns shifted and the LRU started churning.
+        const host = configService.get<string>('redis.host');
+        const port = configService.get<number>('redis.port');
+        const password = configService.get<string>('redis.password');
+        const auth = password ? `default:${encodeURIComponent(password)}@` : '';
+        const redisUrl = `redis://${auth}${host}:${port}`;
         return {
           stores: [
             new Keyv({
