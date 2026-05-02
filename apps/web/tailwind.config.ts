@@ -9,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        arabic: ['Cairo', 'Noto Kufi Arabic', 'sans-serif'],
-        sans: ['Cairo', 'Inter', 'system-ui', 'sans-serif'],
+        arabic: ['var(--font-tajawal)', 'Tajawal', 'var(--font-noto-kufi)', 'Noto Kufi Arabic', 'sans-serif'],
+        sans: ['var(--font-tajawal)', 'Tajawal', 'var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
         brand: {

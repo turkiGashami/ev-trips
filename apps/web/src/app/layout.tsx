@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Noto_Kufi_Arabic } from 'next/font/google';
+import { Inter, Noto_Kufi_Arabic, Tajawal } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
@@ -87,6 +87,13 @@ const notoKufiArabic = Noto_Kufi_Arabic({
   display: 'swap',
 });
 
+const tajawal = Tajawal({
+  subsets: ['arabic', 'latin'],
+  variable: '--font-tajawal',
+  weight: ['400', '500', '700'],
+  display: 'swap',
+});
+
 export default async function RootLayout({
   children,
 }: {
@@ -100,7 +107,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${inter.variable} ${notoKufiArabic.variable}`}
+      className={`${inter.variable} ${notoKufiArabic.variable} ${tajawal.variable}`}
       suppressHydrationWarning
     >
       <body className="font-[var(--font-noto-kufi)] antialiased">
