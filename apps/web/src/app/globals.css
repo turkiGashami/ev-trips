@@ -52,7 +52,7 @@ html, body {
 }
 body {
   min-height: 100dvh;
-  font-family: var(--font-noto-kufi), 'Noto Kufi Arabic', 'Tajawal', system-ui, sans-serif;
+  font-family: 'Noto Kufi Arabic', 'Tajawal', 'Cairo', system-ui, sans-serif;
   font-feature-settings: "kern", "liga";
   letter-spacing: -0.005em;
 }

@@ -103,7 +103,7 @@ export default async function RootLayout({
       className={`${inter.variable} ${notoKufiArabic.variable}`}
       suppressHydrationWarning
     >
-      <body className="font-arabic antialiased">
+      <body className="font-[var(--font-noto-kufi)] antialiased">
         <GoogleAnalytics />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>{children}</Providers>
