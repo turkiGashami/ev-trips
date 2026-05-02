@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Noto_Kufi_Arabic, Cairo } from 'next/font/google';
+import { Inter, Noto_Kufi_Arabic } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
@@ -87,13 +87,6 @@ const notoKufiArabic = Noto_Kufi_Arabic({
   display: 'swap',
 });
 
-const cairo = Cairo({
-  subsets: ['arabic', 'latin'],
-  variable: '--font-cairo',
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-});
-
 export default async function RootLayout({
   children,
 }: {
@@ -107,7 +100,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${inter.variable} ${notoKufiArabic.variable} ${cairo.variable}`}
+      className={`${inter.variable} ${notoKufiArabic.variable}`}
       suppressHydrationWarning
     >
       <body className="font-arabic antialiased">
