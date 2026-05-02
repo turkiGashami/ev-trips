@@ -7,7 +7,11 @@
 
 set -e
 
-export HOSTNAME="${HOSTNAME:-0.0.0.0}"
+# Force bind on 0.0.0.0. Container runtimes (CranL among them) inject
+# HOSTNAME with the container's short hostname (e.g. "2ab59856aaf6"),
+# which makes Next.js bind only to that interface. The platform health
+# check then can't reach us and SIGTERMs the process. Always override.
+export HOSTNAME="0.0.0.0"
 export PORT="${PORT:-3002}"
 
 CANDIDATES="
