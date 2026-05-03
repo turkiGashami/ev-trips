@@ -462,7 +462,7 @@
         "passwordMin": "كلمة المرور 8 أحرف على الأقل",
         "passwordUpper": "يجب أن تحتوي على حرف كبير",
         "passwordDigit": "يجب أن تحتوي على رقم",
-        "passwordSymbol": "يجب أن تحتوي على رمز خاص (@$!%*?&-_#)",
+        "passwordSymbol": "يجب أن تحتوي على رمز خاص (@$!%*?&-_#.)",
         "confirmRequired": "تأكيد كلمة المرور مطلوب",
         "passwordsMismatch": "كلمتا المرور غير متطابقتين",
         "termsRequired": "يجب قبول الشروط والأحكام"
