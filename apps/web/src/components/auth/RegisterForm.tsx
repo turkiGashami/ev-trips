@@ -75,14 +75,15 @@ export default function RegisterForm() {
             .string()
             .min(3, tV('usernameMin'))
             .max(30, tV('usernameMax'))
-            .regex(/^[a-z0-9_]+$/, tV('usernamePattern')),
+            .transform((v) => v.toLowerCase())
+            .pipe(z.string().regex(/^[a-z0-9_]+$/, tV('usernamePattern'))),
           email: z.string().email(tV('emailInvalid')),
           password: z
             .string()
             .min(8, tV('passwordMin'))
             .regex(/[A-Z]/, tV('passwordUpper'))
             .regex(/[0-9]/, tV('passwordDigit'))
-            .regex(/[@$!%*?&\-_#]/, tV('passwordSymbol')),
+            .regex(/[@$!%*?&\-_#.]/, tV('passwordSymbol')),
           confirm_password: z.string().min(1, tV('confirmRequired')),
           country: z.string().optional(),
           terms: z.boolean().refine((v) => v === true, tV('termsRequired')),

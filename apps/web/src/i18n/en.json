@@ -462,7 +462,7 @@
         "passwordMin": "Password must be at least 8 characters",
         "passwordUpper": "Must include an uppercase letter",
         "passwordDigit": "Must include a digit",
-        "passwordSymbol": "Must include a special character (@$!%*?&-_#)",
+        "passwordSymbol": "Must include a special character (@$!%*?&-_#.)",
         "confirmRequired": "Password confirmation is required",
         "passwordsMismatch": "Passwords do not match",
         "termsRequired": "You must accept the terms and conditions"

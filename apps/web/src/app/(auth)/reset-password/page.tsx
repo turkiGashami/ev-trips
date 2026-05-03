@@ -35,7 +35,7 @@ function ResetPasswordPage() {
             .min(8, t('validation.passwordMin'))
             .regex(/[A-Z]/, t('validation.passwordUpper'))
             .regex(/[0-9]/, t('validation.passwordDigit'))
-            .regex(/[@$!%*?&\-_#]/, t('validation.passwordSymbol')),
+            .regex(/[@$!%*?&\-_#.]/, t('validation.passwordSymbol')),
           confirmPassword: z.string(),
         })
         .refine((d) => d.password === d.confirmPassword, {
