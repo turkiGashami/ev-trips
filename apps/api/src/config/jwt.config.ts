@@ -36,9 +36,9 @@ function resolveSecret(name: keyof typeof PLACEHOLDERS): string {
 
 export default registerAs('jwt', () => ({
   secret: resolveSecret('JWT_SECRET'),
-  expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+  expiresIn: process.env.JWT_EXPIRES_IN || '1h',
   refreshSecret: resolveSecret('JWT_REFRESH_SECRET'),
-  refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+  refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '90d',
   emailVerificationSecret: resolveSecret('JWT_EMAIL_VERIFICATION_SECRET'),
   emailVerificationExpiresIn: process.env.JWT_EMAIL_VERIFICATION_EXPIRES_IN || '24h',
   passwordResetSecret: resolveSecret('JWT_PASSWORD_RESET_SECRET'),

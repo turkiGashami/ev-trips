@@ -23,7 +23,7 @@ import { RefreshToken } from '../../entities/refresh-token.entity';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.secret'),
         signOptions: {
-          expiresIn: configService.get<string>('jwt.expiresIn', '15m'),
+          expiresIn: configService.get<string>('jwt.expiresIn', '1h'),
           issuer: 'ev-trips-community',
           audience: 'ev-trips-community-app',
         },
