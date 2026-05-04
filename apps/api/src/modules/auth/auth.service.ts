@@ -379,8 +379,8 @@ export class AuthService {
       emailVerified: !!user.email_verified_at,
     };
 
-    const jwtExpiresIn = this.configService.get<string>('jwt.expiresIn', '15m');
-    const refreshExpiresIn = this.configService.get<string>('jwt.refreshExpiresIn', '7d');
+    const jwtExpiresIn = this.configService.get<string>('jwt.expiresIn', '1h');
+    const refreshExpiresIn = this.configService.get<string>('jwt.refreshExpiresIn', '90d');
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('jwt.secret'),
